@@ -55,8 +55,6 @@ export async function getUserList(
  * 获取用户总数
  */
 export async function getUserCount(db: DB): Promise<number> {
-  const [result] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(user);
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(user);
   return Number(result.count);
 }

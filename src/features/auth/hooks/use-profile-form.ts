@@ -8,7 +8,16 @@ import { uploadAvatarFn } from "@/features/media/media.api";
 
 const profileSchema = z.object({
   name: z.string().min(2, "昵称至少 2 位").max(20, "昵称最多 20 位"),
-  image: z.union([z.literal(""), z.url("无效的 URL 地址").trim()]).optional(),
+  image: z
+    .union([
+      z.literal(""),
+      z.url("无效的 URL 地址").trim(),
+      z
+        .string()
+        .trim()
+        .regex(/^\/images\//, "无效的头像地址"),
+    ])
+    .optional(),
 });
 
 type ProfileSchema = z.infer<typeof profileSchema>;
@@ -54,7 +63,13 @@ export function useProfileForm(options: UseProfileFormOptions) {
       const result = await uploadAvatarFn({ data: formData });
       setValue("image", result.url);
       // 同步更新 authClient session
-      await authClient.updateUser({ image: result.url });
+      const { error } = await authClient.updateUser({ image: result.url });
+      if (error) {
+        toast.error("头像已上传，但会话同步失败", {
+          description: error.message,
+        });
+        return;
+      }
       toast.success("头像已更新");
     } catch (err) {
       toast.error("头像上传失败", {

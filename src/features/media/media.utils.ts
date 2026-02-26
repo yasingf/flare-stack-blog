@@ -9,10 +9,10 @@ export function generateGuitarTabSlug(artist: string, title: string): string {
   // 保留中文/日文/韩文等字符，替换空格和特殊符号为连字符
   const slug = raw
     .toLowerCase()
-    .replace(/[\s_]+/g, "-")           // 空格/下划线 → -
-    .replace(/[^\p{L}\p{N}-]/gu, "")   // 移除非字母数字和连字符
-    .replace(/-+/g, "-")               // 合并多个连字符
-    .replace(/^-|-$/g, "");            // 去掉首尾连字符
+    .replace(/[\s_]+/g, "-") // 空格/下划线 → -
+    .replace(/[^\p{L}\p{N}-]/gu, "") // 移除非字母数字和连字符
+    .replace(/-+/g, "-") // 合并多个连字符
+    .replace(/^-|-$/g, ""); // 去掉首尾连字符
   // 添加短 ID 防止冲突
   const shortId = crypto.randomUUID().slice(0, 6);
   return slug ? `${slug}-${shortId}` : shortId;
@@ -71,11 +71,16 @@ export function isVideoFile(fileName: string): boolean {
 /** 判断文件名是否为音频文件 */
 export function isAudioFile(fileName: string): boolean {
   const ext = fileName.toLowerCase().slice(fileName.lastIndexOf("."));
-  return [".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".weba"].includes(ext);
+  return [".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".weba"].includes(
+    ext,
+  );
 }
 
 /** 根据文件名或 MIME 推断媒体分类 */
-export function getMediaCategoryFromKey(key: string, mimeType?: string): MediaCategory {
+export function getMediaCategoryFromKey(
+  key: string,
+  mimeType?: string,
+): MediaCategory {
   if (key.startsWith("avatars/")) return "avatar";
   if (key.startsWith("album-covers/")) return "album-cover";
   if (isGuitarProFile(key)) return "guitar-pro";

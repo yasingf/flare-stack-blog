@@ -1,5 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
+import {
+  Link,
+  createFileRoute,
+  notFound,
+  redirect,
+} from "@tanstack/react-router";
 import {
   ArrowLeft,
   Clock,
@@ -45,16 +50,7 @@ function GuitarTabDetailPage() {
   const { slug } = Route.useParams();
   const { data } = useSuspenseQuery(guitarTabDetailQuery(slug));
 
-  if (!data) return null;
-
-  const { tab, relatedTabs } = data;
-  const displayTitle = tab.title || tab.fileName;
-  const coverUrl = tab.coverKey
-    ? `/images/${tab.coverKey}?w=300&h=300&fit=cover`
-    : null;
-  const fileUrl = `/images/${tab.key}?original=true`;
-
-  // 查看器状态
+  // 查看器状态 — Hooks 必须在条件分支之前无条件调用
   const [viewerOpen, setViewerOpen] = useState(false);
 
   const handlePlay = useCallback(() => {
@@ -65,8 +61,17 @@ function GuitarTabDetailPage() {
     setViewerOpen(false);
   }, []);
 
+  if (!data) return null;
+
+  const { tab, relatedTabs } = data;
+  const displayTitle = tab.title || tab.fileName;
+  const coverUrl = tab.coverKey
+    ? `/images/${tab.coverKey}?w=300&h=300&fit=cover`
+    : null;
+  const fileUrl = `/images/${tab.key}?original=true`;
+
   // 轨道名称解析
-  let trackNames: string[] = [];
+  let trackNames: Array<string> = [];
   try {
     trackNames = JSON.parse(tab.trackNames || "[]");
   } catch {
@@ -81,7 +86,10 @@ function GuitarTabDetailPage() {
           to="/guitar-tabs"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-8 group"
         >
-          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft
+            size={14}
+            className="group-hover:-translate-x-0.5 transition-transform"
+          />
           返回吉他谱列表
         </Link>
 
@@ -223,7 +231,10 @@ function GuitarTabDetailPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Guitar size={16} className="text-muted-foreground/30" />
+                        <Guitar
+                          size={16}
+                          className="text-muted-foreground/30"
+                        />
                       </div>
                     )}
                   </div>
@@ -236,9 +247,7 @@ function GuitarTabDetailPage() {
                       {related.trackCount > 0 && (
                         <span>{related.trackCount} 轨</span>
                       )}
-                      {related.tempo > 0 && (
-                        <span>{related.tempo} BPM</span>
-                      )}
+                      {related.tempo > 0 && <span>{related.tempo} BPM</span>}
                       {related.sizeInBytes > 0 && (
                         <span>
                           {related.sizeInBytes >= 1048576
@@ -255,7 +264,10 @@ function GuitarTabDetailPage() {
                     </div>
                   </div>
 
-                  <Play size={16} className="shrink-0 text-muted-foreground/30 group-hover:text-accent transition-colors" />
+                  <Play
+                    size={16}
+                    className="shrink-0 text-muted-foreground/30 group-hover:text-accent transition-colors"
+                  />
                 </Link>
               ))}
             </div>

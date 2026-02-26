@@ -1,12 +1,12 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import {
-  getGuitarTabsFn,
-  getGuitarTabMetaFn,
   getGuitarTabBySlugFn,
+  getGuitarTabMetaFn,
+  getGuitarTabsFn,
   getLinkedMediaKeysFn,
   getMediaFn,
-  getTotalMediaSizeFn,
   getMyGuitarTabsFn,
+  getTotalMediaSizeFn,
 } from "../media.api";
 import type { MediaCategory } from "../media.schema";
 
@@ -23,12 +23,18 @@ export const MEDIA_KEYS = {
   myGuitarTabs: ["media", "my-guitar-tabs"] as const,
 
   // Child keys (functions for specific queries)
-  list: (search: string = "", unusedOnly: boolean = false, category?: MediaCategory) =>
-    ["media", "list", search, unusedOnly, category ?? "all"] as const,
+  list: (
+    search: string = "",
+    unusedOnly: boolean = false,
+    category?: MediaCategory,
+  ) => ["media", "list", search, unusedOnly, category ?? "all"] as const,
   linkedKeys: (keys: string) => ["media", "linked-keys", keys] as const,
   linkedPosts: (key: string) => ["media", "linked-posts", key] as const,
-  guitarTabsList: (search: string = "", page: number = 1, pageSize: number = 20) =>
-    ["media", "guitar-tabs", search, page, pageSize] as const,
+  guitarTabsList: (
+    search: string = "",
+    page: number = 1,
+    pageSize: number = 20,
+  ) => ["media", "guitar-tabs", search, page, pageSize] as const,
   guitarTabMetaById: (mediaId: number) =>
     ["media", "guitar-tab-meta", mediaId] as const,
   guitarTabBySlug: (slug: string) =>

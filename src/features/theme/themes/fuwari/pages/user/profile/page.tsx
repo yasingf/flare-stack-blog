@@ -1,5 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { CodeSquare, Loader2, LogOut, Settings2, Shield, Upload } from "lucide-react";
+import {
+  CodeSquare,
+  Loader2,
+  LogOut,
+  Settings2,
+  Shield,
+  Upload,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ProfilePageProps } from "@/features/theme/contract/pages";
@@ -368,7 +375,11 @@ function FuwariAvatarDropZone({
       {/* Preview */}
       <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white dark:border-(--fuwari-card-bg) bg-(--fuwari-btn-regular-bg) shadow-sm shrink-0">
         {currentImage ? (
-          <img src={currentImage} alt={userName} className="w-full h-full object-cover" />
+          <img
+            src={currentImage}
+            alt={userName}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--fuwari-btn-content) font-bold text-lg">
             {userName.charAt(0).toUpperCase()}

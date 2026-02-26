@@ -1,6 +1,6 @@
-import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper } from "@tiptap/react";
-import { Guitar, GripVertical } from "lucide-react";
+import { GripVertical, Guitar } from "lucide-react";
+import type { NodeViewProps } from "@tiptap/react";
 
 /**
  * 编辑器内 Guitar Pro 节点的预览块
@@ -11,7 +11,7 @@ export function GuitarProBlock({ node, selected }: NodeViewProps) {
     fileName: string;
   };
 
-  const displayName = fileName || src?.split("/").pop() || "Guitar Pro 文件";
+  const displayName = fileName || src.split("/").pop() || "Guitar Pro 文件";
 
   return (
     <NodeViewWrapper className="my-4">
@@ -34,7 +34,9 @@ export function GuitarProBlock({ node, selected }: NodeViewProps) {
 
         {/* 信息 */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-mono font-medium truncate">{displayName}</p>
+          <p className="text-sm font-mono font-medium truncate">
+            {displayName}
+          </p>
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mt-0.5">
             Guitar Pro · 吉他谱嵌入
           </p>

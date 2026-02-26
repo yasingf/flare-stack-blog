@@ -32,11 +32,11 @@ export function MarkdownSourceEditor({
           // Shift+Tab: remove indent from current line(s)
           const lines = value.split("\n");
           let pos = 0;
-          let startLine = 0;
+          let startLine = -1;
           let endLine = 0;
 
           for (let i = 0; i < lines.length; i++) {
-            if (pos + lines[i].length >= start && startLine === 0) {
+            if (pos + lines[i].length >= start && startLine === -1) {
               startLine = i;
             }
             if (pos + lines[i].length >= end) {
@@ -83,9 +83,7 @@ export function MarkdownSourceEditor({
         const currentLine = value.substring(lineStart, start);
 
         // Match leading whitespace + optional list marker
-        const indentMatch = currentLine.match(
-          /^(\s*)([-*+]|\d+\.)\s/,
-        );
+        const indentMatch = currentLine.match(/^(\s*)([-*+]|\d+\.)\s/);
         if (indentMatch) {
           e.preventDefault();
           const [, indent, marker] = indentMatch;

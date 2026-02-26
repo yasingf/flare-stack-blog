@@ -150,13 +150,13 @@ Flare Stack Blog 的所有面向用户的页面与布局均通过 **主题契约
 
 ### 支持格式
 
-| 格式 | 说明 |
-| :--- | :--- |
-| `.gp3` | Guitar Pro 3 |
-| `.gp4` | Guitar Pro 4 |
-| `.gp5` | Guitar Pro 5 |
+| 格式   | 说明                          |
+| :----- | :---------------------------- |
+| `.gp3` | Guitar Pro 3                  |
+| `.gp4` | Guitar Pro 4                  |
+| `.gp5` | Guitar Pro 5                  |
 | `.gpx` | Guitar Pro 6（BCFZ 压缩容器） |
-| `.gp` | Guitar Pro 7/8（ZIP 容器） |
+| `.gp`  | Guitar Pro 7/8（ZIP 容器）    |
 
 文件大小限制：50 MB
 
@@ -238,7 +238,7 @@ Flare Stack Blog 的所有面向用户的页面与布局均通过 **主题契约
 | `VITE_BLOG_EMAIL`         | 构建时 | 联系邮箱                                                                                                  |
 | `VITE_FUWARI_HOME_BG`     | 构建时 | Fuwari 主题首页背景图路径，默认 `/images/home-bg.webp`                                                    |
 | `VITE_FUWARI_AVATAR`      | 构建时 | Fuwari 主题头像图片路径，默认 `/images/avatar.png`                                                        |
-| `VITE_ENABLE_GUITAR_TABS` | 构建时 | 吉他谱功能开关，默认 `true`，设为 `false` 关闭                                                           |
+| `VITE_ENABLE_GUITAR_TABS` | 构建时 | 吉他谱功能开关，默认 `true`，设为 `false` 关闭                                                            |
 
 ---
 

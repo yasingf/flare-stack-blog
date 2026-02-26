@@ -35,24 +35,32 @@ export function HomePageSkeleton() {
         <div className="flex flex-col items-center gap-1.5">
           <BookOpen size={16} strokeWidth={1.5} className="text-accent/40" />
           <Skeleton className="h-7 w-8 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">篇文章</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
+            篇文章
+          </span>
         </div>
         <div className="flex flex-col items-center gap-1.5 border-x border-border/30">
           <Hash size={16} strokeWidth={1.5} className="text-accent/40" />
           <Skeleton className="h-7 w-8 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">个标签</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
+            个标签
+          </span>
         </div>
         <div className="flex flex-col items-center gap-1.5">
           <span className="text-accent/40 text-xs">✦</span>
           <Skeleton className="h-5 w-20 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">最近更新</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
+            最近更新
+          </span>
         </div>
       </section>
 
       {/* Recent Posts Skeleton */}
       <section className="space-y-10">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-serif font-medium text-foreground tracking-tight whitespace-nowrap">最新文章</h2>
+          <h2 className="text-xl font-serif font-medium text-foreground tracking-tight whitespace-nowrap">
+            最新文章
+          </h2>
           <div className="flex-1 h-px bg-border/40" />
         </div>
 

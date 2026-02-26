@@ -142,7 +142,6 @@ function RouteComponent() {
               />
               站长工具
             </TabsTrigger>
-
           </TabsList>
 
           <div className="flex-1 min-w-0 space-y-12">
@@ -196,8 +195,6 @@ function RouteComponent() {
               </div>
               <SeoSection />
             </TabsContent>
-
-
           </div>
         </Tabs>
       </form>

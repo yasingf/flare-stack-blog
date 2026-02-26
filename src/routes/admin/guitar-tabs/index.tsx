@@ -19,6 +19,7 @@ import {
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import type { GuitarTabWithMeta } from "@/features/media/data/media.data";
 import {
   fetchMissingCoversFn,
   getGuitarTabsAdminFn,
@@ -26,7 +27,6 @@ import {
 } from "@/features/media/media.api";
 import { GuitarProViewer } from "@/features/media/components/guitar-pro-viewer";
 import { Button } from "@/components/ui/button";
-import type { GuitarTabWithMeta } from "@/features/media/data/media.data";
 
 const searchSchema = z.object({
   status: z
@@ -59,7 +59,9 @@ function GuitarTabsAdminPage() {
   } | null>(null);
 
   // 拒绝原因弹窗
-  const [rejectTarget, setRejectTarget] = useState<GuitarTabWithMeta | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<GuitarTabWithMeta | null>(
+    null,
+  );
   const [rejectReason, setRejectReason] = useState("");
 
   const handlePreview = useCallback((tab: GuitarTabWithMeta) => {
@@ -71,8 +73,7 @@ function GuitarTabsAdminPage() {
     setPreviewFile(null);
   }, []);
 
-  const statusFilter =
-    status === "ALL" ? undefined : (status as "pending" | "approved" | "rejected");
+  const statusFilter = status === "ALL" ? undefined : status;
 
   const { data, isLoading } = useQuery({
     queryKey: [...GUITAR_TABS_ADMIN_KEY, statusFilter],
@@ -96,7 +97,9 @@ function GuitarTabsAdminPage() {
 
   const rejectMutation = useMutation({
     mutationFn: ({ mediaId, reason }: { mediaId: number; reason?: string }) =>
-      reviewGuitarTabFn({ data: { mediaId, status: "rejected", rejectionReason: reason } }),
+      reviewGuitarTabFn({
+        data: { mediaId, status: "rejected", rejectionReason: reason },
+      }),
     onSuccess: () => {
       toast.success("已拒绝");
       queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
@@ -175,7 +178,7 @@ function GuitarTabsAdminPage() {
               })
             }
             className={`px-4 py-2.5 text-xs font-mono uppercase tracking-widest transition-colors cursor-pointer border-b-2 -mb-px ${
-              (status || "pending") === tab.key
+              status === tab.key
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
@@ -192,10 +195,7 @@ function GuitarTabsAdminPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Guitar
-            size={32}
-            className="text-muted-foreground/20 mb-4"
-          />
+          <Guitar size={32} className="text-muted-foreground/20 mb-4" />
           <p className="text-sm text-muted-foreground/60">
             暂无{statusFilter === "pending" ? "待审核" : ""}吉他谱
           </p>
@@ -215,7 +215,7 @@ function GuitarTabsAdminPage() {
               }
               isRejecting={
                 rejectMutation.isPending &&
-                rejectMutation.variables?.mediaId === tab.id
+                rejectMutation.variables.mediaId === tab.id
               }
             />
           ))}
@@ -456,7 +456,7 @@ function GuitarTabDetailPanel({ tab }: { tab: GuitarTabWithMeta }) {
     : null;
 
   // 解析轨道名称
-  let trackNames: string[] = [];
+  let trackNames: Array<string> = [];
   try {
     trackNames = JSON.parse(tab.trackNames || "[]");
   } catch {
@@ -531,7 +531,11 @@ function GuitarTabDetailPanel({ tab }: { tab: GuitarTabWithMeta }) {
               </span>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
                 {tab.uploaderImage ? (
-                  <img src={tab.uploaderImage} alt="" className="w-5 h-5 rounded-full" />
+                  <img
+                    src={tab.uploaderImage}
+                    alt=""
+                    className="w-5 h-5 rounded-full"
+                  />
                 ) : (
                   <User size={12} />
                 )}
@@ -568,7 +572,8 @@ function GuitarTabDetailPanel({ tab }: { tab: GuitarTabWithMeta }) {
 
           {/* 创建时间 */}
           <div className="text-[10px] font-mono text-muted-foreground/30">
-            上传于 {new Date(tab.createdAt).toLocaleDateString("zh-CN", {
+            上传于{" "}
+            {new Date(tab.createdAt).toLocaleDateString("zh-CN", {
               year: "numeric",
               month: "long",
               day: "numeric",
@@ -605,7 +610,10 @@ function MetaField({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; icon: typeof Clock; style: string }> = {
+  const config: Record<
+    string,
+    { label: string; icon: typeof Clock; style: string }
+  > = {
     pending: {
       label: "待审核",
       icon: Clock,

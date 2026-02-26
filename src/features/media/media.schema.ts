@@ -2,7 +2,13 @@ import { z } from "zod";
 
 // ─── 文件类别 ─────────────────────────────────────────
 
-export type MediaCategory = "image" | "guitar-pro" | "video" | "audio" | "album-cover" | "avatar";
+export type MediaCategory =
+  | "image"
+  | "guitar-pro"
+  | "video"
+  | "audio"
+  | "album-cover"
+  | "avatar";
 
 // ─── 按类型的大小限制 ─────────────────────────────────
 
@@ -10,12 +16,12 @@ export type MediaCategory = "image" | "guitar-pro" | "video" | "audio" | "album-
 export const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
 export const MAX_FILE_SIZE_BY_CATEGORY: Record<MediaCategory, number> = {
-  image: 30 * 1024 * 1024,       // 30 MB
+  image: 30 * 1024 * 1024, // 30 MB
   "guitar-pro": 50 * 1024 * 1024, // 50 MB
-  video: 512 * 1024 * 1024,       // 512 MB
-  audio: 50 * 1024 * 1024,        // 50 MB
+  video: 512 * 1024 * 1024, // 512 MB
+  audio: 50 * 1024 * 1024, // 50 MB
   "album-cover": 10 * 1024 * 1024, // 10 MB
-  avatar: 10 * 1024 * 1024,       // 10 MB
+  avatar: 10 * 1024 * 1024, // 10 MB
 };
 
 export function getMaxFileSize(category: MediaCategory): number {
@@ -45,13 +51,7 @@ export const ACCEPTED_GUITAR_PRO_TYPES = [
 ];
 
 /** Guitar Pro 文件扩展名 */
-export const GUITAR_PRO_EXTENSIONS = [
-  ".gp3",
-  ".gp4",
-  ".gp5",
-  ".gpx",
-  ".gp",
-];
+export const GUITAR_PRO_EXTENSIONS = [".gp3", ".gp4", ".gp5", ".gpx", ".gp"];
 
 export const ACCEPTED_VIDEO_TYPES = [
   "video/mp4",
@@ -61,13 +61,7 @@ export const ACCEPTED_VIDEO_TYPES = [
   "video/x-matroska",
 ];
 
-export const VIDEO_EXTENSIONS = [
-  ".mp4",
-  ".webm",
-  ".mov",
-  ".avi",
-  ".mkv",
-];
+export const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv"];
 
 export const ACCEPTED_AUDIO_TYPES = [
   "audio/mpeg",
@@ -117,8 +111,10 @@ function isAudioFileByName(file: File): boolean {
 export function detectMediaCategory(file: File): MediaCategory {
   if (ACCEPTED_IMAGE_TYPES.includes(file.type)) return "image";
   if (isGuitarProFileByName(file)) return "guitar-pro";
-  if (ACCEPTED_VIDEO_TYPES.includes(file.type) || isVideoFileByName(file)) return "video";
-  if (ACCEPTED_AUDIO_TYPES.includes(file.type) || isAudioFileByName(file)) return "audio";
+  if (ACCEPTED_VIDEO_TYPES.includes(file.type) || isVideoFileByName(file))
+    return "video";
+  if (ACCEPTED_AUDIO_TYPES.includes(file.type) || isAudioFileByName(file))
+    return "audio";
   // 未知类型回退
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
@@ -130,8 +126,10 @@ export function detectMediaCategory(file: File): MediaCategory {
 export function isSupportedFile(file: File): boolean {
   if (ACCEPTED_IMAGE_TYPES.includes(file.type)) return true;
   if (isGuitarProFileByName(file)) return true;
-  if (ACCEPTED_VIDEO_TYPES.includes(file.type) || isVideoFileByName(file)) return true;
-  if (ACCEPTED_AUDIO_TYPES.includes(file.type) || isAudioFileByName(file)) return true;
+  if (ACCEPTED_VIDEO_TYPES.includes(file.type) || isVideoFileByName(file))
+    return true;
+  if (ACCEPTED_AUDIO_TYPES.includes(file.type) || isAudioFileByName(file))
+    return true;
   return false;
 }
 
@@ -149,17 +147,13 @@ export const UploadMediaInputSchema = z
     if (!(file instanceof File)) throw new Error("文件不能为空");
 
     if (!isSupportedFile(file)) {
-      throw new Error(
-        "不支持的文件类型。" + getSupportedFormatsText(),
-      );
+      throw new Error("不支持的文件类型。" + getSupportedFormatsText());
     }
 
     const category = detectMediaCategory(file);
     const maxSize = getMaxFileSize(category);
     if (file.size > maxSize) {
-      throw new Error(
-        `文件大小超过限制 (${formatMaxSize(category)})`,
-      );
+      throw new Error(`文件大小超过限制 (${formatMaxSize(category)})`);
     }
 
     const rawWidth = formData.get("width");
@@ -184,7 +178,9 @@ export const GetMediaListInputSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   unusedOnly: z.boolean().optional(),
-  category: z.enum(["image", "guitar-pro", "video", "audio", "album-cover", "avatar"]).optional(),
+  category: z
+    .enum(["image", "guitar-pro", "video", "audio", "album-cover", "avatar"])
+    .optional(),
 });
 
 export type UpdateMediaNameInput = z.infer<typeof UpdateMediaNameInputSchema>;

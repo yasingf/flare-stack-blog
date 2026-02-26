@@ -1,13 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Film, Guitar, Headphones, Image as ImageIcon } from "lucide-react";
+import {
+  Check,
+  Film,
+  Guitar,
+  Headphones,
+  Image as ImageIcon,
+} from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { useLongPress } from "../hooks";
 import type { MediaAsset } from "../types";
 import {
   getOptimizedImageUrl,
+  isAudioFile,
   isGuitarProFile,
   isVideoFile,
-  isAudioFile,
 } from "@/features/media/media.utils";
 import { guitarTabMetaQuery } from "@/features/media/queries";
 import { formatBytes } from "@/lib/utils";
@@ -150,7 +156,7 @@ const MediaCard = memo(
                   )}
                   <img
                     src={getOptimizedImageUrl(gpMeta.coverKey, 300)}
-                    alt={gpMeta.title ?? asset.fileName}
+                    alt={gpMeta.title || asset.fileName}
                     className={`w-full h-full object-cover transition-all duration-500 ${isCoverLoaded ? "opacity-100" : "opacity-0"} ${isSelected ? "opacity-50" : ""}`}
                     onLoad={() => setIsCoverLoaded(true)}
                   />

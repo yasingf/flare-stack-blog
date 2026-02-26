@@ -286,8 +286,15 @@ export async function getDashboardStats(
       time: u.createdAt,
     })),
     ...recentGuitarTabs.map((t) => {
-      const statusLabel = t.status === "approved" ? "已审核" : t.status === "pending" ? "待审核" : "已拒绝";
-      const uploader = t.uploaderName ? `用户 ${t.uploaderName} 上传了` : "上传了";
+      const statusLabel =
+        t.status === "approved"
+          ? "已审核"
+          : t.status === "pending"
+            ? "待审核"
+            : "已拒绝";
+      const uploader = t.uploaderName
+        ? `用户 ${t.uploaderName} 上传了`
+        : "上传了";
       return {
         type: "guitar-tab" as const,
         text: `${uploader}吉他谱《${t.title || "未命名"}》(${t.artist || "未知艺术家"}) — ${statusLabel}`,

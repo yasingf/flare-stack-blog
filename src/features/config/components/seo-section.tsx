@@ -14,9 +14,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { Path } from "react-hook-form";
 import type { SystemConfig } from "@/features/config/config.schema";
 import { Button } from "@/components/ui/button";
-import { getSiteUrlsFn, submitUrlsToSearchEnginesFn } from "@/features/config/config.api";
+import {
+  getSiteUrlsFn,
+  submitUrlsToSearchEnginesFn,
+} from "@/features/config/config.api";
 
 type UrlSubmitStatus = "idle" | "submitted" | "error";
 
@@ -37,7 +41,7 @@ export function SeoSection() {
   const { register, setValue } = useFormContext<SystemConfig>();
 
   // URL 列表与提交状态
-  const [siteUrls, setSiteUrls] = useState<SiteUrl[]>([]);
+  const [siteUrls, setSiteUrls] = useState<Array<SiteUrl>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitResults, setLastSubmitResults] = useState<{
     google?: { success: boolean; message: string };
@@ -67,12 +71,9 @@ export function SeoSection() {
     refetch();
   }, [refetch]);
 
-  const toggleSelectAll = useCallback(
-    (selected: boolean) => {
-      setSiteUrls((prev) => prev.map((u) => ({ ...u, selected })));
-    },
-    [],
-  );
+  const toggleSelectAll = useCallback((selected: boolean) => {
+    setSiteUrls((prev) => prev.map((u) => ({ ...u, selected })));
+  }, []);
 
   const toggleUrl = useCallback((url: string) => {
     setSiteUrls((prev) =>
@@ -90,7 +91,9 @@ export function SeoSection() {
     setIsSubmitting(true);
     setLastSubmitResults(null);
     try {
-      const result = await submitUrlsToSearchEnginesFn({ data: { urls: selectedUrls } });
+      const result = await submitUrlsToSearchEnginesFn({
+        data: { urls: selectedUrls },
+      });
       setLastSubmitResults(result);
 
       // 更新提交状态
@@ -109,7 +112,9 @@ export function SeoSection() {
         (r) => r?.success,
       ).length;
       if (successCount > 0) {
-        toast.success(`已成功提交 ${selectedUrls.length} 个 URL 至 ${successCount} 个搜索引擎`);
+        toast.success(
+          `已成功提交 ${selectedUrls.length} 个 URL 至 ${successCount} 个搜索引擎`,
+        );
       } else {
         toast.error("提交失败，请检查 API 配置");
       }
@@ -124,12 +129,13 @@ export function SeoSection() {
   };
 
   // 按类型分组
-  const groupedUrls = siteUrls.reduce<Record<string, SiteUrl[]>>((acc, u) => {
-    const key = u.type;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(u);
-    return acc;
-  }, {});
+  const groupedUrls = siteUrls.reduce<Partial<Record<string, Array<SiteUrl>>>>(
+    (acc, u) => {
+      (acc[u.type] ??= []).push(u);
+      return acc;
+    },
+    {},
+  ) as Record<string, Array<SiteUrl>>;
 
   const typeLabels: Record<string, { label: string; icon: React.ReactNode }> = {
     page: { label: "页面", icon: <Globe size={12} /> },
@@ -138,16 +144,21 @@ export function SeoSection() {
   };
 
   const selectedCount = siteUrls.filter((u) => u.selected).length;
-  const submittedCount = siteUrls.filter((u) => u.submitStatus === "submitted").length;
+  const submittedCount = siteUrls.filter(
+    (u) => u.submitStatus === "submitted",
+  ).length;
 
   return (
     <div className="space-y-12">
       {/* ── 站长验证码 ── */}
       <section className="space-y-6">
         <div className="space-y-1">
-          <h3 className="text-lg font-serif font-medium tracking-tight">站长验证</h3>
+          <h3 className="text-lg font-serif font-medium tracking-tight">
+            站长验证
+          </h3>
           <p className="text-xs text-muted-foreground/60">
-            直接粘贴搜索引擎提供的完整 &lt;meta&gt; 标签，系统会自动提取 content 值
+            直接粘贴搜索引擎提供的完整 &lt;meta&gt; 标签，系统会自动提取 content
+            值
           </p>
         </div>
 
@@ -179,7 +190,9 @@ export function SeoSection() {
       {/* ── API Key 配置 ── */}
       <section className="space-y-6 pt-8 border-t border-border/20">
         <div className="space-y-1">
-          <h3 className="text-lg font-serif font-medium tracking-tight">API 密钥</h3>
+          <h3 className="text-lg font-serif font-medium tracking-tight">
+            API 密钥
+          </h3>
           <p className="text-xs text-muted-foreground/60">
             配置搜索引擎 API Key 以启用 URL 提交功能
           </p>
@@ -219,7 +232,9 @@ export function SeoSection() {
       <section className="space-y-6 pt-8 border-t border-border/20">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h3 className="text-lg font-serif font-medium tracking-tight">URL 提交</h3>
+            <h3 className="text-lg font-serif font-medium tracking-tight">
+              URL 提交
+            </h3>
             <p className="text-xs text-muted-foreground/60">
               自动加载网站所有页面，选择后一键提交到搜索引擎
             </p>
@@ -248,7 +263,9 @@ export function SeoSection() {
               <span>共 {siteUrls.length} 个 URL</span>
               <span>已选 {selectedCount} 个</span>
               {submittedCount > 0 && (
-                <span className="text-green-600">已提交 {submittedCount} 个</span>
+                <span className="text-green-600">
+                  已提交 {submittedCount} 个
+                </span>
               )}
               <div className="flex-1" />
               <button
@@ -270,27 +287,43 @@ export function SeoSection() {
             {/* URL 分组列表 */}
             <div className="space-y-2">
               {Object.entries(groupedUrls).map(([type, urls]) => {
-                const info = typeLabels[type] ?? { label: type, icon: <Globe size={12} /> };
+                const info = typeLabels[type] ?? {
+                  label: type,
+                  icon: <Globe size={12} />,
+                };
                 const isExpanded = expandedSection === type;
                 const groupSelected = urls.filter((u) => u.selected).length;
 
                 return (
-                  <div key={type} className="border border-border/30 rounded-lg overflow-hidden">
+                  <div
+                    key={type}
+                    className="border border-border/30 rounded-lg overflow-hidden"
+                  >
                     <button
                       type="button"
-                      onClick={() => setExpandedSection(isExpanded ? null : type)}
+                      onClick={() =>
+                        setExpandedSection(isExpanded ? null : type)
+                      }
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/10 transition-colors cursor-pointer"
                     >
-                      <span className="text-muted-foreground/50">{info.icon}</span>
+                      <span className="text-muted-foreground/50">
+                        {info.icon}
+                      </span>
                       <span className="text-xs font-medium">{info.label}</span>
                       <span className="text-[10px] font-mono text-muted-foreground/40">
                         {groupSelected}/{urls.length}
                       </span>
                       <div className="flex-1" />
                       {isExpanded ? (
-                        <ChevronUp size={14} className="text-muted-foreground/40" />
+                        <ChevronUp
+                          size={14}
+                          className="text-muted-foreground/40"
+                        />
                       ) : (
-                        <ChevronDown size={14} className="text-muted-foreground/40" />
+                        <ChevronDown
+                          size={14}
+                          className="text-muted-foreground/40"
+                        />
                       )}
                     </button>
 
@@ -314,10 +347,16 @@ export function SeoSection() {
                               </p>
                             </div>
                             {u.submitStatus === "submitted" && (
-                              <CheckCircle size={12} className="text-green-600 shrink-0" />
+                              <CheckCircle
+                                size={12}
+                                className="text-green-600 shrink-0"
+                              />
                             )}
                             {u.submitStatus === "error" && (
-                              <XCircle size={12} className="text-red-500 shrink-0" />
+                              <XCircle
+                                size={12}
+                                className="text-red-500 shrink-0"
+                              />
                             )}
                           </label>
                         ))}
@@ -404,7 +443,7 @@ function VerificationField({
   register: ReturnType<typeof useFormContext<SystemConfig>>["register"];
   setValue: ReturnType<typeof useFormContext<SystemConfig>>["setValue"];
 }) {
-  const fieldPath = registerPath as any;
+  const fieldPath = registerPath as Path<SystemConfig>;
   const registration = register(fieldPath);
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -463,7 +502,7 @@ function ApiKeyField({
         {label}
       </label>
       <input
-        {...register(registerPath as keyof SystemConfig extends never ? never : any)}
+        {...register(registerPath as Path<SystemConfig>)}
         type="password"
         placeholder="••••••••"
         className="w-full h-9 px-3 rounded-lg border border-border/40 bg-muted/10 text-xs placeholder:text-muted-foreground/30 focus:outline-none focus:border-accent/50 focus:ring-2 focus:ring-accent/10 transition-all font-mono"

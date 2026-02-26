@@ -3,11 +3,7 @@ import { createdAt, id, updatedAt } from "./helper";
 import { MediaTable } from "./media.table";
 import { user } from "./auth.table";
 
-export const GUITAR_TAB_STATUSES = [
-  "pending",
-  "approved",
-  "rejected",
-] as const;
+export const GUITAR_TAB_STATUSES = ["pending", "approved", "rejected"] as const;
 
 export const GuitarTabMetadataTable = sqliteTable("guitar_tab_metadata", {
   id,

@@ -73,7 +73,9 @@ export function PostsPage({
             <span
               className={cn(
                 "absolute -bottom-1 left-0 h-px bg-accent",
-                !selectedTag ? "w-full" : "w-0 group-hover:w-full group-hover:bg-foreground/40",
+                !selectedTag
+                  ? "w-full"
+                  : "w-0 group-hover:w-full group-hover:bg-foreground/40",
               )}
               style={{
                 transition: `all 400ms cubic-bezier(0.16, 1, 0.3, 1)`,

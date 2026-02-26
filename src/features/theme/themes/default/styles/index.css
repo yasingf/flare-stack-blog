@@ -205,13 +205,34 @@ mark {
         hsl(var(--background) / 0) 100%
       ),
       /* 大椭圆式的淡 accent 色渐变 — 左上 */
-      radial-gradient(ellipse 80% 60% at 20% 10%, hsl(var(--accent) / 0.03) 0%, transparent 60%),
+        radial-gradient(
+          ellipse 80% 60% at 20% 10%,
+          hsl(var(--accent) / 0.03) 0%,
+          transparent 60%
+        ),
       /* 大椭圆式的淡 accent 色渐变 — 右下 */
-      radial-gradient(ellipse 70% 50% at 85% 90%, hsl(var(--accent) / 0.025) 0%, transparent 55%),
+        radial-gradient(
+          ellipse 70% 50% at 85% 90%,
+          hsl(var(--accent) / 0.025) 0%,
+          transparent 55%
+        ),
       /* 细微纸纹颗粒 — 24px网格 */
-      radial-gradient(circle at 25% 25%, hsl(var(--foreground) / 0.012) 1px, transparent 1px),
-      radial-gradient(circle at 75% 75%, hsl(var(--foreground) / 0.008) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 24px 24px;
+        radial-gradient(
+          circle at 25% 25%,
+          hsl(var(--foreground) / 0.012) 1px,
+          transparent 1px
+        ),
+      radial-gradient(
+        circle at 75% 75%,
+        hsl(var(--foreground) / 0.008) 1px,
+        transparent 1px
+      );
+    background-size:
+      100% 100%,
+      100% 100%,
+      100% 100%,
+      24px 24px,
+      24px 24px;
     background-attachment: fixed, fixed, fixed, scroll, scroll;
   }
 
@@ -239,8 +260,12 @@ mark {
   }
 
   @keyframes apple-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes apple-scale-in {
@@ -288,15 +313,25 @@ mark {
 
   /* Smooth card lift on hover */
   @keyframes card-glow {
-    from { box-shadow: 0 0 0 0 hsl(var(--accent) / 0); }
-    to   { box-shadow: 0 2px 16px -4px hsl(var(--accent) / 0.08); }
+    from {
+      box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+    }
+    to {
+      box-shadow: 0 2px 16px -4px hsl(var(--accent) / 0.08);
+    }
   }
 
   /* Ambient floating orb for hero decoration */
   @keyframes ambient-float {
-    0%   { transform: translate(0, 0) scale(1); }
-    50%  { transform: translate(15px, -20px) scale(1.05); }
-    100% { transform: translate(-10px, 10px) scale(0.97); }
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(15px, -20px) scale(1.05);
+    }
+    100% {
+      transform: translate(-10px, 10px) scale(0.97);
+    }
   }
 
   /* Typography Defaults */

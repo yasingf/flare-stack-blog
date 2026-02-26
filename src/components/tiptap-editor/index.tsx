@@ -11,10 +11,7 @@ import {
   removeFormulaModalOpener,
   setActiveFormulaModalOpenerKey,
 } from "./formula-modal-store";
-import {
-  jsonToMarkdown,
-  markdownToHtml,
-} from "./utils/markdown-converter";
+import { jsonToMarkdown, markdownToHtml } from "./utils/markdown-converter";
 import type { EditorMode } from "./utils/markdown-converter";
 import type { FormulaModalPayload } from "./formula-modal-store";
 import type {

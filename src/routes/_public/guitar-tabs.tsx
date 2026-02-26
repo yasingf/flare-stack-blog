@@ -1,5 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,17 +17,11 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
-  GuitarTabListCard,
   GuitarTabGridCard,
+  GuitarTabListCard,
 } from "@/features/media/components/guitar-tab-card";
 import { GuitarProViewer } from "@/features/media/components/guitar-pro-viewer";
 import { guitarTabsQueryOptions } from "@/features/media/queries";
@@ -60,7 +59,11 @@ export const Route = createFileRoute("/_public/guitar-tabs")({
     pageSize: z.number().optional(),
   }),
   component: GuitarTabsPage,
-  loaderDeps: ({ search: { search, page, pageSize } }) => ({ search, page, pageSize }),
+  loaderDeps: ({ search: { search, page, pageSize } }) => ({
+    search,
+    page,
+    pageSize,
+  }),
   beforeLoad: () => {
     if (!blogConfig.features.guitarTabs) {
       throw redirect({ to: "/" });
@@ -68,7 +71,11 @@ export const Route = createFileRoute("/_public/guitar-tabs")({
   },
   loader: async ({ context, deps }) => {
     await context.queryClient.prefetchQuery(
-      guitarTabsQueryOptions(deps.search, deps.page ?? 1, deps.pageSize ?? DEFAULT_PAGE_SIZE),
+      guitarTabsQueryOptions(
+        deps.search,
+        deps.page ?? 1,
+        deps.pageSize ?? DEFAULT_PAGE_SIZE,
+      ),
     );
     return {
       title: "吉他谱",
@@ -157,7 +164,10 @@ function GuitarTabsPage() {
   const activeCardRef = useRef<HTMLButtonElement | null>(null);
 
   const handleOpenTab = useCallback(
-    (tab: { key: string; title: string | null; fileName: string }, buttonEl: HTMLButtonElement) => {
+    (
+      tab: { key: string; title: string | null; fileName: string },
+      buttonEl: HTMLButtonElement,
+    ) => {
       const url = `/images/${tab.key}?original=true`;
       const r = buttonEl.getBoundingClientRect();
       setOriginRect({
@@ -185,7 +195,13 @@ function GuitarTabsPage() {
 
   return (
     <div className="min-h-[60vh] py-10">
-      <div className={viewMode === "list" ? "max-w-3xl mx-auto px-4 sm:px-6" : "max-w-5xl mx-auto px-4 sm:px-6"}>
+      <div
+        className={
+          viewMode === "list"
+            ? "max-w-3xl mx-auto px-4 sm:px-6"
+            : "max-w-5xl mx-auto px-4 sm:px-6"
+        }
+      >
         {/* ════════════════════════════════════════════════
             页面头部
             ════════════════════════════════════════════════ */}
@@ -201,9 +217,7 @@ function GuitarTabsPage() {
                   吉他谱
                 </h1>
                 <p className="text-[11px] text-muted-foreground/60 mt-0.5 font-mono">
-                  {totalCount === 0
-                    ? "暂无曲谱"
-                    : `${totalCount} 首收藏`}
+                  {totalCount === 0 ? "暂无曲谱" : `${totalCount} 首收藏`}
                 </p>
               </div>
             </div>
@@ -282,10 +296,7 @@ function GuitarTabsPage() {
         {tabs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-5">
-              <Music
-                size={28}
-                className="text-muted-foreground/20"
-              />
+              <Music size={28} className="text-muted-foreground/20" />
             </div>
             <p className="text-sm text-muted-foreground/70 font-medium">
               {search ? "没有找到匹配的吉他谱" : "还没有上传吉他谱"}
@@ -312,9 +323,7 @@ function GuitarTabsPage() {
                 isActive={
                   viewerFile?.url === `/images/${tab.key}?original=true`
                 }
-                onClick={(e) =>
-                  handleOpenTab(tab, e.currentTarget)
-                }
+                onClick={(e) => handleOpenTab(tab, e.currentTarget)}
               />
             ))}
           </div>
@@ -335,9 +344,7 @@ function GuitarTabsPage() {
                 isActive={
                   viewerFile?.url === `/images/${tab.key}?original=true`
                 }
-                onClick={(e) =>
-                  handleOpenTab(tab, e.currentTarget)
-                }
+                onClick={(e) => handleOpenTab(tab, e.currentTarget)}
               />
             ))}
           </div>
@@ -445,7 +452,7 @@ function PaginationNumbers({
   onPageChange: (page: number) => void;
 }) {
   const pages = useMemo(() => {
-    const result: (number | "...")[] = [];
+    const result: Array<number | "..."> = [];
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) result.push(i);
     } else {

@@ -2,13 +2,11 @@
 
 import { ClientOnly } from "@tanstack/react-router";
 import { Music, Play } from "lucide-react";
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useRef, useState } from "react";
 
 const GuitarProViewerLazy = lazy(
   () =>
-    import(
-      "@/features/media/components/guitar-pro-viewer/guitar-pro-viewer"
-    ),
+    import("@/features/media/components/guitar-pro-viewer/guitar-pro-viewer"),
 );
 
 interface GuitarProEmbedProps {
@@ -23,12 +21,15 @@ interface GuitarProEmbedProps {
 export function GuitarProEmbed({ src, fileName }: GuitarProEmbedProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const cardRef = useRef<HTMLButtonElement>(null);
-  const [originRect, setOriginRect] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  } | undefined>();
+  const [originRect, setOriginRect] = useState<
+    | {
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+      }
+    | undefined
+  >();
 
   // 确保 src 带 ?original=true 以跳过图片变换
   const fileUrl = src.includes("?") ? src : `${src}?original=true`;
@@ -36,7 +37,12 @@ export function GuitarProEmbed({ src, fileName }: GuitarProEmbedProps) {
   const handleOpen = () => {
     if (cardRef.current) {
       const r = cardRef.current.getBoundingClientRect();
-      setOriginRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+      setOriginRect({
+        top: r.top,
+        left: r.left,
+        width: r.width,
+        height: r.height,
+      });
     }
     setIsViewerOpen(true);
   };
@@ -60,7 +66,10 @@ export function GuitarProEmbed({ src, fileName }: GuitarProEmbedProps) {
           <div className="flex items-center gap-4 p-4">
             {/* 图标 */}
             <div className="shrink-0 w-11 h-11 rounded-lg flex items-center justify-center bg-accent/8 group-hover:bg-accent/12 transition-all duration-300">
-              <Music size={18} className="text-accent/70 group-hover:text-accent transition-colors duration-300" />
+              <Music
+                size={18}
+                className="text-accent/70 group-hover:text-accent transition-colors duration-300"
+              />
             </div>
 
             {/* 信息 */}
