@@ -557,9 +557,7 @@ export async function findExistingCover(
 /**
  * 获取所有已通过审核的吉他谱 URL 信息（用于 SEO 提交）
  */
-export async function getAllApprovedTabUrls(
-  db: DB,
-): Promise<
+export async function getAllApprovedTabUrls(db: DB): Promise<
   Array<{
     slug: string;
     title: string | null;
