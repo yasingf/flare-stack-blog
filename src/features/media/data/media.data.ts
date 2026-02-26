@@ -1,9 +1,14 @@
 import { and, count, desc, eq, lt, or, sql, sum } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { escapeLikeString } from "@/features/media/data/helper";
-import { MediaTable, PostMediaTable, GuitarTabMetadataTable, user } from "@/lib/db/schema";
 import type { MediaCategory } from "@/features/media/media.schema";
 import type { GuitarTabStatus } from "@/lib/db/schema/guitar-tab-metadata.table";
+import { escapeLikeString } from "@/features/media/data/helper";
+import {
+  GuitarTabMetadataTable,
+  MediaTable,
+  PostMediaTable,
+  user,
+} from "@/lib/db/schema";
 
 export type Media = typeof MediaTable.$inferSelect;
 
@@ -189,11 +194,16 @@ export interface GuitarTabWithMeta {
 export async function getGuitarTabsWithMetaPaginated(
   db: DB,
   options?: { page?: number; pageSize?: number; search?: string },
-): Promise<{ items: GuitarTabWithMeta[]; total: number; page: number; pageSize: number }> {
+): Promise<{
+  items: Array<GuitarTabWithMeta>;
+  total: number;
+  page: number;
+  pageSize: number;
+}> {
   const { page = 1, pageSize = 20, search } = options ?? {};
   const offset = (page - 1) * pageSize;
 
-  const conditions: SQL[] = [];
+  const conditions: Array<SQL> = [];
 
   if (search) {
     const pattern = `%${escapeLikeString(search)}%`;
@@ -266,18 +276,15 @@ export async function getGuitarTabsWithMetaPaginated(
       coverMedia,
       eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
     )
-    .leftJoin(
-      user,
-      eq(GuitarTabMetadataTable.uploaderId, user.id),
-    )
+    .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
     .where(whereClause)
     .orderBy(desc(MediaTable.id))
     .limit(pageSize)
     .offset(offset);
 
-  const items: GuitarTabWithMeta[] = rows.map((r) => ({
+  const items: Array<GuitarTabWithMeta> = rows.map((r) => ({
     ...r,
-    status: (r.status ?? "approved") as GuitarTabStatus,
+    status: r.status ?? "approved",
   }));
 
   return { items, total: totalCount, page, pageSize };
@@ -288,11 +295,16 @@ export async function getGuitarTabsWithMetaPaginated(
  */
 export async function getGuitarTabsWithMeta(
   db: DB,
-  options?: { cursor?: number; limit?: number; search?: string; status?: GuitarTabStatus },
-): Promise<{ items: GuitarTabWithMeta[]; nextCursor: number | null }> {
+  options?: {
+    cursor?: number;
+    limit?: number;
+    search?: string;
+    status?: GuitarTabStatus;
+  },
+): Promise<{ items: Array<GuitarTabWithMeta>; nextCursor: number | null }> {
   const { cursor, limit = 20, search, status: statusFilter } = options ?? {};
 
-  const conditions: SQL[] = [];
+  const conditions: Array<SQL> = [];
   if (cursor) {
     conditions.push(lt(MediaTable.id, cursor));
   }
@@ -359,10 +371,7 @@ export async function getGuitarTabsWithMeta(
       coverMedia,
       eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
     )
-    .leftJoin(
-      user,
-      eq(GuitarTabMetadataTable.uploaderId, user.id),
-    )
+    .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(MediaTable.id))
     .limit(limit + 1);
@@ -371,9 +380,9 @@ export async function getGuitarTabsWithMeta(
   if (hasMore) rows.pop();
   const nextCursor = hasMore ? (rows[rows.length - 1]?.id ?? null) : null;
 
-  const items: GuitarTabWithMeta[] = rows.map((r) => ({
+  const items: Array<GuitarTabWithMeta> = rows.map((r) => ({
     ...r,
-    status: (r.status ?? "approved") as GuitarTabStatus,
+    status: r.status ?? "approved",
   }));
 
   return { items, nextCursor };
@@ -393,4 +402,3 @@ export async function getMediaByKey(
     .limit(1);
   return result;
 }
-

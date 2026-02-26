@@ -14,7 +14,12 @@ interface PostRowProps {
   isUnpublishing?: boolean;
 }
 
-export function PostRow({ post, onDelete, onUnpublish, isUnpublishing }: PostRowProps) {
+export function PostRow({
+  post,
+  onDelete,
+  onUnpublish,
+  isUnpublishing,
+}: PostRowProps) {
   const navigate = useNavigate();
 
   const handleEdit = () => {

@@ -56,7 +56,7 @@ const EFFECT_BAND_MODE_SHARED_BOTTOM = 3;
 const NOTATION_ELEMENT_EFFECT_LYRICS = 24;
 try {
   const env = Environment as unknown as Record<string, unknown>;
-  const renderers = env.defaultRenderers as unknown[];
+  const renderers = env.defaultRenderers as Array<unknown>;
   if (Array.isArray(renderers)) {
     for (const factory of renderers) {
       const f = factory as Record<string, unknown>;
@@ -67,7 +67,11 @@ try {
         if (!effect) continue;
         // 尝试读取 notationElement (getter)
         let ne: unknown;
-        try { ne = effect.notationElement; } catch { continue; }
+        try {
+          ne = effect.notationElement;
+        } catch {
+          continue;
+        }
         if (ne === NOTATION_ELEMENT_EFFECT_LYRICS) {
           band.mode = EFFECT_BAND_MODE_SHARED_BOTTOM;
         }
@@ -86,7 +90,7 @@ interface DisplayModeOption {
   profile: number;
 }
 
-const DISPLAY_MODES: DisplayModeOption[] = [
+const DISPLAY_MODES: Array<DisplayModeOption> = [
   { value: "scoreTab", label: "标准 + TAB", profile: 1 },
   { value: "score", label: "五线谱", profile: 2 },
   { value: "tab", label: "TAB 谱", profile: 3 },
@@ -271,9 +275,18 @@ function SliderTrack({
  * 信号链：outputNode → compressor → dryGain ─┐
  *         outputNode → compressor → convolver → wetGain ─┤→ destination
  */
+/** alphaTab 内部播放器输出结构（非公开 API） */
+interface AlphaTabPlayerOutput {
+  context?: AudioContext;
+  _worklet?: AudioNode;
+  _audioNode?: AudioNode;
+}
+
 function setupAudioEffects(api: AlphaTabApi): void {
   try {
-    const output = (api as any).player?.output;
+    const output = (
+      api as unknown as { player?: { output?: AlphaTabPlayerOutput } }
+    ).player?.output;
     if (!output) return;
 
     const ctx: AudioContext | undefined = output.context;
@@ -325,9 +338,7 @@ function setupAudioEffects(api: AlphaTabApi): void {
     dryGain.connect(ctx.destination);
     wetGain.connect(ctx.destination);
 
-    console.log(
-      JSON.stringify({ message: "audio effects chain initialized" }),
-    );
+    console.log(JSON.stringify({ message: "audio effects chain initialized" }));
   } catch (e) {
     // 如果 hack 失败，静默降级（无效果但仍可播放）
     console.warn(
@@ -352,9 +363,7 @@ function setupAudioEffects(api: AlphaTabApi): void {
  * 再通过反向 scale(1/sX, 1/sY) 抵消父级缩放，使横杠保持正常像素尺寸。
  */
 function setupIBeamOverlay(container: HTMLElement): (() => void) | null {
-  const beatCursor = container.querySelector(
-    ".at-cursor-beat",
-  ) as HTMLElement | null;
+  const beatCursor = container.querySelector(".at-cursor-beat");
   if (!beatCursor) return null;
 
   const SERIF_W = 14; // 横杠视觉宽度 px
@@ -389,7 +398,7 @@ function setupIBeamOverlay(container: HTMLElement): (() => void) | null {
 
   /** 从 beatCursor 的 inline transform 中提取 scale(sX, sY) 并设置反向缩放 */
   function syncCounterScale() {
-    const t = beatCursor!.style.transform;
+    const t = (beatCursor as HTMLElement).style.transform;
     const m = t.match(/scale\(\s*([\d.e+-]+)\s*,\s*([\d.e+-]+)\s*\)/);
     if (!m) return;
     const sX = parseFloat(m[1]);
@@ -516,7 +525,7 @@ export default function GuitarProViewer({
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── 轨道 ──
-  const [tracks, setTracks] = useState<TrackState[]>([]);
+  const [tracks, setTracks] = useState<Array<TrackState>>([]);
   const [showTrackPanel, setShowTrackPanel] = useState(false);
 
   // ── 伴奏音频轨 ──
@@ -581,7 +590,7 @@ export default function GuitarProViewer({
     api.masterVolume = DEFAULT_MASTER_VOLUME;
 
     apiRef.current = api;
-    const unsubs: (() => void)[] = [];
+    const unsubs: Array<() => void> = [];
 
     // 乐谱信息
     unsubs.push(
@@ -990,7 +999,11 @@ export default function GuitarProViewer({
   if (!isOpen) return null;
 
   return createPortal(
-    <div ref={rootRef} className="fixed inset-0 z-[200] gp-viewer-root overflow-hidden" data-state={viewerState}>
+    <div
+      ref={rootRef}
+      className="fixed inset-0 z-[200] gp-viewer-root overflow-hidden"
+      data-state={viewerState}
+    >
       {/* 注入拍光标样式 */}
       <style>{ALPHATAB_CURSOR_STYLES}</style>
 
@@ -1001,501 +1014,519 @@ export default function GuitarProViewer({
       />
 
       {/* 查看器面板 */}
-      <div className={`gp-viewer-panel absolute flex flex-col bg-background overflow-hidden ${
-        isFullscreen
-          ? "inset-0"
-          : "top-[4%] left-[8%] right-[8%] bottom-[4%] rounded-2xl shadow-2xl"
-      }`}>
-
-      {/* ════════════════════════════════════════════════
+      <div
+        className={`gp-viewer-panel absolute flex flex-col bg-background overflow-hidden ${
+          isFullscreen
+            ? "inset-0"
+            : "top-[4%] left-[8%] right-[8%] bottom-[4%] rounded-2xl shadow-2xl"
+        }`}
+      >
+        {/* ════════════════════════════════════════════════
           顶部工具栏
           ════════════════════════════════════════════════ */}
-      <div className="h-12 border-b border-border/20 flex items-center justify-between px-4 shrink-0 bg-background/95 backdrop-blur-sm gp-viewer-content">
-        {/* 左：曲目信息 */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-accent/10">
-            <Music size={14} className="text-accent" />
-          </div>
-          <div className="min-w-0 flex items-baseline gap-2">
-            <span className="text-sm font-medium truncate max-w-[280px]">
-              {songTitle || fileName}
-            </span>
-            {songArtist && (
-              <span className="text-[10px] text-muted-foreground truncate max-w-[160px] hidden sm:inline">
-                {songArtist}
+        <div className="h-12 border-b border-border/20 flex items-center justify-between px-4 shrink-0 bg-background/95 backdrop-blur-sm gp-viewer-content">
+          {/* 左：曲目信息 */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-accent/10">
+              <Music size={14} className="text-accent" />
+            </div>
+            <div className="min-w-0 flex items-baseline gap-2">
+              <span className="text-sm font-medium truncate max-w-[280px]">
+                {songTitle || fileName}
               </span>
-            )}
-          </div>
-        </div>
-
-        {/* 右：显示控制 */}
-        <div className="flex items-center gap-0.5">
-          {/* 谱面模式 */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDisplayMenu((v) => !v)}
-              className="rounded-lg h-8 gap-1 text-[10px] uppercase tracking-wider font-mono px-2.5"
-            >
-              <span className="hidden sm:inline">{currentDisplayLabel}</span>
-              <span className="sm:hidden">谱面</span>
-              <ChevronDown size={10} />
-            </Button>
-            {showDisplayMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowDisplayMenu(false)}
-                />
-                <div className="absolute right-0 top-full mt-1 z-20 bg-background border border-border rounded-lg shadow-lg min-w-[130px] overflow-hidden">
-                  {DISPLAY_MODES.map((m) => (
-                    <button
-                      key={m.value}
-                      className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors ${
-                        displayMode === m.value
-                          ? "text-foreground bg-accent/5"
-                          : "text-muted-foreground hover:bg-accent/5"
-                      }`}
-                      onClick={() => handleDisplayModeChange(m.value)}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* 缩放 */}
-          <div className="hidden sm:flex items-center border-l border-border/20 ml-1 pl-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleZoomOut}
-              disabled={scale <= ZOOM_STEPS[0]}
-              className="rounded-lg h-7 w-7"
-              title="缩小">
-              <ZoomOut size={12} />
-            </Button>
-            <button
-              className="text-[10px] font-mono w-10 text-center tabular-nums text-muted-foreground select-none hover:text-foreground transition-colors"
-              onClick={() => {
-                // 重置为 100%
-                if (apiRef.current) {
-                  apiRef.current.settings.display.scale = 1.0;
-                  apiRef.current.updateSettings();
-                  apiRef.current.render();
-                }
-                setScale(1.0);
-              }}
-              title="重置缩放"
-            >
-              {Math.round(scale * 100)}%
-            </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleZoomIn}
-              disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
-              className="rounded-lg h-7 w-7"
-              title="放大">
-              <ZoomIn size={12} />
-            </Button>
-          </div>
-
-          {/* 全屏切换 + 打印 + 关闭 */}
-          <div className="border-l border-border/20 ml-1 pl-1 flex items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrint}
-              disabled={isLoading}
-              className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
-              title="打印 / 导出 PDF"
-            >
-              <Printer size={14} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleToggleFullscreen}
-              className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
-              title={isFullscreen ? "退出全屏" : "全屏"}
-            >
-              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-              title="关闭 (Esc)"
-            >
-              <X size={16} />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════
-          乐谱渲染区域
-          ════════════════════════════════════════════════ */}
-      <div ref={scrollContainerRef} className="flex-1 min-h-0 relative overflow-auto custom-scrollbar gp-viewer-content">
-        {/* 加载中 */}
-        {isLoading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                解析乐谱中...
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* 错误 */}
-        {loadError && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <Music
-                size={48}
-                strokeWidth={1}
-                className="text-muted-foreground opacity-30"
-              />
-              <p className="text-sm font-mono text-muted-foreground">
-                {loadError}
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClose}
-                className="rounded-lg font-mono text-xs"
-              >
-                关闭
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* alphaTab 渲染容器 */}
-        <div
-          ref={containerRef}
-          className="w-full min-h-full"
-          style={{ position: "relative" }}
-        />
-      </div>
-
-      {/* ════════════════════════════════════════════════
-          轨道面板（浮动在底栏上方）
-          ════════════════════════════════════════════════ */}
-      {showTrackPanel && (
-        <>
-          <div
-            className="absolute inset-0 z-[201]"
-            onClick={() => setShowTrackPanel(false)}
-          />
-          <div className="absolute bottom-14 right-3 z-[202] w-80 max-h-72 overflow-y-auto bg-background border border-border rounded-xl shadow-xl">
-            <div className="px-3 py-2 border-b border-border/30">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                轨道管理
-              </span>
-            </div>
-            <div className="p-1.5">
-              {tracks.map((track) => (
-                <div
-                  key={track.index}
-                  className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent/5 transition-colors"
-                >
-                  {/* 渲染可见性 */}
-                  <button
-                    className={`shrink-0 w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
-                      track.isSelected
-                        ? "bg-foreground border-foreground"
-                        : "border-muted-foreground/50"
-                    }`}
-                    onClick={() => handleTrackToggle(track.index)}
-                    title="显示 / 隐藏"
-                  >
-                    {track.isSelected && (
-                      <span className="text-background text-[8px] leading-none">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-
-                  {/* 名称 */}
-                  <span className="flex-1 text-xs font-mono truncate min-w-0">
-                    {track.name}
-                  </span>
-
-                  {/* Solo */}
-                  <button
-                    className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
-                      track.isSolo
-                        ? "text-amber-500 bg-amber-500/10"
-                        : "text-muted-foreground/50 hover:text-muted-foreground"
-                    }`}
-                    onClick={() => handleTrackSolo(track.index)}
-                    title="独奏"
-                  >
-                    S
-                  </button>
-
-                  {/* Mute */}
-                  <button
-                    className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
-                      track.isMuted
-                        ? "text-red-500 bg-red-500/10"
-                        : "text-muted-foreground/50 hover:text-muted-foreground"
-                    }`}
-                    onClick={() => handleTrackMute(track.index)}
-                    title="静音"
-                  >
-                    M
-                  </button>
-
-                  {/* 单轨音量 */}
-                  <div className="shrink-0 w-16">
-                    <SliderTrack
-                      value={track.volume}
-                      max={16}
-                      onChange={(v) => handleTrackVolume(track.index, v)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── 伴奏音频轨 ── */}
-            <div className="border-t border-border/30 px-3 py-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  伴奏音轨
+              {songArtist && (
+                <span className="text-[10px] text-muted-foreground truncate max-w-[160px] hidden sm:inline">
+                  {songArtist}
                 </span>
-                <input
-                  ref={audioInputRef}
-                  type="file"
-                  accept="audio/*"
-                  className="hidden"
-                  onChange={handleLoadAudioTrack}
-                />
-                <button
-                  className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                  onClick={() => audioInputRef.current?.click()}
-                >
-                  <Upload size={10} />
-                  添加
-                </button>
-              </div>
-
-              {audioTrackUrl ? (
-                <div className="flex items-center gap-2 px-2 py-1.5 bg-accent/5">
-                  <Mic size={12} className="shrink-0 text-purple-500" />
-                  <span className="flex-1 text-xs font-mono truncate min-w-0">
-                    {audioTrackName}
-                  </span>
-                  <button
-                    className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
-                      audioMuted
-                        ? "text-red-500 bg-red-500/10"
-                        : "text-muted-foreground/50 hover:text-muted-foreground"
-                    }`}
-                    onClick={handleToggleAudioMute}
-                    title="静音伴奏"
-                  >
-                    M
-                  </button>
-                  <div className="shrink-0 w-16">
-                    <SliderTrack
-                      value={audioVolume}
-                      max={1}
-                      onChange={handleAudioVolumeChange}
-                    />
-                  </div>
-                  <button
-                    className="shrink-0 text-muted-foreground/50 hover:text-red-500 transition-colors"
-                    onClick={handleRemoveAudioTrack}
-                    title="移除伴奏"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              ) : (
-                <div className="text-[9px] font-mono text-muted-foreground/50 px-2 py-1.5">
-                  未加载伴奏音轨 · 支持 MP3 / WAV / OGG
-                </div>
               )}
             </div>
           </div>
-        </>
-      )}
 
-      {/* ════════════════════════════════════════════════
-          底部播放控制栏
-          ════════════════════════════════════════════════ */}
-      <div className="h-14 border-t border-border/20 flex items-center gap-1.5 px-3 shrink-0 bg-background/95 backdrop-blur-sm relative gp-viewer-content">
-        {/* ── 播放 / 停止 ── */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handlePlayPause}
-          disabled={!isPlayerReady}
-          className="rounded-full h-9 w-9 bg-accent/10 hover:bg-accent/20 text-accent disabled:opacity-30 transition-all"
-          title={isPlaying ? "暂停 (Space)" : "播放 (Space)"}
-        >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleStop}
-          disabled={!isPlayerReady}
-          className="rounded-lg h-8 w-8"
-          title="停止"
-        >
-          <Square size={13} />
-        </Button>
+          {/* 右：显示控制 */}
+          <div className="flex items-center gap-0.5">
+            {/* 谱面模式 */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDisplayMenu((v) => !v)}
+                className="rounded-lg h-8 gap-1 text-[10px] uppercase tracking-wider font-mono px-2.5"
+              >
+                <span className="hidden sm:inline">{currentDisplayLabel}</span>
+                <span className="sm:hidden">谱面</span>
+                <ChevronDown size={10} />
+              </Button>
+              {showDisplayMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowDisplayMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 z-20 bg-background border border-border rounded-lg shadow-lg min-w-[130px] overflow-hidden">
+                    {DISPLAY_MODES.map((m) => (
+                      <button
+                        key={m.value}
+                        className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors ${
+                          displayMode === m.value
+                            ? "text-foreground bg-accent/5"
+                            : "text-muted-foreground hover:bg-accent/5"
+                        }`}
+                        onClick={() => handleDisplayModeChange(m.value)}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
-        <div className="w-px h-5 bg-border/20 mx-0.5" />
+            {/* 缩放 */}
+            <div className="hidden sm:flex items-center border-l border-border/20 ml-1 pl-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleZoomOut}
+                disabled={scale <= ZOOM_STEPS[0]}
+                className="rounded-lg h-7 w-7"
+                title="缩小"
+              >
+                <ZoomOut size={12} />
+              </Button>
+              <button
+                className="text-[10px] font-mono w-10 text-center tabular-nums text-muted-foreground select-none hover:text-foreground transition-colors"
+                onClick={() => {
+                  // 重置为 100%
+                  if (apiRef.current) {
+                    apiRef.current.settings.display.scale = 1.0;
+                    apiRef.current.updateSettings();
+                    apiRef.current.render();
+                  }
+                  setScale(1.0);
+                }}
+                title="重置缩放"
+              >
+                {Math.round(scale * 100)}%
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleZoomIn}
+                disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+                className="rounded-lg h-7 w-7"
+                title="放大"
+              >
+                <ZoomIn size={12} />
+              </Button>
+            </div>
 
-        {/* ── 循环 / 预备 / 节拍器 ── */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleToggleLoop}
-          className={`rounded-lg h-8 w-8 transition-colors ${
-            isLooping
-              ? "text-accent bg-accent/10"
-              : "text-muted-foreground"
-          }`}
-          title="循环播放">
-          <Repeat size={13} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleToggleCountIn}
-          className={`rounded-lg h-8 w-8 transition-colors ${
-            countInEnabled
-              ? "text-accent bg-accent/10"
-              : "text-muted-foreground"
-          }`}
-          title="节拍预备（播放前倒数）">
-          <Timer size={13} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleToggleMetronome}
-          className={`rounded-lg h-8 w-8 transition-colors ${
-            metronomeEnabled
-              ? "text-accent bg-accent/10"
-              : "text-muted-foreground"
-          }`}
-          title="节拍器">
-          <Activity size={13} />
-        </Button>
-
-        <div className="w-px h-5 bg-border/20 mx-0.5" />
-
-        {/* ── 时间 + 进度条 ── */}
-        <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0 w-11 text-right select-none">
-          {formatTime(currentTime)}
-        </span>
-
-        <div className="flex-1 mx-1.5 min-w-[60px]">
-          <SliderTrack
-            value={progress}
-            max={100}
-            onChange={handleSeek}
-            disabled={!isPlayerReady}
-          />
-        </div>
-
-        <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0 w-11 select-none">
-          {formatTime(totalTime)}
-        </span>
-
-        <div className="w-px h-5 bg-border/20 mx-0.5" />
-
-        {/* ── 速度 ── */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              const idx = SPEED_OPTIONS.indexOf(speed);
-              if (idx > 0) handleSpeedChange(SPEED_OPTIONS[idx - 1]);
-            }}
-            disabled={speed <= SPEED_OPTIONS[0]}
-            className="rounded-lg h-7 w-7"
-            title="减速">
-            <Minus size={11} />
-          </Button>
-          <span className="text-[10px] font-mono w-9 text-center tabular-nums select-none">
-            {speed}x
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              const idx = SPEED_OPTIONS.indexOf(speed);
-              if (idx < SPEED_OPTIONS.length - 1)
-                handleSpeedChange(SPEED_OPTIONS[idx + 1]);
-            }}
-            disabled={speed >= SPEED_OPTIONS[SPEED_OPTIONS.length - 1]}
-            className="rounded-lg h-7 w-7"
-            title="加速">
-            <Plus size={11} />
-          </Button>
-        </div>
-
-        <div className="w-px h-5 bg-border/20 mx-0.5 hidden sm:block" />
-
-        {/* ── 主音量 ── */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleToggleMute}
-            className="rounded-lg h-8 w-8"
-            title={isMuted ? "取消静音" : "静音"}
-          >
-            <VolumeIcon size={14} />
-          </Button>
-          <div className="w-20 hidden sm:block">
-            <SliderTrack
-              value={volume}
-              max={MAX_MASTER_VOLUME}
-              onChange={handleVolumeChange}
-            />
+            {/* 全屏切换 + 打印 + 关闭 */}
+            <div className="border-l border-border/20 ml-1 pl-1 flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrint}
+                disabled={isLoading}
+                className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
+                title="打印 / 导出 PDF"
+              >
+                <Printer size={14} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleToggleFullscreen}
+                className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
+                title={isFullscreen ? "退出全屏" : "全屏"}
+              >
+                {isFullscreen ? (
+                  <Minimize2 size={14} />
+                ) : (
+                  <Maximize2 size={14} />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                title="关闭 (Esc)"
+              >
+                <X size={16} />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* ── 轨道按钮 ── */}
-        <div className="w-px h-5 bg-border/20 mx-0.5" />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowTrackPanel((v) => !v)}
-          className={`rounded-lg h-8 gap-1 text-[10px] uppercase tracking-wider font-mono px-2 ${
-            showTrackPanel
-              ? "text-foreground bg-accent/10"
-              : audioTrackUrl
-                ? "text-purple-500"
-                : "text-muted-foreground"
-          }`}
-          title="轨道管理 / 伴奏音轨"
+        {/* ════════════════════════════════════════════════
+          乐谱渲染区域
+          ════════════════════════════════════════════════ */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 min-h-0 relative overflow-auto custom-scrollbar gp-viewer-content"
         >
-          <ListMusic size={13} />
-          <span className="hidden sm:inline">轨道</span>
-          {audioTrackUrl && (
-            <span className="w-1.5 h-1.5 bg-purple-500 shrink-0" />
+          {/* 加载中 */}
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+                  解析乐谱中...
+                </span>
+              </div>
+            </div>
           )}
-        </Button>
+
+          {/* 错误 */}
+          {loadError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <Music
+                  size={48}
+                  strokeWidth={1}
+                  className="text-muted-foreground opacity-30"
+                />
+                <p className="text-sm font-mono text-muted-foreground">
+                  {loadError}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClose}
+                  className="rounded-lg font-mono text-xs"
+                >
+                  关闭
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* alphaTab 渲染容器 */}
+          <div
+            ref={containerRef}
+            className="w-full min-h-full"
+            style={{ position: "relative" }}
+          />
+        </div>
+
+        {/* ════════════════════════════════════════════════
+          轨道面板（浮动在底栏上方）
+          ════════════════════════════════════════════════ */}
+        {showTrackPanel && (
+          <>
+            <div
+              className="absolute inset-0 z-[201]"
+              onClick={() => setShowTrackPanel(false)}
+            />
+            <div className="absolute bottom-14 right-3 z-[202] w-80 max-h-72 overflow-y-auto bg-background border border-border rounded-xl shadow-xl">
+              <div className="px-3 py-2 border-b border-border/30">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  轨道管理
+                </span>
+              </div>
+              <div className="p-1.5">
+                {tracks.map((track) => (
+                  <div
+                    key={track.index}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent/5 transition-colors"
+                  >
+                    {/* 渲染可见性 */}
+                    <button
+                      className={`shrink-0 w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
+                        track.isSelected
+                          ? "bg-foreground border-foreground"
+                          : "border-muted-foreground/50"
+                      }`}
+                      onClick={() => handleTrackToggle(track.index)}
+                      title="显示 / 隐藏"
+                    >
+                      {track.isSelected && (
+                        <span className="text-background text-[8px] leading-none">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+
+                    {/* 名称 */}
+                    <span className="flex-1 text-xs font-mono truncate min-w-0">
+                      {track.name}
+                    </span>
+
+                    {/* Solo */}
+                    <button
+                      className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
+                        track.isSolo
+                          ? "text-amber-500 bg-amber-500/10"
+                          : "text-muted-foreground/50 hover:text-muted-foreground"
+                      }`}
+                      onClick={() => handleTrackSolo(track.index)}
+                      title="独奏"
+                    >
+                      S
+                    </button>
+
+                    {/* Mute */}
+                    <button
+                      className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
+                        track.isMuted
+                          ? "text-red-500 bg-red-500/10"
+                          : "text-muted-foreground/50 hover:text-muted-foreground"
+                      }`}
+                      onClick={() => handleTrackMute(track.index)}
+                      title="静音"
+                    >
+                      M
+                    </button>
+
+                    {/* 单轨音量 */}
+                    <div className="shrink-0 w-16">
+                      <SliderTrack
+                        value={track.volume}
+                        max={16}
+                        onChange={(v) => handleTrackVolume(track.index, v)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── 伴奏音频轨 ── */}
+              <div className="border-t border-border/30 px-3 py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    伴奏音轨
+                  </span>
+                  <input
+                    ref={audioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={handleLoadAudioTrack}
+                  />
+                  <button
+                    className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    onClick={() => audioInputRef.current?.click()}
+                  >
+                    <Upload size={10} />
+                    添加
+                  </button>
+                </div>
+
+                {audioTrackUrl ? (
+                  <div className="flex items-center gap-2 px-2 py-1.5 bg-accent/5">
+                    <Mic size={12} className="shrink-0 text-purple-500" />
+                    <span className="flex-1 text-xs font-mono truncate min-w-0">
+                      {audioTrackName}
+                    </span>
+                    <button
+                      className={`shrink-0 text-[9px] font-mono font-bold w-5 h-5 flex items-center justify-center transition-colors ${
+                        audioMuted
+                          ? "text-red-500 bg-red-500/10"
+                          : "text-muted-foreground/50 hover:text-muted-foreground"
+                      }`}
+                      onClick={handleToggleAudioMute}
+                      title="静音伴奏"
+                    >
+                      M
+                    </button>
+                    <div className="shrink-0 w-16">
+                      <SliderTrack
+                        value={audioVolume}
+                        max={1}
+                        onChange={handleAudioVolumeChange}
+                      />
+                    </div>
+                    <button
+                      className="shrink-0 text-muted-foreground/50 hover:text-red-500 transition-colors"
+                      onClick={handleRemoveAudioTrack}
+                      title="移除伴奏"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-[9px] font-mono text-muted-foreground/50 px-2 py-1.5">
+                    未加载伴奏音轨 · 支持 MP3 / WAV / OGG
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ════════════════════════════════════════════════
+          底部播放控制栏
+          ════════════════════════════════════════════════ */}
+        <div className="h-14 border-t border-border/20 flex items-center gap-1.5 px-3 shrink-0 bg-background/95 backdrop-blur-sm relative gp-viewer-content">
+          {/* ── 播放 / 停止 ── */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePlayPause}
+            disabled={!isPlayerReady}
+            className="rounded-full h-9 w-9 bg-accent/10 hover:bg-accent/20 text-accent disabled:opacity-30 transition-all"
+            title={isPlaying ? "暂停 (Space)" : "播放 (Space)"}
+          >
+            {isPlaying ? (
+              <Pause size={16} />
+            ) : (
+              <Play size={16} className="ml-0.5" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleStop}
+            disabled={!isPlayerReady}
+            className="rounded-lg h-8 w-8"
+            title="停止"
+          >
+            <Square size={13} />
+          </Button>
+
+          <div className="w-px h-5 bg-border/20 mx-0.5" />
+
+          {/* ── 循环 / 预备 / 节拍器 ── */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleLoop}
+            className={`rounded-lg h-8 w-8 transition-colors ${
+              isLooping ? "text-accent bg-accent/10" : "text-muted-foreground"
+            }`}
+            title="循环播放"
+          >
+            <Repeat size={13} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleCountIn}
+            className={`rounded-lg h-8 w-8 transition-colors ${
+              countInEnabled
+                ? "text-accent bg-accent/10"
+                : "text-muted-foreground"
+            }`}
+            title="节拍预备（播放前倒数）"
+          >
+            <Timer size={13} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleMetronome}
+            className={`rounded-lg h-8 w-8 transition-colors ${
+              metronomeEnabled
+                ? "text-accent bg-accent/10"
+                : "text-muted-foreground"
+            }`}
+            title="节拍器"
+          >
+            <Activity size={13} />
+          </Button>
+
+          <div className="w-px h-5 bg-border/20 mx-0.5" />
+
+          {/* ── 时间 + 进度条 ── */}
+          <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0 w-11 text-right select-none">
+            {formatTime(currentTime)}
+          </span>
+
+          <div className="flex-1 mx-1.5 min-w-[60px]">
+            <SliderTrack
+              value={progress}
+              max={100}
+              onChange={handleSeek}
+              disabled={!isPlayerReady}
+            />
+          </div>
+
+          <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0 w-11 select-none">
+            {formatTime(totalTime)}
+          </span>
+
+          <div className="w-px h-5 bg-border/20 mx-0.5" />
+
+          {/* ── 速度 ── */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const idx = SPEED_OPTIONS.indexOf(speed);
+                if (idx > 0) handleSpeedChange(SPEED_OPTIONS[idx - 1]);
+              }}
+              disabled={speed <= SPEED_OPTIONS[0]}
+              className="rounded-lg h-7 w-7"
+              title="减速"
+            >
+              <Minus size={11} />
+            </Button>
+            <span className="text-[10px] font-mono w-9 text-center tabular-nums select-none">
+              {speed}x
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const idx = SPEED_OPTIONS.indexOf(speed);
+                if (idx < SPEED_OPTIONS.length - 1)
+                  handleSpeedChange(SPEED_OPTIONS[idx + 1]);
+              }}
+              disabled={speed >= SPEED_OPTIONS[SPEED_OPTIONS.length - 1]}
+              className="rounded-lg h-7 w-7"
+              title="加速"
+            >
+              <Plus size={11} />
+            </Button>
+          </div>
+
+          <div className="w-px h-5 bg-border/20 mx-0.5 hidden sm:block" />
+
+          {/* ── 主音量 ── */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleToggleMute}
+              className="rounded-lg h-8 w-8"
+              title={isMuted ? "取消静音" : "静音"}
+            >
+              <VolumeIcon size={14} />
+            </Button>
+            <div className="w-20 hidden sm:block">
+              <SliderTrack
+                value={volume}
+                max={MAX_MASTER_VOLUME}
+                onChange={handleVolumeChange}
+              />
+            </div>
+          </div>
+
+          {/* ── 轨道按钮 ── */}
+          <div className="w-px h-5 bg-border/20 mx-0.5" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowTrackPanel((v) => !v)}
+            className={`rounded-lg h-8 gap-1 text-[10px] uppercase tracking-wider font-mono px-2 ${
+              showTrackPanel
+                ? "text-foreground bg-accent/10"
+                : audioTrackUrl
+                  ? "text-purple-500"
+                  : "text-muted-foreground"
+            }`}
+            title="轨道管理 / 伴奏音轨"
+          >
+            <ListMusic size={13} />
+            <span className="hidden sm:inline">轨道</span>
+            {audioTrackUrl && (
+              <span className="w-1.5 h-1.5 bg-purple-500 shrink-0" />
+            )}
+          </Button>
+        </div>
       </div>
-      </div>{/* end gp-viewer-panel */}
+      {/* end gp-viewer-panel */}
     </div>,
     document.body,
   );

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   CheckCircle2,
   Clock,
@@ -10,16 +10,14 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 import { submitGuitarTabFn } from "@/features/media/media.api";
-import { myGuitarTabsQuery } from "@/features/media/queries";
+import { MEDIA_KEYS, myGuitarTabsQuery } from "@/features/media/queries";
 import {
   GUITAR_PRO_EXTENSIONS,
   MAX_FILE_SIZE_BY_CATEGORY,
 } from "@/features/media/media.schema";
 import { formatDate } from "@/lib/utils";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { MEDIA_KEYS } from "@/features/media/queries";
 
 export const Route = createFileRoute("/_user/submit-guitar-tab")({
   component: SubmitGuitarTabRoute,
@@ -40,9 +38,7 @@ function SubmitGuitarTabRoute() {
   const handleUpload = useCallback(
     async (file: File) => {
       // 验证文件类型
-      const ext = file.name
-        .toLowerCase()
-        .slice(file.name.lastIndexOf("."));
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (!GUITAR_PRO_EXTENSIONS.includes(ext)) {
         toast.error("只支持 Guitar Pro 文件格式 (GP3/GP4/GP5/GPX/GP)");
         return;
@@ -88,13 +84,10 @@ function SubmitGuitarTabRoute() {
   // 拖拽处理
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-    },
-    [],
-  );
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
   const handleDragLeave = useCallback(() => {
     setIsDragging(false);
@@ -104,7 +97,7 @@ function SubmitGuitarTabRoute() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
+      const file = e.dataTransfer.files.item(0);
       if (file) handleUpload(file);
     },
     [handleUpload],
@@ -168,13 +161,8 @@ function SubmitGuitarTabRoute() {
 
           {isUploading ? (
             <>
-              <Loader2
-                size={32}
-                className="animate-spin text-accent mb-4"
-              />
-              <p className="text-sm text-muted-foreground">
-                正在上传并解析...
-              </p>
+              <Loader2 size={32} className="animate-spin text-accent mb-4" />
+              <p className="text-sm text-muted-foreground">正在上传并解析...</p>
             </>
           ) : (
             <>
@@ -209,10 +197,7 @@ function SubmitGuitarTabRoute() {
                 >
                   <div className="space-y-2 min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <Guitar
-                        size={14}
-                        className="text-accent/50 shrink-0"
-                      />
+                      <Guitar size={14} className="text-accent/50 shrink-0" />
                       <span className="text-sm font-serif font-medium truncate">
                         {tab.title || tab.fileName}
                       </span>

@@ -1,3 +1,4 @@
+import { and, desc, eq, lte } from "drizzle-orm";
 import type { SystemConfig } from "@/features/config/config.schema";
 import * as CacheService from "@/features/cache/cache.service";
 import * as ConfigRepo from "@/features/config/config.data";
@@ -7,7 +8,6 @@ import {
 } from "@/features/config/config.schema";
 import { serverEnv } from "@/lib/env/server.env";
 import { PostsTable } from "@/lib/db/schema";
-import { and, desc, eq, lte } from "drizzle-orm";
 import * as GuitarTabMetaRepo from "@/features/media/data/guitar-tab-metadata.data";
 
 export async function getSystemConfig(
@@ -41,12 +41,12 @@ export async function updateSystemConfig(
  */
 export async function submitUrlsToSearchEngines(
   context: DbContext & { executionCtx: ExecutionContext },
-  urls: string[],
+  urls: Array<string>,
 ): Promise<{
   google?: { success: boolean; message: string };
   bing?: { success: boolean; message: string };
   baidu?: { success: boolean; message: string };
-  submittedUrls: string[];
+  submittedUrls: Array<string>;
 }> {
   const config = await getSystemConfig(context);
   const { DOMAIN } = serverEnv(context.env);
@@ -55,7 +55,7 @@ export async function submitUrlsToSearchEngines(
     google?: { success: boolean; message: string };
     bing?: { success: boolean; message: string };
     baidu?: { success: boolean; message: string };
-    submittedUrls: string[];
+    submittedUrls: Array<string>;
   } = { submittedUrls: urls };
 
   // ── Bing URL Submission ──
@@ -70,13 +70,20 @@ export async function submitUrlsToSearchEngines(
             siteUrl,
             urlList: urls,
           }),
+          signal: AbortSignal.timeout(10_000),
         },
       );
       if (resp.ok) {
-        results.bing = { success: true, message: `已提交 ${urls.length} 个 URL` };
+        results.bing = {
+          success: true,
+          message: `已提交 ${urls.length} 个 URL`,
+        };
       } else {
         const text = await resp.text();
-        results.bing = { success: false, message: `HTTP ${resp.status}: ${text.slice(0, 100)}` };
+        results.bing = {
+          success: false,
+          message: `HTTP ${resp.status}: ${text.slice(0, 100)}`,
+        };
       }
     } catch (err) {
       results.bing = {
@@ -95,9 +102,15 @@ export async function submitUrlsToSearchEngines(
           method: "POST",
           headers: { "Content-Type": "text/plain" },
           body: urls.join("\n"),
+          signal: AbortSignal.timeout(10_000),
         },
       );
-      const data = await resp.json() as { success?: number; remain?: number; error?: number; message?: string };
+      const data: {
+        success?: number;
+        remain?: number;
+        error?: number;
+        message?: string;
+      } = await resp.json();
       if (data.success !== undefined) {
         results.baidu = {
           success: true,
@@ -127,7 +140,10 @@ export async function submitUrlsToSearchEngines(
       };
 
       // 生成 JWT Token
-      const token = await generateGoogleJwt(keyJson.client_email, keyJson.private_key);
+      const token = await generateGoogleJwt(
+        keyJson.client_email,
+        keyJson.private_key,
+      );
 
       // 逐个提交 URL（Google Indexing API 不支持批量）
       let successCount = 0;
@@ -147,6 +163,7 @@ export async function submitUrlsToSearchEngines(
                 url,
                 type: "URL_UPDATED",
               }),
+              signal: AbortSignal.timeout(10_000),
             },
           );
           if (resp.ok) {
@@ -162,9 +179,10 @@ export async function submitUrlsToSearchEngines(
 
       results.google = {
         success: successCount > 0,
-        message: successCount > 0
-          ? `已提交 ${successCount}/${Math.min(urls.length, 10)} 个 URL`
-          : lastError || "全部失败",
+        message:
+          successCount > 0
+            ? `已提交 ${successCount}/${Math.min(urls.length, 10)} 个 URL`
+            : lastError || "全部失败",
       };
     } catch (err) {
       results.google = {
@@ -196,8 +214,10 @@ async function generateGoogleJwt(
   };
 
   const encoder = new TextEncoder();
-  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, "");
-  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, "");
+  const toBase64Url = (str: string) =>
+    btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  const headerB64 = toBase64Url(JSON.stringify(header));
+  const payloadB64 = toBase64Url(JSON.stringify(payload));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
   // 导入 RSA 私钥
@@ -221,7 +241,9 @@ async function generateGoogleJwt(
     encoder.encode(unsignedToken),
   );
 
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, "");
+  const signatureB64 = toBase64Url(
+    String.fromCharCode(...new Uint8Array(signature)),
+  );
   const jwt = `${unsignedToken}.${signatureB64}`;
 
   // 交换 JWT → Access Token
@@ -229,9 +251,11 @@ async function generateGoogleJwt(
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    signal: AbortSignal.timeout(10_000),
   });
 
-  const tokenData = await tokenResp.json() as { access_token?: string; error?: string };
+  const tokenData: { access_token?: string; error?: string } =
+    await tokenResp.json();
   if (!tokenData.access_token) {
     throw new Error(tokenData.error || "无法获取 Google Access Token");
   }
@@ -245,16 +269,33 @@ async function generateGoogleJwt(
  */
 export async function getSiteUrls(
   context: DbContext & { executionCtx: ExecutionContext },
-): Promise<Array<{ url: string; type: string; title: string; updatedAt: Date | null }>> {
+): Promise<
+  Array<{ url: string; type: string; title: string; updatedAt: Date | null }>
+> {
   const { DOMAIN } = serverEnv(context.env);
   const baseUrl = `https://${DOMAIN}`;
-  const urls: Array<{ url: string; type: string; title: string; updatedAt: Date | null }> = [];
+  const urls: Array<{
+    url: string;
+    type: string;
+    title: string;
+    updatedAt: Date | null;
+  }> = [];
 
   // 1. 静态页面
   urls.push(
     { url: `${baseUrl}/`, type: "page", title: "首页", updatedAt: null },
-    { url: `${baseUrl}/posts`, type: "page", title: "文章列表", updatedAt: null },
-    { url: `${baseUrl}/guitar-tabs`, type: "page", title: "吉他谱列表", updatedAt: null },
+    {
+      url: `${baseUrl}/posts`,
+      type: "page",
+      title: "文章列表",
+      updatedAt: null,
+    },
+    {
+      url: `${baseUrl}/guitar-tabs`,
+      type: "page",
+      title: "吉他谱列表",
+      updatedAt: null,
+    },
   );
 
   // 2. 已发布文章

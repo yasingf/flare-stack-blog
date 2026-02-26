@@ -10,11 +10,17 @@ import {
   MessageSquare,
   Settings,
   Tag,
-  Users,
   User,
+  Users,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import { ThemeToggle } from "@/components/common/theme-toggle";
@@ -49,14 +55,17 @@ export function SideBar({
   // ── 侧边栏滑动选中指示器 ──
   const navContainerRef = useRef<HTMLElement>(null);
   const navItemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const [navIndicator, setNavIndicator] = useState<{ top: number; height: number } | null>(null);
+  const [navIndicator, setNavIndicator] = useState<{
+    top: number;
+    height: number;
+  } | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const updateNavIndicator = useCallback(() => {
     const container = navContainerRef.current;
     if (!container) return;
     const activeItem = navItems.find((item) =>
-      item.exact ? pathname === item.path : pathname.startsWith(item.path)
+      item.exact ? pathname === item.path : pathname.startsWith(item.path),
     );
     if (!activeItem) {
       setNavIndicator(null);
@@ -82,10 +91,13 @@ export function SideBar({
     return () => window.removeEventListener("resize", updateNavIndicator);
   }, [updateNavIndicator]);
 
-  const setNavItemRef = useCallback((path: string) => (el: HTMLDivElement | null) => {
-    if (el) navItemRefs.current.set(path, el);
-    else navItemRefs.current.delete(path);
-  }, []);
+  const setNavItemRef = useCallback(
+    (path: string) => (el: HTMLDivElement | null) => {
+      if (el) navItemRefs.current.set(path, el);
+      else navItemRefs.current.delete(path);
+    },
+    [],
+  );
 
   const handleSignOutClick = () => {
     setShowLogoutConfirm(true);
@@ -201,7 +213,10 @@ export function SideBar({
         </div>
 
         {/* Navigation */}
-        <nav ref={navContainerRef} className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar relative">
+        <nav
+          ref={navContainerRef}
+          className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar relative"
+        >
           {/* 滑动选中指示器 — 黑色背景块 */}
           {navIndicator && (
             <div
@@ -209,7 +224,8 @@ export function SideBar({
               style={{
                 top: navIndicator.top,
                 height: navIndicator.height,
-                transition: "top 500ms cubic-bezier(0.34, 1.56, 0.64, 1), height 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+                transition:
+                  "top 500ms cubic-bezier(0.34, 1.56, 0.64, 1), height 400ms cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             />
           )}

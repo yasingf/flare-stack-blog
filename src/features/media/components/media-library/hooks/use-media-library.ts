@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { MediaCategory } from "@/features/media/media.schema";
 import { deleteImageFn, updateMediaNameFn } from "@/features/media/media.api";
 import {
   MEDIA_KEYS,
@@ -16,7 +17,6 @@ import {
 } from "@/features/media/queries";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Route } from "@/routes/admin/media";
-import type { MediaCategory } from "@/features/media/media.schema";
 
 export function useMediaLibrary() {
   const queryClient = useQueryClient();

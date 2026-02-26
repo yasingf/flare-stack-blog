@@ -9,7 +9,7 @@ export const blogConfig = {
   description:
     env.VITE_BLOG_DESCRIPTION || "这是博客的描述，写一段话介绍一下这个博客，",
   features: {
-    guitarTabs: env.VITE_ENABLE_GUITAR_TABS ?? true,
+    guitarTabs: env.VITE_ENABLE_GUITAR_TABS,
   },
   social: {
     github: env.VITE_BLOG_GITHUB || "https://github.com/example",

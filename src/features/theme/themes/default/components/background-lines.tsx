@@ -19,61 +19,123 @@ export function BackgroundLines() {
         {/* ── 对角交叉细线 ─────────────────── */}
         {/* 主斜线组 — 从左上到右下 */}
         <line
-          x1="0" y1="200" x2="600" y2="800"
+          x1="0"
+          y1="200"
+          x2="600"
+          y2="800"
           className="stroke-foreground/[0.045] dark:stroke-foreground/[0.07]"
           strokeWidth="0.6"
         />
         <line
-          x1="200" y1="0" x2="800" y2="600"
+          x1="200"
+          y1="0"
+          x2="800"
+          y2="600"
           className="stroke-foreground/[0.035] dark:stroke-foreground/[0.06]"
           strokeWidth="0.5"
         />
         <line
-          x1="600" y1="0" x2="1200" y2="600"
+          x1="600"
+          y1="0"
+          x2="1200"
+          y2="600"
           className="stroke-foreground/[0.03] dark:stroke-foreground/[0.05]"
           strokeWidth="0.5"
         />
         <line
-          x1="900" y1="0" x2="1200" y2="300"
+          x1="900"
+          y1="0"
+          x2="1200"
+          y2="300"
           className="stroke-foreground/[0.025] dark:stroke-foreground/[0.04]"
           strokeWidth="0.4"
         />
 
         {/* 反向斜线组 — 从右上到左下 */}
         <line
-          x1="1200" y1="150" x2="600" y2="750"
+          x1="1200"
+          y1="150"
+          x2="600"
+          y2="750"
           className="stroke-accent/[0.05] dark:stroke-accent/[0.08]"
           strokeWidth="0.5"
         />
         <line
-          x1="1000" y1="0" x2="400" y2="600"
+          x1="1000"
+          y1="0"
+          x2="400"
+          y2="600"
           className="stroke-accent/[0.04] dark:stroke-accent/[0.06]"
           strokeWidth="0.4"
         />
         <line
-          x1="500" y1="0" x2="0" y2="500"
+          x1="500"
+          y1="0"
+          x2="0"
+          y2="500"
           className="stroke-accent/[0.045] dark:stroke-accent/[0.07]"
           strokeWidth="0.5"
         />
 
         {/* ── 交叉点菱形装饰 ───────────────── */}
         <g className="fill-accent/[0.07] dark:fill-accent/[0.1]">
-          <rect x="396" y="396" width="5" height="5" rx="0.5" transform="rotate(45 398.5 398.5)" />
-          <rect x="596" y="296" width="4" height="4" rx="0.5" transform="rotate(45 598 298)" />
-          <rect x="796" y="396" width="4" height="4" rx="0.5" transform="rotate(45 798 398)" />
-          <rect x="296" y="196" width="3.5" height="3.5" rx="0.5" transform="rotate(45 297.75 197.75)" />
-          <rect x="896" y="196" width="3" height="3" rx="0.5" transform="rotate(45 897.5 197.5)" />
+          <rect
+            x="396"
+            y="396"
+            width="5"
+            height="5"
+            rx="0.5"
+            transform="rotate(45 398.5 398.5)"
+          />
+          <rect
+            x="596"
+            y="296"
+            width="4"
+            height="4"
+            rx="0.5"
+            transform="rotate(45 598 298)"
+          />
+          <rect
+            x="796"
+            y="396"
+            width="4"
+            height="4"
+            rx="0.5"
+            transform="rotate(45 798 398)"
+          />
+          <rect
+            x="296"
+            y="196"
+            width="3.5"
+            height="3.5"
+            rx="0.5"
+            transform="rotate(45 297.75 197.75)"
+          />
+          <rect
+            x="896"
+            y="196"
+            width="3"
+            height="3"
+            rx="0.5"
+            transform="rotate(45 897.5 197.5)"
+          />
         </g>
 
         {/* ── 水平辅助细线（偏下方，与导航栏区分） ─── */}
         <line
-          x1="100" y1="520" x2="500" y2="520"
+          x1="100"
+          y1="520"
+          x2="500"
+          y2="520"
           className="stroke-foreground/[0.03] dark:stroke-foreground/[0.045]"
           strokeWidth="0.4"
           strokeDasharray="3 8"
         />
         <line
-          x1="700" y1="620" x2="1100" y2="620"
+          x1="700"
+          y1="620"
+          x2="1100"
+          y2="620"
           className="stroke-foreground/[0.025] dark:stroke-foreground/[0.04]"
           strokeWidth="0.4"
           strokeDasharray="2 10"

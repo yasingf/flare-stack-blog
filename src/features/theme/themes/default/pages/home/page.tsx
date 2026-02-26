@@ -1,12 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  Github,
-  Hash,
-  Mail,
-  Rss,
-  Terminal,
-} from "lucide-react";
+import { BookOpen, Github, Hash, Mail, Rss, Terminal } from "lucide-react";
 import type { HomePageProps } from "@/features/theme/contract/pages";
 import { blogConfig } from "@/blog.config";
 import { PostItem } from "@/features/theme/themes/default/components/post-item";
@@ -87,11 +80,7 @@ export function HomePage({ posts, totalPosts, totalTags }: HomePageProps) {
       {/* ── Stats Bar ── */}
       <section className="grid grid-cols-3 gap-6 py-6 px-8 rounded-2xl bg-card border border-border/50 shadow-sm shadow-accent/[0.04] backdrop-blur-sm">
         <div className="flex flex-col items-center gap-1.5 text-center">
-          <BookOpen
-            size={16}
-            strokeWidth={1.5}
-            className="text-accent/70"
-          />
+          <BookOpen size={16} strokeWidth={1.5} className="text-accent/70" />
           <span className="text-2xl font-serif font-medium text-foreground tabular-nums">
             {totalPosts}
           </span>

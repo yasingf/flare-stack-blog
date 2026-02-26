@@ -48,7 +48,7 @@ export function MobileMenu({
         }`}
         style={{
           transition: `all 600ms cubic-bezier(0.16, 1, 0.3, 1)`,
-          transitionDelay: isOpen ? '100ms' : '0ms',
+          transitionDelay: isOpen ? "100ms" : "0ms",
         }}
       >
         {/* Header */}
@@ -92,9 +92,7 @@ export function MobileMenu({
                 <>
                   <span
                     className={`text-sm md:text-base text-muted-foreground/50 transition-colors ${
-                      isActive
-                        ? "text-accent"
-                        : "group-hover:text-accent"
+                      isActive ? "text-accent" : "group-hover:text-accent"
                     }`}
                   >
                     &gt;_
@@ -142,13 +140,11 @@ export function MobileMenu({
         {/* Footer: User Info / Login */}
         <div
           className={`border-t border-border/20 pt-8 ${
-            isOpen
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-4"
+            isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
           style={{
             transition: `all 600ms cubic-bezier(0.16, 1, 0.3, 1)`,
-            transitionDelay: isOpen ? '500ms' : '0ms',
+            transitionDelay: isOpen ? "500ms" : "0ms",
           }}
         >
           {user ? (

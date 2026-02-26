@@ -7,6 +7,8 @@ import { authClient } from "@/lib/auth/auth.client";
 import { CACHE_CONTROL } from "@/lib/constants";
 import { AUTH_KEYS } from "@/features/auth/queries";
 
+import { blogConfig } from "@/blog.config";
+
 export const Route = createFileRoute("/_public")({
   component: PublicLayout,
   headers: () => {
@@ -20,8 +22,6 @@ export const Route = createFileRoute("/_public")({
     })),
   }),
 });
-
-import { blogConfig } from "@/blog.config";
 
 const allNavOptions = [
   { label: "主页", to: "/" as const, id: "home" },

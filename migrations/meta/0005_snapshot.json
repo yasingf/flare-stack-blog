@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0895f830-e78c-49c4-ab35-3e6faedb42ff",
-  "prevId": "9984c39f-7ed2-4c45-8e08-787ea5fce19c",
+  "id": "47dbf2e7-1dc8-46a7-b149-676a32e8c5bb",
+  "prevId": "0895f830-e78c-49c4-ab35-3e6faedb42ff",
   "tables": {
     "account": {
       "name": "account",
@@ -1216,6 +1216,21 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(unixepoch())"
+        },
+        "uploader_id": {
+          "name": "uploader_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'approved'"
         }
       },
       "indexes": {
@@ -1254,6 +1269,19 @@
           "tableTo": "media",
           "columnsFrom": [
             "cover_media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "guitar_tab_metadata_uploader_id_user_id_fk": {
+          "name": "guitar_tab_metadata_uploader_id_user_id_fk",
+          "tableFrom": "guitar_tab_metadata",
+          "tableTo": "user",
+          "columnsFrom": [
+            "uploader_id"
           ],
           "columnsTo": [
             "id"

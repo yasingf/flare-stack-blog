@@ -389,7 +389,11 @@ function AvatarDropZone({
       {/* Preview */}
       <div className="w-16 h-16 rounded-full overflow-hidden border border-border/30 bg-muted/20 shrink-0">
         {currentImage ? (
-          <img src={currentImage} alt={userName} className="w-full h-full object-cover" />
+          <img
+            src={currentImage}
+            alt={userName}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground font-serif text-xl">
             {userName.charAt(0).toUpperCase()}

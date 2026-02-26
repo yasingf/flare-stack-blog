@@ -17,7 +17,7 @@ export interface GpHeaderInfo {
   album: string;
   tempo: number;
   trackCount: number;
-  trackNames: string[];
+  trackNames: Array<string>;
   version: string;
 }
 
@@ -210,8 +210,8 @@ function parseGp345(data: Uint8Array): GpHeaderInfo {
 
   // 接下来的结构因版本而异，尝试定位 tempo 和轨道
   let tempo = 120;
-  let trackCount = 0;
-  const trackNames: string[] = [];
+  const trackCount = 0;
+  const trackNames: Array<string> = [];
 
   try {
     if (isGp5) {
@@ -230,7 +230,6 @@ function parseGp345(data: Uint8Array): GpHeaderInfo {
       // tempo name + tempo value
       reader.readIntByteString(); // tempo name (如 "Moderate")
       tempo = reader.readInt32LE();
-
     } else if (isGp4) {
       // GP4: lyrics block + tempo
       reader.readInt32LE(); // lyrics track
@@ -239,7 +238,6 @@ function parseGp345(data: Uint8Array): GpHeaderInfo {
         reader.readIntString();
       }
       tempo = reader.readInt32LE();
-
     } else {
       // GP3: 直接 tempo
       tempo = reader.readInt32LE();
@@ -264,6 +262,9 @@ function parseGp345(data: Uint8Array): GpHeaderInfo {
 
 // ── GPX (GP6/7/8) 解析 ───────────────────────────────
 
+/** 解压后最大允许大小：50 MB */
+const MAX_DECOMPRESSED_SIZE = 50 * 1024 * 1024;
+
 /**
  * 解压 BCFZ 容器数据
  *
@@ -276,16 +277,24 @@ async function decompressBcfz(data: Uint8Array): Promise<Uint8Array> {
   const compressedData = data.slice(8);
 
   // 尝试 deflate-raw 和 deflate (zlib) 两种格式
-  for (const format of ["deflate-raw", "deflate"] as CompressionFormat[]) {
+  for (const format of ["deflate-raw", "deflate"] as Array<CompressionFormat>) {
     try {
       const ds = new DecompressionStream(format);
       const blob = new Blob([compressedData as unknown as BlobPart]);
       const stream = blob.stream().pipeThrough(ds);
       const response = new Response(stream);
       const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > MAX_DECOMPRESSED_SIZE) {
+        throw new Error(
+          `Decompressed size ${buffer.byteLength} exceeds limit ${MAX_DECOMPRESSED_SIZE}`,
+        );
+      }
       const result = new Uint8Array(buffer);
       if (result.length > 0) return result;
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("exceeds limit")) {
+        throw err;
+      }
       continue;
     }
   }
@@ -366,7 +375,7 @@ function parseGpifXml(xml: string): GpHeaderInfo {
   }
 
   // 轨道名 — 支持 CDATA: <Name><![CDATA[Steel Guitar]]></Name>
-  const trackNames: string[] = [];
+  const trackNames: Array<string> = [];
   const trackRegex =
     /<Track\s[^>]*>[\s\S]*?<Name>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/Name>/g;
   let match;
@@ -435,16 +444,19 @@ async function parseGpx(data: Uint8Array): Promise<GpHeaderInfo> {
  * 支持 GP3/4/5/GPX/GP7+(ZIP) 格式，在 Workers 环境中运行。
  * 只解析元信息（标题、艺术家、专辑、速度），不解析完整乐谱。
  */
-export async function parseGpHeader(
-  data: Uint8Array,
-): Promise<GpHeaderInfo> {
+export async function parseGpHeader(data: Uint8Array): Promise<GpHeaderInfo> {
   if (data.byteLength < 32) return EMPTY_RESULT;
 
   try {
     const magic = String.fromCharCode(data[0], data[1], data[2], data[3]);
 
     // GP7/8: ZIP 格式（PK\x03\x04）
-    if (data[0] === 0x50 && data[1] === 0x4b && data[2] === 0x03 && data[3] === 0x04) {
+    if (
+      data[0] === 0x50 &&
+      data[1] === 0x4b &&
+      data[2] === 0x03 &&
+      data[3] === 0x04
+    ) {
       return await parseGpZip(data);
     }
 
@@ -600,15 +612,23 @@ async function extractFileFromZip(
  */
 async function inflateData(compressed: Uint8Array): Promise<Uint8Array> {
   // 尝试 deflate-raw（ZIP 使用 raw deflate，无 zlib header）
-  for (const format of ["deflate-raw", "deflate"] as CompressionFormat[]) {
+  for (const format of ["deflate-raw", "deflate"] as Array<CompressionFormat>) {
     try {
       const ds = new DecompressionStream(format);
       const blob = new Blob([compressed as unknown as BlobPart]);
       const stream = blob.stream().pipeThrough(ds);
       const response = new Response(stream);
       const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > MAX_DECOMPRESSED_SIZE) {
+        throw new Error(
+          `Decompressed size ${buffer.byteLength} exceeds limit ${MAX_DECOMPRESSED_SIZE}`,
+        );
+      }
       return new Uint8Array(buffer);
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("exceeds limit")) {
+        throw err;
+      }
       continue;
     }
   }

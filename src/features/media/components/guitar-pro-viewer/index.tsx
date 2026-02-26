@@ -1,5 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { Suspense, lazy } from "react";
 import type { GuitarProViewerProps } from "./types";
 
 const GuitarProViewerLazy = lazy(() => import("./guitar-pro-viewer"));

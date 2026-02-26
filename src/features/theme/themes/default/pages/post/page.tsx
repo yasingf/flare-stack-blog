@@ -33,7 +33,10 @@ export function PostPage({ post }: PostPageProps) {
             transition: `opacity 350ms cubic-bezier(0.25, 0.1, 0.25, 1)`,
           }}
         >
-          <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform duration-[350ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]" />
+          <ArrowLeft
+            size={12}
+            className="group-hover:-translate-x-1 transition-transform duration-[350ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+          />
           <span>返回目录</span>
         </button>
       </nav>

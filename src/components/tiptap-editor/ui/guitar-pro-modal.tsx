@@ -1,17 +1,10 @@
 import { ClientOnly } from "@tanstack/react-router";
-import {
-  Check,
-  Globe,
-  Guitar,
-  Loader2,
-  Search,
-  X,
-} from "lucide-react";
+import { Check, Globe, Guitar, Loader2, Search, X } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useGuitarProPicker } from "./use-guitar-pro-picker";
 import type { MediaAsset } from "@/features/media/components/media-library/types";
 import type React from "react";
-import { useGuitarProPicker } from "./use-guitar-pro-picker";
 import { useDelayUnmount } from "@/hooks/use-delay-unmount";
 
 interface GuitarProModalProps {
@@ -121,7 +114,11 @@ const GuitarProModalInternal: React.FC<GuitarProModalProps> = ({
   const handleSubmit = () => {
     const src = inputUrl.trim();
     if (!src) return;
-    const name = inputFileName.trim() || selectedMedia?.fileName || src.split("/").pop() || "Guitar Pro";
+    const name =
+      inputFileName.trim() ||
+      selectedMedia?.fileName ||
+      src.split("/").pop() ||
+      "Guitar Pro";
     onSubmit(src, name);
   };
 

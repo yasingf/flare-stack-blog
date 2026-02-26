@@ -36,7 +36,8 @@ export const GuitarTabReviewEmail = ({
       {approved ? (
         <>
           <p style={{ fontSize: "14px", color: "#444", lineHeight: "1.6" }}>
-            恭喜！您投稿的吉他谱 <strong>{displayName}</strong> 已通过审核，现已在吉他谱库中展示。
+            恭喜！您投稿的吉他谱 <strong>{displayName}</strong>{" "}
+            已通过审核，现已在吉他谱库中展示。
           </p>
           {blogUrl && (
             <div style={{ marginTop: "32px" }}>

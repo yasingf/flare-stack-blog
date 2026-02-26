@@ -1,6 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Search, UserIcon } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { NavOption, UserInfo } from "@/features/theme/contract/layouts";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +28,10 @@ export function Navbar({
   const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const linkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
-  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -39,7 +48,7 @@ export function Navbar({
     if (!nav) return;
     // 找到当前激活的 nav option
     const activeOption = navOptions.find((opt) =>
-      opt.to === "/" ? pathname === "/" : pathname.startsWith(opt.to)
+      opt.to === "/" ? pathname === "/" : pathname.startsWith(opt.to),
     );
     if (!activeOption) {
       setIndicator(null);
@@ -66,10 +75,13 @@ export function Navbar({
     return () => window.removeEventListener("resize", updateIndicator);
   }, [updateIndicator]);
 
-  const setLinkRef = useCallback((id: string) => (el: HTMLAnchorElement | null) => {
-    if (el) linkRefs.current.set(id, el);
-    else linkRefs.current.delete(id);
-  }, []);
+  const setLinkRef = useCallback(
+    (id: string) => (el: HTMLAnchorElement | null) => {
+      if (el) linkRefs.current.set(id, el);
+      else linkRefs.current.delete(id);
+    },
+    [],
+  );
 
   return (
     <>
@@ -92,7 +104,10 @@ export function Navbar({
           </Link>
 
           {/* Center: Main Nav */}
-          <nav ref={navRef} className="hidden lg:flex items-center gap-8 relative">
+          <nav
+            ref={navRef}
+            className="hidden lg:flex items-center gap-8 relative"
+          >
             {navOptions.map((option) => (
               <Link
                 key={option.id}
@@ -113,7 +128,8 @@ export function Navbar({
                 style={{
                   left: indicator.left,
                   width: indicator.width,
-                  transition: "left 500ms cubic-bezier(0.34, 1.56, 0.64, 1), width 500ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  transition:
+                    "left 500ms cubic-bezier(0.34, 1.56, 0.64, 1), width 500ms cubic-bezier(0.34, 1.56, 0.64, 1)",
                 }}
               />
             )}

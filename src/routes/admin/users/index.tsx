@@ -35,9 +35,7 @@ function UsersAdminPage() {
   const navigate = Route.useNavigate();
   const [searchInput, setSearchInput] = useState(search || "");
 
-  const { data } = useSuspenseQuery(
-    userListQueryOptions(page, search),
-  );
+  const { data } = useSuspenseQuery(userListQueryOptions(page, search));
 
   const { items: users, total } = data;
   const itemsPerPage = 20;
@@ -104,10 +102,7 @@ function UsersAdminPage() {
       <div className="min-h-100">
         {users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <UserIcon
-              size={32}
-              className="text-muted-foreground/30 mb-4"
-            />
+            <UserIcon size={32} className="text-muted-foreground/30 mb-4" />
             <p className="text-sm text-muted-foreground">
               {search ? "没有找到匹配的用户" : "暂无注册用户"}
             </p>
@@ -142,14 +137,15 @@ function UsersAdminPage() {
                       <UserIcon size={14} className="text-muted-foreground" />
                     </div>
                   )}
-                  <span className="text-sm font-medium truncate">
-                    {u.name}
-                  </span>
+                  <span className="text-sm font-medium truncate">{u.name}</span>
                 </div>
 
                 {/* 邮箱 */}
                 <div className="flex items-center gap-2 min-w-0">
-                  <Mail size={12} className="text-muted-foreground shrink-0 hidden md:block" />
+                  <Mail
+                    size={12}
+                    className="text-muted-foreground shrink-0 hidden md:block"
+                  />
                   <span className="text-xs font-mono text-muted-foreground truncate">
                     {u.email}
                   </span>

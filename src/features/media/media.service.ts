@@ -3,21 +3,22 @@ import type {
   GetMediaListInput,
   UpdateMediaNameInput,
 } from "@/features/media/media.schema";
+import type { GuitarTabStatus } from "@/lib/db/schema/guitar-tab-metadata.table";
 import * as Storage from "@/features/media/data/media.storage";
 import * as MediaRepo from "@/features/media/data/media.data";
 import * as GuitarTabMetaRepo from "@/features/media/data/guitar-tab-metadata.data";
 import * as PostMediaRepo from "@/features/posts/data/post-media.data";
 import {
   buildTransformOptions,
+  generateGuitarTabSlug,
   getContentTypeFromKey,
   isAudioFile,
   isGuitarProFile,
   isVideoFile,
 } from "@/features/media/media.utils";
 import { parseGpHeader } from "@/features/media/utils/gp-header-parser";
-import { generateGuitarTabSlug } from "@/features/media/media.utils";
+
 import { CACHE_CONTROL } from "@/lib/constants";
-import type { GuitarTabStatus } from "@/lib/db/schema/guitar-tab-metadata.table";
 import { GuitarTabReviewEmail } from "@/features/email/templates/GuitarTabReviewEmail";
 import { serverEnv } from "@/lib/env/server.env";
 
@@ -34,10 +35,7 @@ export async function getGuitarTabsList(
 /**
  * 公开接口：根据 slug 获取吉他谱详情
  */
-export async function getGuitarTabBySlug(
-  context: DbContext,
-  slug: string,
-) {
+export async function getGuitarTabBySlug(context: DbContext, slug: string) {
   const tab = await GuitarTabMetaRepo.getBySlug(context.db, slug);
   if (!tab) return null;
 
@@ -57,7 +55,12 @@ export async function getGuitarTabBySlug(
  */
 export async function getGuitarTabsListAdmin(
   context: DbContext,
-  data: { cursor?: number; limit?: number; search?: string; status?: GuitarTabStatus },
+  data: {
+    cursor?: number;
+    limit?: number;
+    search?: string;
+    status?: GuitarTabStatus;
+  },
 ) {
   return await MediaRepo.getGuitarTabsWithMeta(context.db, data);
 }
@@ -67,10 +70,17 @@ export async function getGuitarTabsListAdmin(
  */
 export async function reviewGuitarTab(
   context: DbContext & { env: Env },
-  data: { mediaId: number; status: "approved" | "rejected"; rejectionReason?: string },
+  data: {
+    mediaId: number;
+    status: "approved" | "rejected";
+    rejectionReason?: string;
+  },
 ) {
   // 先获取元数据（含上传者信息），用于发邮件
-  const tabMeta = await GuitarTabMetaRepo.getByMediaId(context.db, data.mediaId);
+  const tabMeta = await GuitarTabMetaRepo.getByMediaId(
+    context.db,
+    data.mediaId,
+  );
 
   await GuitarTabMetaRepo.updateStatus(context.db, data.mediaId, data.status);
 
@@ -79,11 +89,13 @@ export async function reviewGuitarTab(
     try {
       const { user: userTable } = await import("@/lib/db/schema/auth.table");
       const { eq } = await import("drizzle-orm");
-      const [uploader] = await context.db
-        .select({ email: userTable.email, name: userTable.name })
-        .from(userTable)
-        .where(eq(userTable.id, tabMeta.uploaderId))
-        .limit(1);
+      const uploader = (
+        await context.db
+          .select({ email: userTable.email, name: userTable.name })
+          .from(userTable)
+          .where(eq(userTable.id, tabMeta.uploaderId))
+          .limit(1)
+      ).at(0);
 
       if (uploader?.email) {
         const { DOMAIN } = serverEnv(context.env);
@@ -91,7 +103,7 @@ export async function reviewGuitarTab(
         const emailHtml = renderToStaticMarkup(
           GuitarTabReviewEmail({
             tabTitle,
-            artist: tabMeta.artist ?? undefined,
+            artist: tabMeta.artist || undefined,
             approved: data.status === "approved",
             rejectionReason: data.rejectionReason,
             blogUrl: `https://${DOMAIN}`,
@@ -102,9 +114,10 @@ export async function reviewGuitarTab(
           type: "EMAIL",
           data: {
             to: uploader.email,
-            subject: data.status === "approved"
-              ? `[吉他谱审核通过] ${tabTitle}`
-              : `[吉他谱审核结果] ${tabTitle}`,
+            subject:
+              data.status === "approved"
+                ? `[吉他谱审核通过] ${tabTitle}`
+                : `[吉他谱审核结果] ${tabTitle}`,
             html: emailHtml,
           },
         });
@@ -134,12 +147,16 @@ export async function submitGuitarTab(
   const fileBuffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const fileHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  const fileHash = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   const existing = await GuitarTabMetaRepo.findByFileHash(context.db, fileHash);
   if (existing) {
     const displayName = existing.title || existing.fileName;
-    throw new Error(`该文件已存在：${displayName}。如果您认为这是不同的版本，请联系管理员。`);
+    throw new Error(
+      `该文件已存在：${displayName}。如果您认为这是不同的版本，请联系管理员。`,
+    );
   }
 
   // 将 ArrayBuffer 重新包装成 File 以便上传（因为上面已经消费了 stream）
@@ -156,7 +173,8 @@ export async function submitGuitarTab(
     });
 
     // 自动解析元数据
-    let guitarTabMeta: { title: string; artist: string; album: string } | null = null;
+    let guitarTabMeta: { title: string; artist: string; album: string } | null =
+      null;
     try {
       const meta = await processGuitarTabMetadata(
         context.env,
@@ -219,24 +237,24 @@ export async function submitGuitarTab(
  * 获取用户自己提交的吉他谱
  */
 export async function getMyGuitarTabs(context: AuthContext) {
-  return await GuitarTabMetaRepo.getByUploaderId(context.db, context.session.user.id);
+  return await GuitarTabMetaRepo.getByUploaderId(
+    context.db,
+    context.session.user.id,
+  );
 }
 
 /**
  * 用户上传头像
  * 上传到 R2 后返回 /images/<key> URL，走 Cloudflare Image Resizing 处理
  */
-export async function uploadAvatar(
-  context: AuthContext,
-  file: File,
-) {
+export async function uploadAvatar(context: AuthContext, file: File) {
   const { user: userTable } = await import("@/lib/db/schema/auth.table");
   const { eq } = await import("drizzle-orm");
 
   // 删除旧头像（如果旧头像是本站 R2 中的）
   const currentImage = context.session.user.image;
   if (currentImage?.startsWith("/images/")) {
-    const oldKey = currentImage.replace("/images/", "").split("?")[0]!;
+    const oldKey = currentImage.replace("/images/", "").split("?")[0];
     try {
       await Storage.deleteFromR2(context.env, oldKey);
       await MediaRepo.deleteMedia(context.db, oldKey);
@@ -305,11 +323,12 @@ export async function upload(
     });
 
     // 如果是 Guitar Pro 文件，直接解析元数据（同步等待，确保返回前数据已入库）
-    let guitarTabMeta: { title: string; artist: string; album: string } | null = null;
+    let guitarTabMeta: { title: string; artist: string; album: string } | null =
+      null;
     if (isGuitarProFile(uploaded.key)) {
       try {
         // 管理员上传时，设置 uploaderId 为当前管理员 ID
-        const uploaderId = context.session?.user?.id ?? null;
+        const uploaderId = context.session?.user.id ?? null;
         const meta = await processGuitarTabMetadata(
           context.env,
           context.db,
@@ -392,16 +411,14 @@ export async function deleteImage(
           // 删除封面 media 记录和 R2 对象
           await MediaRepo.deleteMedia(context.db, coverMeta.coverKey);
           context.executionCtx.waitUntil(
-            Storage.deleteFromR2(context.env, coverMeta.coverKey).catch(
-              (err) =>
-                console.error(
-                  JSON.stringify({
-                    message: "r2 cover delete failed",
-                    key: coverMeta.coverKey,
-                    error:
-                      err instanceof Error ? err.message : String(err),
-                  }),
-                ),
+            Storage.deleteFromR2(context.env, coverMeta.coverKey).catch((err) =>
+              console.error(
+                JSON.stringify({
+                  message: "r2 cover delete failed",
+                  key: coverMeta.coverKey,
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              ),
             ),
           );
           console.log(
@@ -498,7 +515,13 @@ export async function handleImageRequest(
   const wantsOriginal = searchParams.get("original") === "true";
 
   // Guitar Pro / 视频 / 音频等非图片文件直接返回原文件
-  if (isLoop || wantsOriginal || isGuitarProFile(key) || isVideoFile(key) || isAudioFile(key)) {
+  if (
+    isLoop ||
+    wantsOriginal ||
+    isGuitarProFile(key) ||
+    isVideoFile(key) ||
+    isAudioFile(key)
+  ) {
     return await serveOriginal();
   }
 
@@ -619,7 +642,9 @@ export async function processGuitarTabMetadata(
     // slug 冲突时重试一次
     const retrySlug = generateGuitarTabSlug(info.artist, info.title);
     await GuitarTabMetaRepo.updateSlug(db, mediaId, retrySlug).catch(() => {
-      console.error(JSON.stringify({ message: "slug generation failed", mediaId }));
+      console.error(
+        JSON.stringify({ message: "slug generation failed", mediaId }),
+      );
     });
   }
 
@@ -658,9 +683,18 @@ export async function fetchAndSaveAlbumCover(
 
   try {
     // ── 封面复用：检查是否已有相同 artist+title 的封面 ──
-    const existingCover = await GuitarTabMetaRepo.findExistingCover(db, artist, title, mediaId);
+    const existingCover = await GuitarTabMetaRepo.findExistingCover(
+      db,
+      artist,
+      title,
+      mediaId,
+    );
     if (existingCover) {
-      await GuitarTabMetaRepo.updateCoverMediaId(db, mediaId, existingCover.coverMediaId);
+      await GuitarTabMetaRepo.updateCoverMediaId(
+        db,
+        mediaId,
+        existingCover.coverMediaId,
+      );
       console.log(
         JSON.stringify({
           message: "album cover reused from existing tab",
@@ -931,4 +965,3 @@ export async function fetchMissingCovers(
 
   return { total: tabs.length, fetched, errors };
 }
-

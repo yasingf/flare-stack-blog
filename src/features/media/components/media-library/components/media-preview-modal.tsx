@@ -33,9 +33,9 @@ import { cn, formatBytes } from "@/lib/utils";
 import { MEDIA_KEYS, guitarTabMetaQuery } from "@/features/media/queries";
 import {
   getOptimizedImageUrl,
+  isAudioFile,
   isGuitarProFile,
   isVideoFile,
-  isAudioFile,
 } from "@/features/media/media.utils";
 
 interface MediaPreviewModalProps {
@@ -201,7 +201,7 @@ export function MediaPreviewModal({
                 <div className="relative w-48 h-48 md:w-56 md:h-56 shadow-lg border border-border/30 overflow-hidden">
                   <img
                     src={getOptimizedImageUrl(gpMeta.coverKey, 400)}
-                    alt={gpMeta.title ?? activeAsset.fileName}
+                    alt={gpMeta.title || activeAsset.fileName}
                     className="w-full h-full object-cover"
                   />
                 </div>

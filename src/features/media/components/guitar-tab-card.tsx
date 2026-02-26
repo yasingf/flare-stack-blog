@@ -2,13 +2,13 @@
 
 import { Link } from "@tanstack/react-router";
 import {
+  Clock,
+  ExternalLink,
   Guitar,
+  Layers,
   Music2,
   Play,
-  Clock,
-  Layers,
   User,
-  ExternalLink,
 } from "lucide-react";
 import { memo } from "react";
 import type { GuitarTabWithMeta } from "../data/media.data";
@@ -102,7 +102,10 @@ export const GuitarTabListCard = memo(function GuitarTabListCard({
           <div className="flex items-center gap-1.5 mt-1 min-w-0">
             {artist ? (
               <>
-                <Music2 size={10} className="shrink-0 text-muted-foreground/40" />
+                <Music2
+                  size={10}
+                  className="shrink-0 text-muted-foreground/40"
+                />
                 <span className="text-xs text-muted-foreground truncate">
                   {artist}
                 </span>

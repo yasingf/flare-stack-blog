@@ -73,7 +73,10 @@ function escapeHtmlAttr(s: string): string {
  */
 export async function markdownToHtml(markdown: string): Promise<string> {
   const preprocessed = preprocessMathInMarkdown(markdown);
-  const { marked } = await import("marked");
+  const [{ marked }, DOMPurify] = await Promise.all([
+    import("marked"),
+    import("dompurify").then((m) => m.default),
+  ]);
 
   // 配置 marked 保留 guitar-pro 自定义标签
   const renderer = new marked.Renderer();
@@ -87,5 +90,11 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     return originalHtml.call(this, token);
   };
 
-  return await marked(preprocessed, { renderer });
+  const rawHtml = await marked(preprocessed, { renderer });
+
+  // 净化 HTML，防止 XSS，同时保留自定义标签和数学公式属性
+  return DOMPurify.sanitize(rawHtml, {
+    ADD_TAGS: ["guitar-pro"],
+    ADD_ATTR: ["data-type", "data-latex", "src", "data-file"],
+  });
 }

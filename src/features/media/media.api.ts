@@ -2,10 +2,10 @@ import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
 import {
   GetMediaListInputSchema,
-  UpdateMediaNameInputSchema,
-  UploadMediaInputSchema,
   SubmitGuitarTabInputSchema,
+  UpdateMediaNameInputSchema,
   UploadAvatarInputSchema,
+  UploadMediaInputSchema,
 } from "@/features/media/media.schema";
 import * as MediaService from "@/features/media/media.service";
 import {
@@ -20,7 +20,9 @@ export const uploadImageFn = createServerFn({
 })
   .middleware([adminMiddleware])
   .inputValidator(UploadMediaInputSchema)
-  .handler(({ data: file, context }) => MediaService.upload({ ...context, session: context.session }, file));
+  .handler(({ data: file, context }) =>
+    MediaService.upload({ ...context, session: context.session }, file),
+  );
 
 export const deleteImageFn = createServerFn({
   method: "POST",
@@ -126,10 +128,7 @@ export const fetchMissingCoversFn = createServerFn({
 })
   .middleware([adminMiddleware])
   .handler(async ({ context }) => {
-    return await MediaService.fetchMissingCovers(
-      context.env,
-      context.db,
-    );
+    return await MediaService.fetchMissingCovers(context.env, context.db);
   });
 
 // ─── Admin: 审核吉他谱（通过/拒绝） ─────────────────────

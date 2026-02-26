@@ -1,10 +1,10 @@
-import { desc, eq, sql, and, ne } from "drizzle-orm";
-import {
-  GuitarTabMetadataTable,
-  type InsertGuitarTabMetadata,
-  type GuitarTabMetadata,
-  type GuitarTabStatus,
+import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import type {
+  GuitarTabMetadata,
+  GuitarTabStatus,
+  InsertGuitarTabMetadata,
 } from "@/lib/db/schema/guitar-tab-metadata.table";
+import { GuitarTabMetadataTable } from "@/lib/db/schema/guitar-tab-metadata.table";
 import { MediaTable } from "@/lib/db/schema/media.table";
 import { user } from "@/lib/db/schema/auth.table";
 
@@ -18,29 +18,31 @@ export async function findByFileHash(
   db: DB,
   fileHash: string,
 ): Promise<(GuitarTabMetadata & { fileName: string }) | null> {
-  const [result] = await db
-    .select({
-      id: GuitarTabMetadataTable.id,
-      mediaId: GuitarTabMetadataTable.mediaId,
-      title: GuitarTabMetadataTable.title,
-      artist: GuitarTabMetadataTable.artist,
-      album: GuitarTabMetadataTable.album,
-      tempo: GuitarTabMetadataTable.tempo,
-      trackCount: GuitarTabMetadataTable.trackCount,
-      trackNames: GuitarTabMetadataTable.trackNames,
-      coverMediaId: GuitarTabMetadataTable.coverMediaId,
-      uploaderId: GuitarTabMetadataTable.uploaderId,
-      fileHash: GuitarTabMetadataTable.fileHash,
-      slug: GuitarTabMetadataTable.slug,
-      status: GuitarTabMetadataTable.status,
-      createdAt: GuitarTabMetadataTable.createdAt,
-      updatedAt: GuitarTabMetadataTable.updatedAt,
-      fileName: MediaTable.fileName,
-    })
-    .from(GuitarTabMetadataTable)
-    .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
-    .where(eq(GuitarTabMetadataTable.fileHash, fileHash))
-    .limit(1);
+  const result = (
+    await db
+      .select({
+        id: GuitarTabMetadataTable.id,
+        mediaId: GuitarTabMetadataTable.mediaId,
+        title: GuitarTabMetadataTable.title,
+        artist: GuitarTabMetadataTable.artist,
+        album: GuitarTabMetadataTable.album,
+        tempo: GuitarTabMetadataTable.tempo,
+        trackCount: GuitarTabMetadataTable.trackCount,
+        trackNames: GuitarTabMetadataTable.trackNames,
+        coverMediaId: GuitarTabMetadataTable.coverMediaId,
+        uploaderId: GuitarTabMetadataTable.uploaderId,
+        fileHash: GuitarTabMetadataTable.fileHash,
+        slug: GuitarTabMetadataTable.slug,
+        status: GuitarTabMetadataTable.status,
+        createdAt: GuitarTabMetadataTable.createdAt,
+        updatedAt: GuitarTabMetadataTable.updatedAt,
+        fileName: MediaTable.fileName,
+      })
+      .from(GuitarTabMetadataTable)
+      .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
+      .where(eq(GuitarTabMetadataTable.fileHash, fileHash))
+      .limit(1)
+  ).at(0);
   return result ?? null;
 }
 
@@ -106,38 +108,40 @@ export async function getByMediaId(
 export async function getByMediaIdWithCover(
   db: DB,
   mediaId: number,
-): Promise<
-  | (GuitarTabMetadata & { coverKey: string | null })
-  | null
-> {
+): Promise<(GuitarTabMetadata & { coverKey: string | null }) | null> {
   const coverMedia = db
     .select({ id: MediaTable.id, key: MediaTable.key })
     .from(MediaTable)
     .as("cover_media");
 
-  const [result] = await db
-    .select({
-      id: GuitarTabMetadataTable.id,
-      mediaId: GuitarTabMetadataTable.mediaId,
-      title: GuitarTabMetadataTable.title,
-      artist: GuitarTabMetadataTable.artist,
-      album: GuitarTabMetadataTable.album,
-      tempo: GuitarTabMetadataTable.tempo,
-      trackCount: GuitarTabMetadataTable.trackCount,
-      trackNames: GuitarTabMetadataTable.trackNames,
-      coverMediaId: GuitarTabMetadataTable.coverMediaId,
-      uploaderId: GuitarTabMetadataTable.uploaderId,
-      fileHash: GuitarTabMetadataTable.fileHash,
-      slug: GuitarTabMetadataTable.slug,
-      status: GuitarTabMetadataTable.status,
-      createdAt: GuitarTabMetadataTable.createdAt,
-      updatedAt: GuitarTabMetadataTable.updatedAt,
-      coverKey: coverMedia.key,
-    })
-    .from(GuitarTabMetadataTable)
-    .leftJoin(coverMedia, eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id))
-    .where(eq(GuitarTabMetadataTable.mediaId, mediaId))
-    .limit(1);
+  const result = (
+    await db
+      .select({
+        id: GuitarTabMetadataTable.id,
+        mediaId: GuitarTabMetadataTable.mediaId,
+        title: GuitarTabMetadataTable.title,
+        artist: GuitarTabMetadataTable.artist,
+        album: GuitarTabMetadataTable.album,
+        tempo: GuitarTabMetadataTable.tempo,
+        trackCount: GuitarTabMetadataTable.trackCount,
+        trackNames: GuitarTabMetadataTable.trackNames,
+        coverMediaId: GuitarTabMetadataTable.coverMediaId,
+        uploaderId: GuitarTabMetadataTable.uploaderId,
+        fileHash: GuitarTabMetadataTable.fileHash,
+        slug: GuitarTabMetadataTable.slug,
+        status: GuitarTabMetadataTable.status,
+        createdAt: GuitarTabMetadataTable.createdAt,
+        updatedAt: GuitarTabMetadataTable.updatedAt,
+        coverKey: coverMedia.key,
+      })
+      .from(GuitarTabMetadataTable)
+      .leftJoin(
+        coverMedia,
+        eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
+      )
+      .where(eq(GuitarTabMetadataTable.mediaId, mediaId))
+      .limit(1)
+  ).at(0);
 
   return result ?? null;
 }
@@ -196,12 +200,14 @@ export async function getMediaIdsWithoutMetadata(
       GuitarTabMetadataTable,
       eq(MediaTable.id, GuitarTabMetadataTable.mediaId),
     )
-    .where(eq(GuitarTabMetadataTable.id, undefined as unknown as number))
+    .where(isNull(GuitarTabMetadataTable.id))
     .limit(100);
 
-  // leftJoin + null check 不太直观，换用子查询 / raw SQL
-  // 重写为更可靠的方式
-  return results;
+  // 筛选 guitar-pro 类型文件
+  return results.filter((m) => {
+    const ext = m.key.split(".").pop()?.toLowerCase();
+    return ["gp3", "gp4", "gp5", "gpx", "gp"].includes(ext || "");
+  });
 }
 
 export async function getUnprocessedGuitarTabs(
@@ -235,10 +241,7 @@ export async function getUnprocessedGuitarTabs(
 /**
  * 删除指定 media 的元数据
  */
-export async function deleteByMediaId(
-  db: DB,
-  mediaId: number,
-): Promise<void> {
+export async function deleteByMediaId(db: DB, mediaId: number): Promise<void> {
   await db
     .delete(GuitarTabMetadataTable)
     .where(eq(GuitarTabMetadataTable.mediaId, mediaId));
@@ -247,9 +250,7 @@ export async function deleteByMediaId(
 /**
  * 获取有元数据但没有封面的吉他谱列表
  */
-export async function getTabsWithoutCover(
-  db: DB,
-): Promise<
+export async function getTabsWithoutCover(db: DB): Promise<
   Array<{
     mediaId: number;
     title: string | null;
@@ -320,10 +321,7 @@ export async function getByUploaderId(
       createdAt: GuitarTabMetadataTable.createdAt,
     })
     .from(GuitarTabMetadataTable)
-    .innerJoin(
-      MediaTable,
-      eq(GuitarTabMetadataTable.mediaId, MediaTable.id),
-    )
+    .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
     .leftJoin(
       coverMedia,
       eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
@@ -377,39 +375,44 @@ export async function getBySlug(
     .from(MediaTable)
     .as("cover_media");
 
-  const [result] = await db
-    .select({
-      id: GuitarTabMetadataTable.id,
-      mediaId: GuitarTabMetadataTable.mediaId,
-      key: MediaTable.key,
-      fileName: MediaTable.fileName,
-      sizeInBytes: MediaTable.sizeInBytes,
-      title: GuitarTabMetadataTable.title,
-      artist: GuitarTabMetadataTable.artist,
-      album: GuitarTabMetadataTable.album,
-      tempo: GuitarTabMetadataTable.tempo,
-      trackCount: GuitarTabMetadataTable.trackCount,
-      trackNames: GuitarTabMetadataTable.trackNames,
-      coverKey: coverMedia.key,
-      uploaderName: user.name,
-      uploaderImage: user.image,
-      slug: GuitarTabMetadataTable.slug,
-      status: GuitarTabMetadataTable.status,
-      createdAt: GuitarTabMetadataTable.createdAt,
-    })
-    .from(GuitarTabMetadataTable)
-    .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
-    .leftJoin(coverMedia, eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id))
-    .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
-    .where(
-      and(
-        eq(GuitarTabMetadataTable.slug, slug),
-        eq(GuitarTabMetadataTable.status, "approved"),
-      ),
-    )
-    .limit(1);
+  const result = (
+    await db
+      .select({
+        id: GuitarTabMetadataTable.id,
+        mediaId: GuitarTabMetadataTable.mediaId,
+        key: MediaTable.key,
+        fileName: MediaTable.fileName,
+        sizeInBytes: MediaTable.sizeInBytes,
+        title: GuitarTabMetadataTable.title,
+        artist: GuitarTabMetadataTable.artist,
+        album: GuitarTabMetadataTable.album,
+        tempo: GuitarTabMetadataTable.tempo,
+        trackCount: GuitarTabMetadataTable.trackCount,
+        trackNames: GuitarTabMetadataTable.trackNames,
+        coverKey: coverMedia.key,
+        uploaderName: user.name,
+        uploaderImage: user.image,
+        slug: GuitarTabMetadataTable.slug,
+        status: GuitarTabMetadataTable.status,
+        createdAt: GuitarTabMetadataTable.createdAt,
+      })
+      .from(GuitarTabMetadataTable)
+      .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
+      .leftJoin(
+        coverMedia,
+        eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
+      )
+      .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
+      .where(
+        and(
+          eq(GuitarTabMetadataTable.slug, slug),
+          eq(GuitarTabMetadataTable.status, "approved"),
+        ),
+      )
+      .limit(1)
+  ).at(0);
 
-  return (result as GuitarTabDetail) ?? null;
+  return (result as GuitarTabDetail | undefined) ?? null;
 }
 
 /**
@@ -420,16 +423,18 @@ export async function getRelatedTabs(
   artist: string,
   title: string,
   excludeMediaId: number,
-): Promise<Array<{
-  mediaId: number;
-  slug: string | null;
-  fileName: string;
-  trackCount: number;
-  tempo: number;
-  sizeInBytes: number;
-  uploaderName: string | null;
-  coverKey: string | null;
-}>> {
+): Promise<
+  Array<{
+    mediaId: number;
+    slug: string | null;
+    fileName: string;
+    trackCount: number;
+    tempo: number;
+    sizeInBytes: number;
+    uploaderName: string | null;
+    coverKey: string | null;
+  }>
+> {
   if (!artist && !title) return [];
 
   const coverMedia = db
@@ -450,7 +455,10 @@ export async function getRelatedTabs(
     })
     .from(GuitarTabMetadataTable)
     .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
-    .leftJoin(coverMedia, eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id))
+    .leftJoin(
+      coverMedia,
+      eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
+    )
     .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
     .where(
       and(
@@ -533,13 +541,15 @@ export async function findExistingCover(
     conditions.push(ne(GuitarTabMetadataTable.mediaId, excludeMediaId));
   }
 
-  const [result] = await db
-    .select({
-      coverMediaId: GuitarTabMetadataTable.coverMediaId,
-    })
-    .from(GuitarTabMetadataTable)
-    .where(and(...conditions))
-    .limit(1);
+  const result = (
+    await db
+      .select({
+        coverMediaId: GuitarTabMetadataTable.coverMediaId,
+      })
+      .from(GuitarTabMetadataTable)
+      .where(and(...conditions))
+      .limit(1)
+  ).at(0);
 
   return result ? { coverMediaId: result.coverMediaId! } : null;
 }
@@ -549,7 +559,14 @@ export async function findExistingCover(
  */
 export async function getAllApprovedTabUrls(
   db: DB,
-): Promise<Array<{ slug: string; title: string | null; artist: string | null; updatedAt: Date }>> {
+): Promise<
+  Array<{
+    slug: string;
+    title: string | null;
+    artist: string | null;
+    updatedAt: Date;
+  }>
+> {
   const results = await db
     .select({
       slug: GuitarTabMetadataTable.slug,
@@ -566,5 +583,10 @@ export async function getAllApprovedTabUrls(
     )
     .orderBy(desc(GuitarTabMetadataTable.updatedAt));
 
-  return results as Array<{ slug: string; title: string | null; artist: string | null; updatedAt: Date }>;
+  return results as Array<{
+    slug: string;
+    title: string | null;
+    artist: string | null;
+    updatedAt: Date;
+  }>;
 }
