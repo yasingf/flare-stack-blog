@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import type { UploadItem } from "../types";
 import { getGuitarTabMetaFn, uploadImageFn } from "@/features/media/media.api";
 import { MEDIA_KEYS } from "@/features/media/queries";
+import {
+  needsCompression,
+  compressGpFile,
+} from "@/features/media/utils/gp-audio-compressor";
 import { formatBytes } from "@/lib/utils";
 
 const GP_EXTENSIONS = /\.(gp[345x]?|gp)$/i;
@@ -83,7 +87,50 @@ export function useMediaUpload() {
       // 吉他谱文件：上传+解析后立即完成，封面获取通过 toast 跟踪
       try {
         if (isGpFile) {
-          const result = await uploadMutation.mutateAsync(item.file);
+          // 客户端音频压缩（大 GP 文件）
+          let fileToUpload = item.file;
+          if (needsCompression(item.file)) {
+            setQueue((prev) =>
+              prev.map((q, i) =>
+                i === waitingIndex
+                  ? {
+                      ...q,
+                      progress: 10,
+                      log: "> COMPRESS: 正在压缩内嵌音频...",
+                    }
+                  : q,
+              ),
+            );
+            try {
+              const compressResult = await compressGpFile(item.file, {
+                onProgress: (p) => {
+                  if (isMountedRef.current) {
+                    setQueue((prev) =>
+                      prev.map((q, idx) =>
+                        idx === waitingIndex
+                          ? {
+                              ...q,
+                              progress: Math.round(10 + p * 20),
+                              log: `> COMPRESS: ${Math.round(p * 100)}%`,
+                            }
+                          : q,
+                      ),
+                    );
+                  }
+                },
+              });
+              if (compressResult.compressed) {
+                fileToUpload = compressResult.file;
+                toast.info(
+                  `音频已压缩: ${formatBytes(compressResult.originalSize)} → ${formatBytes(compressResult.compressedSize)}`,
+                );
+              }
+            } catch (e) {
+              console.warn("GP audio compression failed, uploading original:", e);
+            }
+          }
+
+          const result = await uploadMutation.mutateAsync(fileToUpload);
 
           if (isMountedRef.current) {
             const meta = result.guitarTabMeta;

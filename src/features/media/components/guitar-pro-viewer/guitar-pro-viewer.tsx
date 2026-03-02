@@ -722,6 +722,12 @@ export default function GuitarProViewer({
 
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen((v) => !v);
+    // 全屏切换改变了容器宽度，CSS transition 500ms 完成后重新渲染以填满新宽度
+    setTimeout(() => {
+      if (apiRef.current) {
+        apiRef.current.render();
+      }
+    }, 550);
   }, []);
 
   // ── 基础状态 ──
@@ -805,6 +811,7 @@ export default function GuitarProViewer({
         staveProfile: 0, // Default — 尊重 GP 文件中每个轨道的谱面设置（吉他→TAB，声乐→简谱+歌词）
         padding: [40, 40, 40, 40],
         lyricLinesPaddingBetween: 8, // 多行歌词间距
+        effectBandPaddingBottom: 6, // 效果条(歌词等)底部间距，避免简谱与歌词重叠
       },
       player: {
         playerMode: PlayerMode.EnabledAutomatic,
@@ -942,23 +949,7 @@ export default function GuitarProViewer({
             }),
           );
 
-          // 延迟到下一帧：先应用设置变更（如 playerMode），再显式渲染全部轨道
-          requestAnimationFrame(() => {
-            if (api.score) {
-              // 设置 core.tracks 为全部轨道索引（避免 -1 在某些版本不可靠）
-              api.settings.core.tracks = api.score.tracks.map((_: unknown, i: number) => i);
-              api.updateSettings();
-              const allTracks = [...api.score.tracks];
-              console.log(
-                JSON.stringify({
-                  message: "renderTracks all",
-                  count: allTracks.length,
-                  names: allTracks.map((t: { name: string }) => t.name),
-                }),
-              );
-              api.renderTracks(allTracks);
-            }
-          });
+          // 不需要手动设置 core.tracks — 通过 api.load(data, [-1]) 已指定渲染全部轨道。
 
           // 解析段落标记（Intro / Verse / Chorus 等）
           const sectionList: Array<{ name: string; barIndex: number; startTick: number; endTick: number }> = [];
@@ -1073,11 +1064,23 @@ export default function GuitarProViewer({
     );
     unsubs.push(
       api.error.on((error: unknown) => {
+        const msg = String(error);
         console.error(
-          JSON.stringify({ message: "alphaTab error", error: String(error) }),
+          JSON.stringify({ message: "alphaTab error", error: msg }),
         );
-        setLoadError("无法加载乐谱文件");
-        setIsLoading(false);
+        // 布局/渲染错误（如 highestNoteInHelper is null）不视为致命错误——
+        // 乐谱可能已部分加载，用户仍可以操作已渲染的部分。
+        const isLayoutError = /highestNote|beaming|layout|overflow/i.test(msg);
+        if (isLayoutError) {
+          // 部分渲染成功，仅 loading 状态取消
+          setIsLoading(false);
+          console.warn(
+            JSON.stringify({ message: "alphaTab layout warning (non-fatal)", error: msg }),
+          );
+        } else {
+          setLoadError("无法加载乐谱文件");
+          setIsLoading(false);
+        }
       }),
     );
 
@@ -1089,7 +1092,7 @@ export default function GuitarProViewer({
         return res.arrayBuffer();
       })
       .then((buffer) => {
-        if (!cancelled) api.load(new Uint8Array(buffer));
+        if (!cancelled) api.load(new Uint8Array(buffer), [-1]); // [-1] = 渲染所有轨道
       })
       .catch((err) => {
         if (!cancelled) {
@@ -1250,10 +1253,17 @@ export default function GuitarProViewer({
     const selected = tracks
       .filter((t) => t.isSelected)
       .map((t) => apiRef.current!.score!.tracks[t.index]);
-    if (selected.length > 0) {
-      apiRef.current.renderTracks(selected);
-    } else {
-      apiRef.current.render();
+    try {
+      if (selected.length > 0) {
+        apiRef.current.renderTracks(selected);
+      } else {
+        apiRef.current.render();
+      }
+    } catch (renderErr) {
+      console.warn(
+        JSON.stringify({ message: "renderTracks failed in display mode change", error: String(renderErr) }),
+      );
+      try { apiRef.current.render(); } catch { /* 兜底 */ }
     }
     setDisplayMode(mode);
     setShowDisplayMenu(false);
@@ -1295,6 +1305,8 @@ export default function GuitarProViewer({
   const handleTrackToggle = useCallback(
     (trackIndex: number) => {
       if (!apiRef.current?.score) return;
+      // 防止在渲染进行中快速切换导致 beaming 崩溃
+      if (isLoading) return;
       const updated = tracks.map((t) =>
         t.index === trackIndex ? { ...t, isSelected: !t.isSelected } : t,
       );
@@ -1305,7 +1317,20 @@ export default function GuitarProViewer({
       const selected = updated
         .filter((t) => t.isSelected)
         .map((t) => apiRef.current!.score!.tracks[t.index]);
-      apiRef.current.renderTracks(selected);
+      // 先标记 loading 防止并发渲染
+      setIsLoading(true);
+      // 使用 setTimeout(0) 让 React 先更新 isLoading 状态，
+      // 避免在当前渲染帧中触发 alphaTab 的布局（可导致 beaming null 崩溃）。
+      setTimeout(() => {
+        try {
+          apiRef.current?.renderTracks(selected);
+        } catch (renderErr) {
+          console.warn(
+            JSON.stringify({ message: "renderTracks failed in track toggle", error: String(renderErr) }),
+          );
+          try { apiRef.current?.render(); } catch { /* 兜底 */ }
+        }
+      }, 0);
 
       // 更新播放：取消选中的轨道静音，选中的轨道取消静音
       const toggled = updated.find((t) => t.index === trackIndex)!;
@@ -1318,7 +1343,7 @@ export default function GuitarProViewer({
         apiRef.current.changeTrackMute([track], false);
       }
     },
-    [tracks],
+    [tracks, isLoading],
   );
 
   // 轨道 — 静音

@@ -17,7 +17,11 @@ import {
   GUITAR_PRO_EXTENSIONS,
   MAX_FILE_SIZE_BY_CATEGORY,
 } from "@/features/media/media.schema";
-import { formatDate } from "@/lib/utils";
+import {
+  needsCompression,
+  compressGpFile,
+} from "@/features/media/utils/gp-audio-compressor";
+import { formatDate, formatBytes } from "@/lib/utils";
 
 export const Route = createFileRoute("/_user/submit-guitar-tab")({
   component: SubmitGuitarTabRoute,
@@ -52,8 +56,25 @@ function SubmitGuitarTabRoute() {
 
       setIsUploading(true);
       try {
+        // 客户端音频压缩（大 GP 文件）
+        let fileToUpload = file;
+        if (needsCompression(file)) {
+          toast.info("正在压缩内嵌音频，请稍候...");
+          try {
+            const compressResult = await compressGpFile(file);
+            if (compressResult.compressed) {
+              fileToUpload = compressResult.file;
+              toast.info(
+                `音频已压缩: ${formatBytes(compressResult.originalSize)} → ${formatBytes(compressResult.compressedSize)}`,
+              );
+            }
+          } catch (e) {
+            console.warn("GP audio compression failed, uploading original:", e);
+          }
+        }
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", fileToUpload);
         await submitGuitarTabFn({ data: formData });
         toast.success("提交成功！曲谱将在管理员审核通过后展示。");
         await queryClient.invalidateQueries({
