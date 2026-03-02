@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Link, getRouteApi } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { CommentList } from "./comment-list";
@@ -15,26 +15,38 @@ import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { Turnstile, useTurnstile } from "@/components/common/turnstile";
 import { cn } from "@/lib/utils";
 
-const routeApi = getRouteApi("/_public/post/$slug");
-
 interface CommentSectionProps {
-  postId: number;
+  postId?: number;
+  guitarTabId?: number;
   className?: string;
 }
 
-export const CommentSection = ({ postId, className }: CommentSectionProps) => {
+export const CommentSection = ({
+  postId,
+  guitarTabId,
+  className,
+}: CommentSectionProps) => {
   const { data: session } = authClient.useSession();
-  const { rootId, highlightCommentId } = routeApi.useSearch();
+  // Safely read search params — they may not exist on all routes
+  const search = useSearch({ strict: false }) as
+    | { rootId?: number; highlightCommentId?: number }
+    | undefined;
+  const rootId = search?.rootId;
+  const highlightCommentId = search?.highlightCommentId;
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
-      rootCommentsByPostIdInfiniteQuery(postId, session?.user.id),
+      rootCommentsByPostIdInfiniteQuery(
+        postId,
+        session?.user.id,
+        guitarTabId,
+      ),
     );
 
   const rootComments = data?.pages.flatMap((page) => page.items) ?? [];
   const totalCount = data?.pages[0]?.total ?? 0;
 
   const { createComment, deleteComment, isCreating, isDeleting } =
-    useComments(postId);
+    useComments(postId, guitarTabId);
 
   const [replyTarget, setReplyTarget] = useState<{
     rootId: number;
@@ -67,6 +79,7 @@ export const CommentSection = ({ postId, className }: CommentSectionProps) => {
       await createComment({
         data: {
           postId,
+          guitarTabId,
           content,
         },
       });
@@ -82,6 +95,7 @@ export const CommentSection = ({ postId, className }: CommentSectionProps) => {
       await createComment({
         data: {
           postId,
+          guitarTabId,
           content,
           rootId: replyTarget.rootId,
           replyToCommentId: replyTarget.commentId,
@@ -195,6 +209,7 @@ export const CommentSection = ({ postId, className }: CommentSectionProps) => {
       <CommentList
         rootComments={rootComments}
         postId={postId}
+        guitarTabId={guitarTabId}
         onReply={(rootIdArg, commentId, userName) =>
           setReplyTarget({ rootId: rootIdArg, commentId, userName })
         }

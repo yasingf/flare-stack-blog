@@ -76,10 +76,8 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
 
   // Post actions hook
   const {
-    isGeneratingSlug,
     isCalculatingReadTime,
     isGeneratingSummary,
-    handleGenerateSlug,
     handleCalculateReadTime,
     handleGenerateSummary,
     handleProcessData,
@@ -274,33 +272,18 @@ export function PostEditor({ initialData, onSave }: PostEditorProps) {
                 </div>
               </div>
 
-              {/* 4. Slug (Full Width) */}
+              {/* 4. Short ID (Full Width - Read Only) */}
               <div className="col-span-1 md:col-span-3 space-y-3">
                 <label className="text-[9px] uppercase tracking-widest text-muted-foreground font-mono">
-                  链接 slug
+                  链接 ID
                 </label>
                 <div className="flex items-center gap-2 group">
                   <span className="text-xs text-muted-foreground font-mono">
                     /post/
                   </span>
-                  <Input
-                    type="text"
-                    value={post.slug || ""}
-                    onChange={(e) => handlePostChange({ slug: e.target.value })}
-                    className="flex-1 bg-transparent border-none shadow-none text-xs font-mono text-foreground focus-visible:ring-0 px-0 h-auto p-0 placeholder:text-muted-foreground/30"
-                    placeholder="your-post-slug"
-                  />
-                  <button
-                    onClick={handleGenerateSlug}
-                    disabled={isGeneratingSlug}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-muted-foreground hover:text-foreground"
-                  >
-                    {isGeneratingSlug ? (
-                      <Loader2 size={10} className="animate-spin" />
-                    ) : (
-                      <Sparkles size={10} />
-                    )}
-                  </button>
+                  <span className="flex-1 text-xs font-mono text-foreground/70 select-all">
+                    {post.slug || "自动生成"}
+                  </span>
                 </div>
               </div>
 

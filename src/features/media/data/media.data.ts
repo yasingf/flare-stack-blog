@@ -186,6 +186,8 @@ export interface GuitarTabWithMeta {
   slug: string | null;
   // 状态
   status: GuitarTabStatus;
+  // 浏览量
+  viewCount: number | null;
 }
 
 /**
@@ -266,6 +268,7 @@ export async function getGuitarTabsWithMetaPaginated(
       uploaderEmail: user.email,
       slug: GuitarTabMetadataTable.slug,
       status: GuitarTabMetadataTable.status,
+      viewCount: GuitarTabMetadataTable.viewCount,
     })
     .from(MediaTable)
     .leftJoin(
@@ -361,6 +364,7 @@ export async function getGuitarTabsWithMeta(
       uploaderEmail: user.email,
       slug: GuitarTabMetadataTable.slug,
       status: GuitarTabMetadataTable.status,
+      viewCount: GuitarTabMetadataTable.viewCount,
     })
     .from(MediaTable)
     .leftJoin(

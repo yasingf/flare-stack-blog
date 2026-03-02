@@ -16,7 +16,8 @@ interface SendReplyNotificationParams {
     userId: string;
     content: JSONContent | null;
   };
-  post: {
+  target: {
+    type: "post" | "guitarTab";
     slug: string;
     title: string;
   };
@@ -28,7 +29,7 @@ export async function sendReplyNotification(
   env: Env,
   params: SendReplyNotificationParams,
 ): Promise<void> {
-  const { comment, post } = params;
+  const { comment, target } = params;
 
   if (!comment.replyToCommentId) return;
 
@@ -99,11 +100,15 @@ export async function sendReplyNotification(
 
   // Build URL with comment anchor and query params for direct navigation
   const rootId = comment.rootId ?? comment.id;
-  const commentUrl = `https://${DOMAIN}/post/${post.slug}?highlightCommentId=${comment.id}&rootId=${rootId}#comment-${comment.id}`;
+  const basePath =
+    target.type === "post"
+      ? `/post/${target.slug}`
+      : `/guitar-tab/${target.slug}`;
+  const commentUrl = `https://${DOMAIN}${basePath}?highlightCommentId=${comment.id}&rootId=${rootId}#comment-${comment.id}`;
 
   const emailHtml = renderToStaticMarkup(
     ReplyNotificationEmail({
-      postTitle: post.title,
+      postTitle: target.title,
       replierName,
       replyPreview: `${replyPreview}${replyPreview.length >= 100 ? "..." : ""}`,
       commentUrl,
@@ -116,7 +121,7 @@ export async function sendReplyNotification(
       type: "EMAIL",
       data: {
         to: replyToAuthor.email,
-        subject: `[评论回复] ${replierName} 回复了您在《${post.title}》的评论`,
+        subject: `[评论回复] ${replierName} 回复了您在《${target.title}》的评论`,
         html: emailHtml,
         headers: {
           "List-Unsubscribe": `<${unsubscribeUrl}>`,

@@ -26,8 +26,8 @@ import { generateTableOfContents } from "@/features/posts/utils/toc";
 import {
   convertToPlainText,
   highlightCodeBlocks,
-  slugify,
 } from "@/features/posts/utils/content";
+import { encodeId } from "@/lib/short-id";
 import { purgePostCDNCache } from "@/lib/invalidate";
 import * as SearchService from "@/features/search/search.service";
 import { calculatePostHash } from "@/features/posts/utils/sync";
@@ -163,54 +163,38 @@ export async function generateSummaryByPostId({
 
 // ============ Admin Service Methods ============
 
+/**
+ * 根据帖子 ID 生成 8 位短 ID slug
+ * 如果提供了 excludeId（编辑现有帖子），直接返回该帖子的短 ID
+ */
 export async function generateSlug(
-  context: DbContext,
+  _context: DbContext,
   data: GenerateSlugInput,
 ) {
-  const baseSlug = slugify(data.title);
-  // 1. 先查有没有完全一样的 (比如 'hello-world')
-  const exactMatch = await PostRepo.slugExists(context.db, baseSlug, {
-    excludeId: data.excludeId,
-  });
-  if (!exactMatch) {
-    return { slug: baseSlug };
+  if (data.excludeId) {
+    // 编辑现有帖子：返回已有的基于 ID 的短 ID
+    return { slug: encodeId(data.excludeId) };
   }
-
-  // 2. 既然 'hello-world' 被占了，那就查所有 'hello-world-%' 的
-  const similarSlugs = await PostRepo.findSimilarSlugs(context.db, baseSlug, {
-    excludeId: data.excludeId,
-  });
-
-  // 3. 在内存里找最大的数字后缀
-  // 正则含义：匹配以 "-数字" 结尾的字符串，并捕获那个数字
-  const regex = new RegExp(`^${baseSlug}-(\\d+)$`);
-
-  let maxSuffix = 0;
-  for (const slug of similarSlugs) {
-    const match = slug.match(regex);
-    if (match) {
-      const number = parseInt(match[1], 10);
-      if (number > maxSuffix) {
-        maxSuffix = number;
-      }
-    }
-  }
-
-  // 4. 结果就是最大值 + 1
-  return { slug: `${baseSlug}-${maxSuffix + 1}` };
+  // 新帖子还没有 ID，返回临时占位符（createEmptyPost 会在插入后更新）
+  return { slug: crypto.randomUUID().slice(0, 8) };
 }
 
 export async function createEmptyPost(context: DbContext) {
-  const { slug } = await generateSlug(context, { title: "" });
+  // 先用临时 slug 插入，拿到自增 ID 后再编码为 8 位短 ID
+  const tempSlug = `tmp-${crypto.randomUUID().slice(0, 8)}`;
 
   const post = await PostRepo.insertPost(context.db, {
     title: "",
-    slug,
+    slug: tempSlug,
     summary: "",
     status: "draft",
     readTimeInMinutes: 1,
     contentJson: null,
   });
+
+  // 用 Feistel 编码后的短 ID 更新 slug
+  const shortId = encodeId(post.id);
+  await PostRepo.setPostSlug(context.db, post.id, shortId);
 
   // No cache/index operations for drafts
 

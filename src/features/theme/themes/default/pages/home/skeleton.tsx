@@ -1,4 +1,4 @@
-import { BookOpen, Github, Hash, Mail, Rss, Terminal } from "lucide-react";
+import { BookOpen, Github, Hash, Mail, Music, Rss, Terminal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { blogConfig } from "@/blog.config";
 
@@ -30,29 +30,27 @@ export function HomePageSkeleton() {
         </div>
       </section>
 
-      {/* Stats Bar Skeleton */}
-      <section className="grid grid-cols-3 gap-6 py-6 px-8 rounded-2xl bg-card border border-border/50 shadow-sm shadow-accent/[0.04]">
-        <div className="flex flex-col items-center gap-1.5">
-          <BookOpen size={16} strokeWidth={1.5} className="text-accent/40" />
-          <Skeleton className="h-7 w-8 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
-            篇文章
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-1.5 border-x border-border/30">
-          <Hash size={16} strokeWidth={1.5} className="text-accent/40" />
-          <Skeleton className="h-7 w-8 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
-            个标签
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-1.5">
-          <span className="text-accent/40 text-xs">✦</span>
-          <Skeleton className="h-5 w-20 rounded-sm" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
-            最近更新
-          </span>
-        </div>
+      {/* Stats Bar Skeleton — flex layout matching real component */}
+      <section className="relative flex items-stretch py-6 px-4 sm:px-6 md:px-8 rounded-2xl bg-card border border-border/50 shadow-sm shadow-accent/[0.04] overflow-hidden">
+        {[
+          { icon: <BookOpen size={15} strokeWidth={1.5} className="text-accent/40" />, w: "w-8", label: "篇文章", wide: false },
+          { icon: <Hash size={15} strokeWidth={1.5} className="text-accent/40" />, w: "w-8", label: "个标签", wide: false },
+          { icon: <Music size={15} strokeWidth={1.5} className="text-accent/40" />, w: "w-8", label: "首吉他谱", wide: false },
+          { icon: <span className="text-accent/40 text-xs">✦</span>, w: "w-20", label: "最近更新", wide: true },
+        ].map((stat, i) => (
+          <div
+            key={stat.label}
+            className={`flex flex-col items-center justify-center gap-2 text-center ${
+              stat.wide ? "flex-[1.6] min-w-0" : "flex-1 min-w-0"
+            } ${i < 3 ? "border-r border-border/30" : ""}`}
+          >
+            {stat.icon}
+            <Skeleton className={`h-7 ${stat.w} rounded-sm`} />
+            <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/40">
+              {stat.label}
+            </span>
+          </div>
+        ))}
       </section>
 
       {/* Recent Posts Skeleton */}

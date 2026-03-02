@@ -8,6 +8,7 @@ import {
 import { createdAt, id, updatedAt } from "./helper";
 import { user } from "./auth.table";
 import { PostsTable } from "./posts.table";
+import { GuitarTabMetadataTable } from "./guitar-tab-metadata.table";
 import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { JSONContent } from "@tiptap/react";
 
@@ -38,9 +39,15 @@ export const CommentsTable = sqliteTable(
       .default("verifying"),
     aiReason: text("ai_reason"),
 
-    postId: integer("post_id")
-      .notNull()
-      .references(() => PostsTable.id, { onDelete: "cascade" }),
+    /** Associated post ID (null for guitar tab comments) */
+    postId: integer("post_id").references(() => PostsTable.id, {
+      onDelete: "cascade",
+    }),
+    /** Associated guitar tab ID (null for post comments) */
+    guitarTabId: integer("guitar_tab_id").references(
+      () => GuitarTabMetadataTable.id,
+      { onDelete: "cascade" },
+    ),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "set null" }),
@@ -57,6 +64,11 @@ export const CommentsTable = sqliteTable(
     index("comments_user_created_idx").on(table.userId, table.createdAt),
     index("comments_status_created_idx").on(table.status, table.createdAt),
     index("comments_global_created_idx").on(table.createdAt),
+    index("comments_guitar_tab_root_created_idx").on(
+      table.guitarTabId,
+      table.rootId,
+      table.createdAt,
+    ),
   ],
 );
 

@@ -19,6 +19,8 @@ export const PostsTable = sqliteTable(
     summary: text(),
     readTimeInMinutes: integer("read_time_in_minutes").default(1).notNull(),
     slug: text().notNull().unique(),
+    /** 旧文本 slug 备份，用于 301 重定向 */
+    legacySlug: text("legacy_slug"),
 
     contentJson: text("content_json", { mode: "json" }).$type<JSONContent>(),
     status: text("status", { enum: POST_STATUSES }).notNull().default("draft"),

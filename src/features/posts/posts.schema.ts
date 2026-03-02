@@ -22,6 +22,7 @@ export const PostUpdateSchema = createUpdateSchema(PostsTable);
 
 export const PostItemSchema = PostSelectSchema.omit({
   contentJson: true,
+  legacySlug: true,
 }).extend({
   tags: z.array(TagSelectSchema).optional(),
 });
@@ -29,7 +30,9 @@ export const PostListResponseSchema = z.object({
   items: z.array(PostItemSchema),
   nextCursor: z.number().nullable(),
 });
-export const PostWithTocSchema = PostSelectSchema.extend({
+export const PostWithTocSchema = PostSelectSchema.omit({
+  legacySlug: true,
+}).extend({
   tags: z.array(TagSelectSchema).optional(),
   toc: z.array(
     z.object({
@@ -108,7 +111,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostInputSchema>;
 export type DeletePostInput = z.infer<typeof DeletePostInputSchema>;
 export type PreviewSummaryInput = z.infer<typeof PreviewSummaryInputSchema>;
 export type StartPostProcessInput = z.infer<typeof StartPostProcessInputSchema>;
-export type PostListItem = Omit<Post, "contentJson"> & {
+export type PostListItem = Omit<Post, "contentJson" | "legacySlug"> & {
   tags?: Array<Tag>;
 };
 

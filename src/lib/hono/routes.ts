@@ -11,6 +11,7 @@ import {
 import { createRateLimiterIdentifier } from "./helper";
 import { handleImageRequest } from "@/features/media/media.service";
 import { serverEnv } from "@/lib/env/server.env";
+import { slugRedirectMiddleware } from "@/lib/slug-redirect";
 import postsListRoute from "@/features/posts/api/hono/posts.list.route";
 import postsDetailRoute from "@/features/posts/api/hono/posts.detail.route";
 import postsRelatedRoute from "@/features/posts/api/hono/posts.related.route";
@@ -139,6 +140,10 @@ app.route("/api/admin/export", exportDownloadRoute);
 
 // Router之前的防护
 app.all("*", shieldMiddleware);
+
+// 旧文本 slug → 新短 ID 301 永久重定向
+app.get("/post/:slug", slugRedirectMiddleware("post"));
+app.get("/guitar-tab/:slug", slugRedirectMiddleware("guitar-tab"));
 
 app.all("*", (c) => {
   return handler.fetch(c.req.raw, {

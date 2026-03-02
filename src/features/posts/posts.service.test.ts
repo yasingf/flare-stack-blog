@@ -20,7 +20,7 @@ describe("PostService", () => {
   });
 
   describe("Post CRUD", () => {
-    it("should create an empty draft post", async () => {
+    it("should create an empty draft post with short ID slug", async () => {
       const { id } = await PostService.createEmptyPost(adminContext);
       expect(id).toBeDefined();
 
@@ -28,6 +28,8 @@ describe("PostService", () => {
       expect(post).not.toBeNull();
       expect(post?.status).toBe("draft");
       expect(post?.title).toBe("");
+      // Slug should be an 8-char base36 encoded ID
+      expect(post?.slug).toMatch(/^[0-9a-z]{8}$/);
     });
 
     it("should update a post with content", async () => {
@@ -58,23 +60,26 @@ describe("PostService", () => {
       expect(updatedPost!.status).toBe("published");
     });
 
-    it("should find a published post by slug", async () => {
+    it("should find a published post by short ID slug", async () => {
       const { id } = await PostService.createEmptyPost(adminContext);
       await PostService.updatePost(adminContext, {
         id,
         data: {
           title: "Public Post",
-          slug: "public-post",
           status: "published",
           publishedAt: new Date(),
         },
       });
 
+      // Get the auto-generated short ID slug
+      const postData = await PostService.findPostById(adminContext, { id });
+      const shortIdSlug = postData!.slug;
+
       // 等待 waitUntil 完成（缓存写入）
       await waitForBackgroundTasks(adminContext.executionCtx);
 
       const post = await PostService.findPostBySlug(adminContext, {
-        slug: "public-post",
+        slug: shortIdSlug,
       });
 
       expect(post).not.toBeNull();
@@ -97,38 +102,39 @@ describe("PostService", () => {
   });
 
   describe("Slug Generation", () => {
-    it("should generate a unique slug when there is a collision", async () => {
+    it("should generate a deterministic short ID for existing post", async () => {
       const post1 = await PostService.createEmptyPost(adminContext);
-      await PostService.updatePost(adminContext, {
-        id: post1.id,
-        data: { title: "Collision", slug: "collision" },
-      });
 
       const { slug } = await PostService.generateSlug(adminContext, {
-        title: "Collision",
+        title: "Any Title",
+        excludeId: post1.id,
       });
 
-      expect(slug).toBe("collision-1");
+      // Should be an 8-char base36 encoded ID
+      expect(slug).toMatch(/^[0-9a-z]{8}$/);
+
+      // Should be deterministic - same ID always gives same slug
+      const { slug: slug2 } = await PostService.generateSlug(adminContext, {
+        title: "Different Title",
+        excludeId: post1.id,
+      });
+      expect(slug).toBe(slug2);
     });
 
-    it("should generate incrementing slugs for multiple collisions", async () => {
+    it("should generate different short IDs for different posts", async () => {
       const post1 = await PostService.createEmptyPost(adminContext);
-      await PostService.updatePost(adminContext, {
-        id: post1.id,
-        data: { title: "Test", slug: "test" },
-      });
-
       const post2 = await PostService.createEmptyPost(adminContext);
-      await PostService.updatePost(adminContext, {
-        id: post2.id,
-        data: { title: "Test", slug: "test-1" },
+
+      const { slug: slug1 } = await PostService.generateSlug(adminContext, {
+        title: "Same Title",
+        excludeId: post1.id,
+      });
+      const { slug: slug2 } = await PostService.generateSlug(adminContext, {
+        title: "Same Title",
+        excludeId: post2.id,
       });
 
-      const { slug } = await PostService.generateSlug(adminContext, {
-        title: "Test",
-      });
-
-      expect(slug).toBe("test-2");
+      expect(slug1).not.toBe(slug2);
     });
   });
 

@@ -23,6 +23,15 @@ import { GuitarTabReviewEmail } from "@/features/email/templates/GuitarTabReview
 import { serverEnv } from "@/lib/env/server.env";
 
 /**
+ * 公开接口：获取已审核通过的吉他谱总数
+ */
+export async function getApprovedGuitarTabsCount(
+  context: DbContext,
+): Promise<number> {
+  return await GuitarTabMetaRepo.getApprovedCount(context.db);
+}
+
+/**
  * 公开接口：获取已审核通过的吉他谱文件列表（分页）
  */
 export async function getGuitarTabsList(
@@ -34,10 +43,24 @@ export async function getGuitarTabsList(
 
 /**
  * 公开接口：根据 slug 获取吉他谱详情
+ * 同时异步增加浏览次数
  */
-export async function getGuitarTabBySlug(context: DbContext, slug: string) {
+export async function getGuitarTabBySlug(
+  context: DbContext & { executionCtx?: ExecutionContext },
+  slug: string,
+) {
   const tab = await GuitarTabMetaRepo.getBySlug(context.db, slug);
   if (!tab) return null;
+
+  // 异步增加浏览次数（不阻塞响应）
+  if (context.executionCtx) {
+    context.executionCtx.waitUntil(
+      GuitarTabMetaRepo.incrementViewCount(context.db, tab.id),
+    );
+  } else {
+    // 无 executionCtx（测试环境等）直接执行
+    void GuitarTabMetaRepo.incrementViewCount(context.db, tab.id);
+  }
 
   // 获取同首歌的其他版本
   const relatedTabs = await GuitarTabMetaRepo.getRelatedTabs(
@@ -621,7 +644,7 @@ export async function processGuitarTabMetadata(
   const info = await parseGpHeader(data);
 
   // 保存到数据库
-  await GuitarTabMetaRepo.upsertMetadata(db, {
+  const metaRecord = await GuitarTabMetaRepo.upsertMetadata(db, {
     mediaId,
     title: info.title,
     artist: info.artist,
@@ -634,18 +657,14 @@ export async function processGuitarTabMetadata(
     ...(fileHash ? { fileHash } : {}),
   });
 
-  // 生成并保存 slug（用于详情页 URL）
-  const slug = generateGuitarTabSlug(info.artist, info.title);
+  // 生成并保存 slug（基于元数据 ID 的 8 位短 ID）
+  const slug = generateGuitarTabSlug(metaRecord.id);
   try {
     await GuitarTabMetaRepo.updateSlug(db, mediaId, slug);
-  } catch {
-    // slug 冲突时重试一次
-    const retrySlug = generateGuitarTabSlug(info.artist, info.title);
-    await GuitarTabMetaRepo.updateSlug(db, mediaId, retrySlug).catch(() => {
-      console.error(
-        JSON.stringify({ message: "slug generation failed", mediaId }),
-      );
-    });
+  } catch (err) {
+    console.error(
+      JSON.stringify({ message: "slug generation failed", mediaId, error: String(err) }),
+    );
   }
 
   console.log(

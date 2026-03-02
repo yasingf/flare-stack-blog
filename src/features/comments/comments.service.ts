@@ -22,14 +22,17 @@ export async function getRootCommentsByPostId(
   context: DbContext,
   data: GetCommentsByPostIdInput & { viewerId?: string },
 ) {
+  const postId = data.postId ?? 0;
   const [items, total] = await Promise.all([
-    CommentRepo.getRootCommentsByPostId(context.db, data.postId, {
+    CommentRepo.getRootCommentsByPostId(context.db, postId, {
+      guitarTabId: data.guitarTabId,
       offset: data.offset,
       limit: data.limit,
       viewerId: data.viewerId,
       status: data.viewerId ? undefined : ["published", "deleted"],
     }),
-    CommentRepo.getRootCommentsByPostIdCount(context.db, data.postId, {
+    CommentRepo.getRootCommentsByPostIdCount(context.db, postId, {
+      guitarTabId: data.guitarTabId,
       viewerId: data.viewerId,
       status: data.viewerId ? undefined : ["published", "deleted"],
     }),
@@ -40,9 +43,10 @@ export async function getRootCommentsByPostId(
     items.map(async (item) => {
       const replyCount = await CommentRepo.getReplyCountByRootId(
         context.db,
-        data.postId,
+        postId,
         item.id,
         {
+          guitarTabId: data.guitarTabId,
           viewerId: data.viewerId,
           status: data.viewerId ? undefined : ["published", "deleted"],
         },
@@ -56,18 +60,27 @@ export async function getRootCommentsByPostId(
 
 export async function getRepliesByRootId(
   context: DbContext,
-  data: { postId: number; rootId: number; offset?: number; limit?: number } & {
+  data: {
+    postId?: number;
+    guitarTabId?: number;
+    rootId: number;
+    offset?: number;
+    limit?: number;
+  } & {
     viewerId?: string;
   },
 ) {
+  const postId = data.postId ?? 0;
   const [items, total] = await Promise.all([
-    CommentRepo.getRepliesByRootId(context.db, data.postId, data.rootId, {
+    CommentRepo.getRepliesByRootId(context.db, postId, data.rootId, {
+      guitarTabId: data.guitarTabId,
       offset: data.offset,
       limit: data.limit,
       viewerId: data.viewerId,
       status: data.viewerId ? undefined : ["published", "deleted"],
     }),
-    CommentRepo.getRepliesByRootIdCount(context.db, data.postId, data.rootId, {
+    CommentRepo.getRepliesByRootIdCount(context.db, postId, data.rootId, {
+      guitarTabId: data.guitarTabId,
       viewerId: data.viewerId,
       status: data.viewerId ? undefined : ["published", "deleted"],
     }),
@@ -98,7 +111,11 @@ export async function createComment(
     if (rootComment.rootId !== null) {
       return err({ reason: "INVALID_ROOT_ID" });
     }
-    if (rootComment.postId !== data.postId) {
+    // For post comments, check postId match; for guitar tab comments, check guitarTabId match
+    if (data.postId && rootComment.postId !== data.postId) {
+      return err({ reason: "ROOT_COMMENT_POST_MISMATCH" });
+    }
+    if (data.guitarTabId && rootComment.guitarTabId !== data.guitarTabId) {
       return err({ reason: "ROOT_COMMENT_POST_MISMATCH" });
     }
     rootId = data.rootId;
@@ -132,7 +149,8 @@ export async function createComment(
   const isAdmin = context.session.user.role === "admin";
 
   const comment = await CommentRepo.insertComment(context.db, {
-    postId: data.postId,
+    postId: data.postId ?? null,
+    guitarTabId: data.guitarTabId ?? null,
     content: data.content,
     rootId,
     replyToCommentId,
@@ -146,57 +164,101 @@ export async function createComment(
     await startCommentModerationWorkflow(context, { commentId: comment.id });
   }
 
+  // Determine the target info for notifications
+  const targetInfo = await getCommentTargetInfo(context, data);
+
   // Send reply notification for admin replies (non-admin replies get notified via moderation workflow)
-  if (isAdmin && replyToCommentId) {
+  if (isAdmin && replyToCommentId && targetInfo) {
+    await sendReplyNotification(context.db, context.env, {
+      comment: {
+        id: comment.id,
+        rootId: comment.rootId,
+        replyToCommentId: comment.replyToCommentId,
+        userId: comment.userId,
+        content: data.content,
+      },
+      target: targetInfo,
+    });
+  }
+
+  // Notify admin about new root comments from non-admin users only
+  const isRootComment = rootId === null;
+  if (!isAdmin && isRootComment && targetInfo) {
+    const { ADMIN_EMAIL, DOMAIN } = serverEnv(context.env);
+    const commentPreview = convertToPlainText(data.content).slice(0, 100);
+    const commenterName = context.session.user.name;
+
+    const commentUrl = buildCommentUrl(
+      DOMAIN,
+      targetInfo,
+      comment.id,
+      comment.id,
+    );
+
+    const emailHtml = renderToStaticMarkup(
+      AdminNotificationEmail({
+        postTitle: targetInfo.title,
+        commenterName,
+        commentPreview: `${commentPreview}${commentPreview.length >= 100 ? "..." : ""}`,
+        commentUrl,
+      }),
+    );
+
+    await context.env.QUEUE.send({
+      type: "EMAIL",
+      data: {
+        to: ADMIN_EMAIL,
+        subject: `[新评论] ${targetInfo.title}`,
+        html: emailHtml,
+      },
+    });
+  }
+
+  return ok(comment);
+}
+
+/** Resolve the post or guitar tab info for a comment target */
+async function getCommentTargetInfo(
+  context: DbContext,
+  data: { postId?: number; guitarTabId?: number },
+): Promise<{ type: "post" | "guitarTab"; slug: string; title: string } | null> {
+  if (data.postId) {
     const post = await PostService.findPostById(context, {
       id: data.postId,
     });
     if (post) {
-      await sendReplyNotification(context.db, context.env, {
-        comment: {
-          id: comment.id,
-          rootId: comment.rootId,
-          replyToCommentId: comment.replyToCommentId,
-          userId: comment.userId,
-          content: data.content,
-        },
-        post: { slug: post.slug, title: post.title },
-      });
+      return { type: "post", slug: post.slug, title: post.title };
     }
   }
-
-  // Notify admin about new root comments from non-admin users only
-  // - Skip if admin is commenting (no need to notify yourself)
-  // - Skip if it's a reply (only root comments trigger admin notification)
-  const isRootComment = rootId === null;
-  if (!isAdmin && isRootComment) {
-    const post = await PostService.findPostById(context, { id: data.postId });
-    if (post) {
-      const { ADMIN_EMAIL, DOMAIN } = serverEnv(context.env);
-      const commentPreview = convertToPlainText(data.content).slice(0, 100);
-      const commenterName = context.session.user.name;
-
-      const emailHtml = renderToStaticMarkup(
-        AdminNotificationEmail({
-          postTitle: post.title,
-          commenterName,
-          commentPreview: `${commentPreview}${commentPreview.length >= 100 ? "..." : ""}`,
-          commentUrl: `https://${DOMAIN}/post/${post.slug}?highlightCommentId=${comment.id}&rootId=${comment.id}#comment-${comment.id}`,
-        }),
-      );
-
-      await context.env.QUEUE.send({
-        type: "EMAIL",
-        data: {
-          to: ADMIN_EMAIL,
-          subject: `[新评论] ${post.title}`,
-          html: emailHtml,
-        },
-      });
+  if (data.guitarTabId) {
+    // Look up guitar tab info directly
+    const tab = await context.db.query.GuitarTabMetadataTable.findFirst({
+      where: (t, { eq }) => eq(t.id, data.guitarTabId!),
+      columns: { slug: true, title: true },
+    });
+    if (tab) {
+      return {
+        type: "guitarTab",
+        slug: tab.slug ?? String(data.guitarTabId),
+        title: tab.title || "吉他谱",
+      };
     }
   }
+  return null;
+}
 
-  return ok(comment);
+/** Build the full comment URL for notifications */
+function buildCommentUrl(
+  domain: string,
+  target: { type: "post" | "guitarTab"; slug: string },
+  commentId: number,
+  rootId: number,
+): string {
+  const basePath =
+    target.type === "post"
+      ? `/post/${target.slug}`
+      : `/guitar-tab/${target.slug}`;
+  return `https://${domain}${basePath}?highlightCommentId=${commentId}&rootId=${rootId}#comment-${commentId}`;
 }
 
 export async function deleteComment(
@@ -288,10 +350,11 @@ export async function moderateComment(
     comment.status !== "published" &&
     comment.replyToCommentId
   ) {
-    const post = await PostService.findPostById(context, {
-      id: comment.postId,
+    const targetInfo = await getCommentTargetInfo(context, {
+      postId: comment.postId ?? undefined,
+      guitarTabId: comment.guitarTabId ?? undefined,
     });
-    if (post) {
+    if (targetInfo) {
       await sendReplyNotification(context.db, context.env, {
         comment: {
           id: comment.id,
@@ -300,7 +363,7 @@ export async function moderateComment(
           userId: comment.userId,
           content: comment.content,
         },
-        post: { slug: post.slug, title: post.title },
+        target: { slug: targetInfo.slug, title: targetInfo.title, type: targetInfo.type },
         skipNotifyUserId: moderatorUserId,
       });
     }

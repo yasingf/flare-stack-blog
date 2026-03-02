@@ -20,7 +20,7 @@ export function PostPage({ post }: PostPageProps) {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 400);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -33,6 +33,7 @@ export function PostPage({ post }: PostPageProps) {
           className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] opacity-40 hover:opacity-100 group"
           style={{
             transition: `opacity 350ms cubic-bezier(0.25, 0.1, 0.25, 1)`,
+            animation: "collision-left 700ms var(--ease-spring) both",
           }}
         >
           <ArrowLeft
@@ -57,7 +58,10 @@ export function PostPage({ post }: PostPageProps) {
         {/* Header Section */}
         <header className="space-y-8">
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-muted-foreground/60 tracking-wider">
+            <div
+              className="flex flex-wrap items-center gap-4 text-xs font-mono text-muted-foreground/60 tracking-wider"
+              style={{ animation: "ink-reveal 900ms var(--ease-out-expo) 150ms both" }}
+            >
               <span className="flex items-center gap-1.5">
                 发布于:{" "}
                 <ClientOnly fallback={<span>-</span>}>
@@ -98,6 +102,7 @@ export function PostPage({ post }: PostPageProps) {
               className="text-4xl md:text-5xl lg:text-6xl font-serif font-medium leading-[1.1] tracking-tight text-foreground"
               style={{
                 viewTransitionName: `post-title-${post.slug}`,
+                animation: "elastic-in 800ms var(--ease-spring) 200ms both",
               }}
             >
               {post.title}
@@ -105,7 +110,10 @@ export function PostPage({ post }: PostPageProps) {
           </div>
 
           {post.summary && (
-            <div className="bg-card rounded-xl p-6 space-y-3 border border-border/40 shadow-sm">
+            <div
+              className="bg-card rounded-xl p-6 space-y-3 border border-border/40 shadow-sm"
+              style={{ animation: "float-up 800ms var(--ease-spring-soft) 350ms both" }}
+            >
               <div className="flex items-center gap-2 text-muted-foreground/80 font-medium text-sm uppercase tracking-widest">
                 <Sparkles className="w-4 h-4" />
                 <span>摘要</span>
@@ -121,12 +129,18 @@ export function PostPage({ post }: PostPageProps) {
         <div className="relative">
           {/* Floating TOC for Large Screens */}
           <aside className="hidden xl:block absolute left-full ml-12 top-0 h-full">
-            <div className="sticky top-32 w-60">
+            <div
+              className="sticky top-32 w-60"
+              style={{ animation: "swing-in 900ms var(--ease-spring) 500ms both" }}
+            >
               <TableOfContents headers={post.toc} />
             </div>
           </aside>
 
-          <main className="max-w-none text-foreground leading-relaxed font-serif">
+          <main
+            className="max-w-none text-foreground leading-relaxed font-serif"
+            style={{ animation: "apple-fade-up 900ms var(--ease-spring-soft) 400ms both" }}
+          >
             <ContentRenderer content={post.contentJson} />
 
             <footer className="mt-24 pt-8 border-t border-border/20 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -163,14 +177,20 @@ export function PostPage({ post }: PostPageProps) {
         </div>
 
         {/* Related Posts */}
-        <div className="pt-24 border-t border-border/40">
+        <div
+          className="pt-24 border-t border-border/40"
+          style={{ animation: "bounce-drop 800ms var(--ease-spring) 600ms both" }}
+        >
           <Suspense fallback={<RelatedPostsSkeleton />}>
             <RelatedPosts slug={post.slug} />
           </Suspense>
         </div>
 
         {/* Comments Section */}
-        <div className="pt-12 border-t-0 border-border/40">
+        <div
+          className="pt-12 border-t-0 border-border/40"
+          style={{ animation: "float-up 800ms var(--ease-spring-soft) 700ms both" }}
+        >
           <CommentSection postId={post.id} />
         </div>
       </article>

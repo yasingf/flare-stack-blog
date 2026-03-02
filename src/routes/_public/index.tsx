@@ -5,6 +5,7 @@ import {
   featuredPostsQuery,
   publicPostsCountQuery,
 } from "@/features/posts/queries";
+import { approvedGuitarTabsCountQuery } from "@/features/media/queries";
 import { tagsQueryOptions } from "@/features/tags/queries";
 
 const { featuredPostsLimit } = theme.config.home;
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_public/")({
       ),
       context.queryClient.ensureQueryData(publicPostsCountQuery),
       context.queryClient.ensureQueryData(tagsQueryOptions),
+      context.queryClient.ensureQueryData(approvedGuitarTabsCountQuery),
     ]);
   },
   pendingComponent: HomePageSkeleton,
@@ -29,12 +31,16 @@ function HomeRoute() {
   );
   const { data: totalPosts } = useSuspenseQuery(publicPostsCountQuery);
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const { data: totalGuitarTabs } = useSuspenseQuery(
+    approvedGuitarTabsCountQuery,
+  );
 
   return (
     <theme.HomePage
       posts={posts}
       totalPosts={totalPosts}
       totalTags={tags.length}
+      totalGuitarTabs={totalGuitarTabs}
     />
   );
 }

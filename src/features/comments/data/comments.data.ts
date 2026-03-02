@@ -24,16 +24,18 @@ export async function getRootCommentsByPostId(
   db: DB,
   postId: number,
   options: {
+    guitarTabId?: number;
     offset?: number;
     limit?: number;
     status?: CommentStatus | Array<CommentStatus>;
     viewerId?: string;
   } = {},
 ) {
-  const { offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
+  const { guitarTabId, offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
+    guitarTabId,
     status,
     viewerId,
     rootOnly: true,
@@ -46,6 +48,7 @@ export async function getRootCommentsByPostId(
       rootId: CommentsTable.rootId,
       replyToCommentId: CommentsTable.replyToCommentId,
       postId: CommentsTable.postId,
+      guitarTabId: CommentsTable.guitarTabId,
       userId: CommentsTable.userId,
       status: CommentsTable.status,
       aiReason: CommentsTable.aiReason,
@@ -72,14 +75,16 @@ export async function getRootCommentsByPostIdCount(
   db: DB,
   postId: number,
   options: {
+    guitarTabId?: number;
     status?: CommentStatus | Array<CommentStatus>;
     viewerId?: string;
   } = {},
 ) {
-  const { status, viewerId } = options;
+  const { guitarTabId, status, viewerId } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
+    guitarTabId,
     status,
     viewerId,
     rootOnly: true,
@@ -98,14 +103,16 @@ export async function getReplyCountByRootId(
   postId: number,
   rootId: number,
   options: {
+    guitarTabId?: number;
     status?: CommentStatus | Array<CommentStatus>;
     viewerId?: string;
   } = {},
 ) {
-  const { status, viewerId } = options;
+  const { guitarTabId, status, viewerId } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
+    guitarTabId,
     rootId,
     status,
     viewerId,
@@ -124,16 +131,18 @@ export async function getRepliesByRootId(
   postId: number,
   rootId: number,
   options: {
+    guitarTabId?: number;
     offset?: number;
     limit?: number;
     status?: CommentStatus | Array<CommentStatus>;
     viewerId?: string;
   } = {},
 ) {
-  const { offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
+  const { guitarTabId, offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
+    guitarTabId,
     rootId,
     status,
     viewerId,
@@ -146,6 +155,7 @@ export async function getRepliesByRootId(
       rootId: CommentsTable.rootId,
       replyToCommentId: CommentsTable.replyToCommentId,
       postId: CommentsTable.postId,
+      guitarTabId: CommentsTable.guitarTabId,
       userId: CommentsTable.userId,
       status: CommentsTable.status,
       aiReason: CommentsTable.aiReason,
@@ -202,14 +212,16 @@ export async function getRepliesByRootIdCount(
   postId: number,
   rootId: number,
   options: {
+    guitarTabId?: number;
     status?: CommentStatus | Array<CommentStatus>;
     viewerId?: string;
   } = {},
 ) {
-  const { status, viewerId } = options;
+  const { guitarTabId, status, viewerId } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
+    guitarTabId,
     rootId,
     status,
     viewerId,
@@ -282,6 +294,7 @@ export async function getAllComments(
       rootId: CommentsTable.rootId,
       replyToCommentId: CommentsTable.replyToCommentId,
       postId: CommentsTable.postId,
+      guitarTabId: CommentsTable.guitarTabId,
       userId: CommentsTable.userId,
       status: CommentsTable.status,
       aiReason: CommentsTable.aiReason,

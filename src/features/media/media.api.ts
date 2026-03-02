@@ -97,6 +97,14 @@ export const getGuitarTabBySlugFn = createServerFn()
     MediaService.getGuitarTabBySlug(context, data.slug),
   );
 
+// ─── Public: 审核通过的吉他谱总数 ─────────────────────
+
+export const getApprovedGuitarTabsCountFn = createServerFn()
+  .middleware([dbMiddleware])
+  .handler(({ context }) =>
+    MediaService.getApprovedGuitarTabsCount(context),
+  );
+
 // ─── Admin: 获取单个吉他谱元数据 ──────────────────────
 
 export const getGuitarTabMetaFn = createServerFn()

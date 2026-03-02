@@ -32,10 +32,14 @@ export const GuitarTabMetadataTable = sqliteTable("guitar_tab_metadata", {
   fileHash: text("file_hash"),
   /** URL 友好的唯一标识（自动生成） */
   slug: text("slug").unique(),
+  /** 旧文本 slug 备份，用于 301 重定向 */
+  legacySlug: text("legacy_slug"),
   /** 上传者用户 ID（管理员上传时可为 null） */
   uploaderId: text("uploader_id").references(() => user.id, {
     onDelete: "set null",
   }),
+  /** 浏览次数 */
+  viewCount: integer("view_count").notNull().default(0),
   /** 审核状态 */
   status: text("status", { enum: GUITAR_TAB_STATUSES })
     .notNull()

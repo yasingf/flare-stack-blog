@@ -46,7 +46,7 @@ function getSavedPageSize(): number {
   if (typeof window === "undefined") return DEFAULT_PAGE_SIZE;
   const saved = localStorage.getItem(PAGE_SIZE_KEY);
   if (saved) {
-    const n = parseInt(saved);
+    const n = parseInt(saved, 10);
     if (PAGE_SIZE_OPTIONS.includes(n)) return n;
   }
   return DEFAULT_PAGE_SIZE;
@@ -209,10 +209,13 @@ function GuitarTabsPage() {
           {/* 标题区 + 视图切换 */}
           <div className="flex items-end justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+              <div
+                className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center"
+                style={{ animation: "jelly 800ms var(--ease-spring) 100ms both" }}
+              >
                 <Guitar size={22} className="text-accent" />
               </div>
-              <div>
+              <div style={{ animation: "elastic-in 700ms var(--ease-spring) 200ms both" }}>
                 <h1 className="text-2xl font-serif font-medium tracking-tight leading-tight">
                   吉他谱
                 </h1>
@@ -264,7 +267,10 @@ function GuitarTabsPage() {
           </div>
 
           {/* 搜索框 */}
-          <div className="relative group">
+          <div
+            className="relative group"
+            style={{ animation: "float-up 700ms var(--ease-spring-soft) 300ms both" }}
+          >
             <Search
               size={15}
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-accent"
@@ -316,15 +322,21 @@ function GuitarTabsPage() {
         ) : viewMode === "list" ? (
           /* ── 列表视图 ── */
           <div className="space-y-3">
-            {tabs.map((tab) => (
-              <GuitarTabListCard
+            {tabs.map((tab, i) => (
+              <div
                 key={tab.id}
-                tab={tab}
-                isActive={
-                  viewerFile?.url === `/images/${tab.key}?original=true`
-                }
-                onClick={(e) => handleOpenTab(tab, e.currentTarget)}
-              />
+                style={{
+                  animation: `apple-fade-up 600ms var(--ease-spring-soft) ${Math.min(100 + i * 50, 800)}ms both`,
+                }}
+              >
+                <GuitarTabListCard
+                  tab={tab}
+                  isActive={
+                    viewerFile?.url === `/images/${tab.key}?original=true`
+                  }
+                  onClick={(e) => handleOpenTab(tab, e.currentTarget)}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -336,16 +348,22 @@ function GuitarTabsPage() {
                 : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"
             }
           >
-            {tabs.map((tab) => (
-              <GuitarTabGridCard
+            {tabs.map((tab, i) => (
+              <div
                 key={tab.id}
-                tab={tab}
-                size={viewMode === "large-grid" ? "large" : "small"}
-                isActive={
-                  viewerFile?.url === `/images/${tab.key}?original=true`
-                }
-                onClick={(e) => handleOpenTab(tab, e.currentTarget)}
-              />
+                style={{
+                  animation: `jelly 700ms var(--ease-spring) ${Math.min(80 + i * 40, 800)}ms both`,
+                }}
+              >
+                <GuitarTabGridCard
+                  tab={tab}
+                  size={viewMode === "large-grid" ? "large" : "small"}
+                  isActive={
+                    viewerFile?.url === `/images/${tab.key}?original=true`
+                  }
+                  onClick={(e) => handleOpenTab(tab, e.currentTarget)}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -382,7 +400,10 @@ function GuitarTabsPage() {
         {/* ════════════════════════════════════════════════
             投稿入口
             ════════════════════════════════════════════════ */}
-        <div className="mt-16 mb-6 text-center">
+        <div
+          className="mt-16 mb-6 text-center"
+          style={{ animation: "bounce-drop 800ms var(--ease-spring) 500ms both" }}
+        >
           <div className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-muted/20 border border-border/20">
             <Upload size={14} className="text-muted-foreground/50" />
             <span className="text-xs text-muted-foreground/60">

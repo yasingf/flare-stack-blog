@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import {
   Clock,
   ExternalLink,
+  Eye,
   Guitar,
   Layers,
   Music2,
@@ -22,6 +23,12 @@ function getDisplayName(fileName: string): string {
 function getExtension(fileName: string): string {
   const match = fileName.match(/\.(gp[345x]?|gp)$/i);
   return match ? match[1].toUpperCase() : "GP";
+}
+
+function formatViewCount(count: number): string {
+  if (count >= 10000) return `${(count / 10000).toFixed(1)}万`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return String(count);
 }
 
 // ── 列表视图卡片 ─────────────────────────────────────
@@ -160,6 +167,12 @@ export const GuitarTabListCard = memo(function GuitarTabListCard({
                 {tab.uploaderName}
               </span>
             )}
+            {(tab.viewCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 font-mono">
+                <Eye size={9} />
+                {formatViewCount(tab.viewCount ?? 0)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -272,6 +285,12 @@ export const GuitarTabGridCard = memo(function GuitarTabGridCard({
               <User size={8} />
             )}
             {tab.uploaderName}
+          </p>
+        )}
+        {(tab.viewCount ?? 0) > 0 && (
+          <p className="text-[10px] text-muted-foreground/40 mt-1 flex items-center gap-1 font-mono">
+            <Eye size={8} />
+            {formatViewCount(tab.viewCount ?? 0)}
           </p>
         )}
       </div>

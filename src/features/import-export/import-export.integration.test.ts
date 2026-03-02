@@ -149,10 +149,11 @@ describe("Import/Export Integration", () => {
       );
       expect(result.skipped).toBeUndefined();
       expect(result.title).toBe("测试文章");
-      expect(result.slug).toBe("test-article");
+      // Slug is now an auto-generated short ID
+      expect(result.slug).toMatch(/^[0-9a-z]{8}$/);
 
-      // Verify DB: post
-      const post = await PostRepo.findPostBySlug(db, "test-article");
+      // Verify DB: post (use returned short ID slug)
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.title).toBe("测试文章");
       expect(post!.summary).toBe("这是摘要");
@@ -193,7 +194,7 @@ describe("Import/Export Integration", () => {
       );
       expect(result.skipped).toBeUndefined();
 
-      const post = await PostRepo.findPostBySlug(db, "md-only");
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.contentJson).not.toBeNull();
     });
@@ -232,7 +233,7 @@ describe("Import/Export Integration", () => {
       expect(result.skipped).toBeUndefined();
       expect(result.title).toBe("Markdown 文章");
 
-      const post = await PostRepo.findPostBySlug(db, "markdown-post");
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.summary).toBe("从 Markdown 导入");
       expect(post!.contentJson).not.toBeNull();
@@ -242,21 +243,15 @@ describe("Import/Export Integration", () => {
     });
   });
 
-  describe("Slug collision", () => {
-    it("should skip import when slug already exists", async () => {
-      // Seed a post with the same slug
-      await PostRepo.insertPost(db, {
-        title: "Existing Post",
-        slug: "existing-post",
-        status: "published",
-      });
-
+  describe("Duplicate imports", () => {
+    it("should import posts with unique short ID slugs even if frontmatter slug matches", async () => {
+      // First import
       const zipFiles = buildNativeZipFiles([
         {
-          slug: "existing-post",
+          slug: "same-post",
           frontmatter: {
-            title: "Duplicate",
-            slug: "existing-post",
+            title: "Same Post",
+            slug: "same-post",
             status: "published",
             readTimeInMinutes: 1,
             tags: [],
@@ -267,14 +262,26 @@ describe("Import/Export Integration", () => {
       ]);
 
       const entries = enumerateNativePosts(zipFiles);
-      const result = await importSinglePost(
+      const result1 = await importSinglePost(
         env,
         zipFiles,
         entries[0],
         "native",
       );
+      expect(result1.skipped).toBeUndefined();
+      expect(result1.slug).toMatch(/^[0-9a-z]{8}$/);
 
-      expect(result.skipped).toBe(true);
+      // Second import of same content gets a different short ID
+      const entries2 = enumerateNativePosts(zipFiles);
+      const result2 = await importSinglePost(
+        env,
+        zipFiles,
+        entries2[0],
+        "native",
+      );
+      expect(result2.skipped).toBeUndefined();
+      expect(result2.slug).toMatch(/^[0-9a-z]{8}$/);
+      expect(result2.slug).not.toBe(result1.slug);
     });
   });
 
@@ -304,7 +311,7 @@ describe("Import/Export Integration", () => {
       );
       expect(result.skipped).toBeUndefined();
 
-      const post = await PostRepo.findPostBySlug(db, "dedup-tags");
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.tags).toHaveLength(2);
 
@@ -346,8 +353,9 @@ describe("Import/Export Integration", () => {
       expect(entries).toHaveLength(2);
 
       // Import both
+      const results: Array<{ slug: string }> = [];
       for (const entry of entries) {
-        await importSinglePost(env, zipFiles, entry, "native");
+        results.push(await importSinglePost(env, zipFiles, entry, "native"));
       }
 
       // Verify shared-tag is only created once
@@ -355,9 +363,9 @@ describe("Import/Export Integration", () => {
       const sharedTags = allTags.filter((t) => t.name === "shared-tag");
       expect(sharedTags).toHaveLength(1);
 
-      // Verify each post has correct tags
-      const postA = await PostRepo.findPostBySlug(db, "post-a");
-      const postB = await PostRepo.findPostBySlug(db, "post-b");
+      // Verify each post has correct tags (use returned short ID slugs)
+      const postA = await PostRepo.findPostBySlug(db, results[0].slug);
+      const postB = await PostRepo.findPostBySlug(db, results[1].slug);
 
       expect(postA!.tags.map((t) => t.name).sort()).toEqual([
         "shared-tag",
@@ -396,7 +404,7 @@ describe("Import/Export Integration", () => {
       );
       expect(result.skipped).toBeUndefined();
 
-      const post = await PostRepo.findPostBySlug(db, "draft-post");
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.status).toBe("draft");
       expect(post!.publishedAt).toBeNull();
@@ -471,10 +479,10 @@ describe("Import/Export Integration", () => {
       expect(result.skipped).toBeUndefined();
       expect(result.title).toBe("原始文章");
 
-      // 5. Verify round-trip fidelity
+      // 5. Verify round-trip fidelity (use returned short ID slug)
       const reimported = await PostRepo.findPostBySlug(
         db,
-        "reimported-article",
+        result.slug,
       );
       expect(reimported).not.toBeNull();
       expect(reimported!.title).toBe(fullPost.title);
@@ -522,7 +530,7 @@ describe("Import/Export Integration", () => {
       );
       expect(result.skipped).toBeUndefined();
 
-      const post = await PostRepo.findPostBySlug(db, "hugo-style");
+      const post = await PostRepo.findPostBySlug(db, result.slug);
       expect(post).not.toBeNull();
       expect(post!.title).toBe("Hugo Post");
       expect(post!.summary).toBe("Hugo summary");

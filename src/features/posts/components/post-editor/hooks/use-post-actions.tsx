@@ -5,13 +5,12 @@ import { toast } from "sonner";
 import type { PostEditorData } from "@/features/posts/components/post-editor/types";
 import type { Tag } from "@/features/tags/tags.schema";
 import {
-  generateSlugFn,
   previewSummaryFn,
   startPostProcessWorkflowFn,
 } from "@/features/posts/api/posts.admin.api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toLocalDateString } from "@/lib/utils";
-import { convertToPlainText, slugify } from "@/features/posts/utils/content";
+import { convertToPlainText } from "@/features/posts/utils/content";
 import { createTagFn, generateTagsFn } from "@/features/tags/api/tags.api";
 import { TAGS_KEYS } from "@/features/tags/queries";
 
@@ -29,7 +28,7 @@ export function usePostActions({
   post,
   initialData,
   setPost,
-  setError,
+  setError: _setError,
   allTags,
 }: UsePostActionsOptions) {
   const queryClient = useQueryClient();
@@ -99,15 +98,11 @@ export function usePostActions({
   }, [post, kvSnapshot, initialData.isSynced, sessionSynced]);
 
   // Keep track of how slug was requested to control noisy toasts
-  const slugGenerationMode = useRef<"manual" | "auto">("manual");
   // Track previous values to detect actual changes & skip first mount
-  const prevTitleRef = useRef(post.title);
   const prevContentRef = useRef(post.contentJson);
-  const isFirstTitleMount = useRef(true);
   const isFirstContentMount = useRef(true);
 
   // Debounced values
-  const debouncedTitle = useDebounce(post.title, 500);
   const debouncedContentJson = useDebounce(post.contentJson, 500);
 
   const processDataMutation = useMutation({
@@ -150,30 +145,7 @@ export function usePostActions({
     }, 800);
   };
 
-  // Slug generation mutation
-  const slugMutation = useMutation({
-    mutationFn: (title: string) =>
-      generateSlugFn({
-        data: {
-          title,
-          excludeId: postId,
-        },
-      }),
-    onSuccess: (result) => {
-      setPost((prev) => ({ ...prev, slug: result.slug }));
-      if (slugGenerationMode.current === "manual") {
-        toast.success("URL slug 已设置", {
-          description: `URL slug 已设置为 "${result.slug}"`,
-        });
-      }
-    },
-    onError: (error) => {
-      console.error("Slug生成失败:", error);
-      setError("Slug生成失败");
-      const fallbackSlug = slugify(post.title) || "untitled-log";
-      setPost((prev) => ({ ...prev, slug: fallbackSlug }));
-    },
-  });
+  // Slug is now auto-generated from post ID — no longer needs manual generation
 
   const previewSummaryMutation = useMutation({
     mutationFn: () =>
@@ -191,29 +163,6 @@ export function usePostActions({
       });
     },
   });
-
-  // Auto-generate slug on title change (debounced)
-  useEffect(() => {
-    // Skip first mount to avoid regenerating slug on edit page load
-    if (isFirstTitleMount.current) {
-      isFirstTitleMount.current = false;
-      prevTitleRef.current = debouncedTitle;
-      return;
-    }
-
-    // Only run if title actually changed
-    if (debouncedTitle === prevTitleRef.current) {
-      return;
-    }
-    prevTitleRef.current = debouncedTitle;
-
-    if (!debouncedTitle.trim()) {
-      return;
-    }
-    if (slugMutation.isPending) return;
-    slugGenerationMode.current = "auto";
-    slugMutation.mutate(debouncedTitle);
-  }, [debouncedTitle]);
 
   const runReadTimeCalculation = (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -266,15 +215,6 @@ export function usePostActions({
     }
     runReadTimeCalculation({ silent: true });
   }, [debouncedContentJson]);
-
-  const handleGenerateSlug = () => {
-    if (!post.title.trim()) {
-      setError("标题不能为空");
-      return;
-    }
-    slugGenerationMode.current = "manual";
-    slugMutation.mutate(post.title);
-  };
 
   const handleCalculateReadTime = () => {
     runReadTimeCalculation({ silent: false });
@@ -373,10 +313,8 @@ export function usePostActions({
   };
 
   return {
-    isGeneratingSlug: slugMutation.isPending,
     isCalculatingReadTime,
     isGeneratingSummary,
-    handleGenerateSlug,
     handleCalculateReadTime,
     handleGenerateSummary,
     handleProcessData,

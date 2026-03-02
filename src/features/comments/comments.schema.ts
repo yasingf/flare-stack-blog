@@ -56,7 +56,8 @@ export const GetUserStatsInputSchema = z.object({
 
 // Public API Schemas
 export const GetCommentsByPostIdInputSchema = z.object({
-  postId: z.number(),
+  postId: z.number().optional(),
+  guitarTabId: z.number().optional(),
   offset: z.number().optional(),
   limit: z.number().optional(),
 });
@@ -67,7 +68,8 @@ export const GetCommentsResponseSchema = z.object({
 });
 
 export const GetRepliesByRootIdInputSchema = z.object({
-  postId: z.number(),
+  postId: z.number().optional(),
+  guitarTabId: z.number().optional(),
   rootId: z.number(),
   offset: z.number().optional(),
   limit: z.number().optional(),
@@ -98,7 +100,8 @@ export const GetRootCommentsResponseSchema = z.object({
 
 // Authed User API Schemas
 export const CreateCommentInputSchema = z.object({
-  postId: z.number(),
+  postId: z.number().optional(),
+  guitarTabId: z.number().optional(),
   content: z.custom<JSONContent>(),
   rootId: z.number().optional(),
   replyToCommentId: z.number().optional(),

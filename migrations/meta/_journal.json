@@ -50,6 +50,27 @@
       "when": 1772208000000,
       "tag": "0006_guitar_tab_file_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1772380800000,
+      "tag": "0007_guitar_tab_view_count",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1772467200000,
+      "tag": "0008_add_legacy_slug",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1772553600000,
+      "tag": "0009_guitar_tab_comments",
+      "breakpoints": true
     }
   ]
 }

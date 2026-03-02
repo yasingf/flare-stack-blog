@@ -18,6 +18,7 @@ import {
   buildPostWhereClause,
 } from "@/features/posts/data/helper";
 import { PostTagsTable, PostsTable, TagsTable } from "@/lib/db/schema";
+import { decodeId, isShortId } from "@/lib/short-id";
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -229,6 +230,33 @@ export async function findPostBySlug(
 ) {
   const { publicOnly = false } = options;
 
+  // 试图将 slug 解码为短 ID，用整数 ID 查询（新格式）
+  if (isShortId(slug)) {
+    try {
+      const id = decodeId(slug);
+      const whereClause = buildPostWhereClause({ publicOnly });
+      const post = await db.query.PostsTable.findFirst({
+        where: and(eq(PostsTable.id, id), whereClause),
+        with: {
+          postTags: {
+            with: {
+              tag: true,
+            },
+          },
+        },
+      });
+
+      if (post) {
+        const tags = post.postTags.map((pt) => pt.tag);
+        const { postTags, ...rest } = post;
+        return { ...rest, tags };
+      }
+    } catch {
+      // 解码失败，回退到文本 slug 查询
+    }
+  }
+
+  // 回退：按文本 slug 查询（兼容旧数据）
   const whereClause = buildPostWhereClause({ publicOnly });
   const post = await db.query.PostsTable.findFirst({
     where: and(eq(PostsTable.slug, slug), whereClause),
@@ -252,10 +280,24 @@ export async function findPostBySlug(
 export async function updatePost(
   db: DB,
   id: number,
-  data: Partial<Omit<typeof PostsTable.$inferInsert, "id" | "createdAt">>,
+  data: Partial<Omit<typeof PostsTable.$inferInsert, "id" | "createdAt" | "slug">>,
 ) {
   await db.update(PostsTable).set(data).where(eq(PostsTable.id, id));
   return await findPostById(db, id);
+}
+
+/**
+ * 仅在初始创建或数据迁移时设置 slug（slug 一旦设定后不应再变更）
+ */
+export async function setPostSlug(
+  db: DB,
+  id: number,
+  slug: string,
+): Promise<void> {
+  await db
+    .update(PostsTable)
+    .set({ slug })
+    .where(eq(PostsTable.id, id));
 }
 
 export async function deletePost(db: DB, id: number) {
@@ -315,14 +357,27 @@ export async function getRelatedPostIds(
 ) {
   const { limit = 3 } = options;
 
-  // 1. Get current post ID and its tags
-  const currentPost = await db.query.PostsTable.findFirst({
-    where: eq(PostsTable.slug, slug),
-    with: {
-      postTags: true,
-    },
-    columns: { id: true },
-  });
+  // 1. Get current post: try short ID first, then fallback to text slug
+  let currentPost: { id: number; postTags: Array<{ tagId: number }> } | undefined;
+
+  if (isShortId(slug)) {
+    try {
+      const id = decodeId(slug);
+      currentPost = await db.query.PostsTable.findFirst({
+        where: eq(PostsTable.id, id),
+        with: { postTags: true },
+        columns: { id: true },
+      }) ?? undefined;
+    } catch { /* fallback */ }
+  }
+
+  if (!currentPost) {
+    currentPost = await db.query.PostsTable.findFirst({
+      where: eq(PostsTable.slug, slug),
+      with: { postTags: true },
+      columns: { id: true },
+    }) ?? undefined;
+  }
 
   if (!currentPost || currentPost.postTags.length === 0) {
     return [];

@@ -9,8 +9,8 @@ import * as PostRepo from "@/features/posts/data/posts.data";
 import * as TagRepo from "@/features/tags/data/tags.data";
 import * as MediaRepo from "@/features/media/data/media.data";
 import { syncPostMedia } from "@/features/posts/data/post-media.data";
-import { highlightCodeBlocks, slugify } from "@/features/posts/utils/content";
-import * as PostService from "@/features/posts/posts.service";
+import { highlightCodeBlocks } from "@/features/posts/utils/content";
+import { encodeId } from "@/lib/short-id";
 import {
   listDirectories,
   listFiles,
@@ -93,7 +93,6 @@ export async function importSinglePost(
   warnings: Array<string>;
 }> {
   const db = getDb(env);
-  const context: DbContext = { db, env };
   const warnings: Array<string> = [];
 
   // 1. Parse content
@@ -161,15 +160,6 @@ export async function importSinglePost(
   }
   const title = normalized.title || entry.dir || "Untitled";
 
-  const candidateSlug = normalized.slug || title;
-  const slugAlreadyExists = await PostRepo.slugExists(
-    db,
-    slugify(candidateSlug),
-  );
-  if (slugAlreadyExists) {
-    return { title, slug: candidateSlug, skipped: true, warnings };
-  }
-
   // 3. Upload images and rewrite paths (native mode only — markdown mode handles images pre-conversion)
   if (contentJson && mode === "native") {
     const imageResult = await uploadImages(env, zipFiles, entry);
@@ -188,10 +178,8 @@ export async function importSinglePost(
     }
   }
 
-  // 5. Generate unique slug
-  const { slug } = await PostService.generateSlug(context, {
-    title: normalized.slug || title,
-  });
+  // 5. Generate temporary slug (will be replaced with encodeId after insertion)
+  const tempSlug = `tmp-${crypto.randomUUID().slice(0, 8)}`;
 
   // 6. Resolve tags
   const tagIds: Array<number> = [];
@@ -209,7 +197,7 @@ export async function importSinglePost(
   // 7. Insert post
   const post = await PostRepo.insertPost(db, {
     title,
-    slug,
+    slug: tempSlug,
     summary: normalized.summary ?? null,
     contentJson,
     status: normalized.status === "draft" ? "draft" : "published",
@@ -221,7 +209,11 @@ export async function importSinglePost(
         : null,
   });
 
-  // 8. Link tags
+  // 8. Update slug with encodeId after insertion
+  const shortId = encodeId(post.id);
+  await PostRepo.setPostSlug(db, post.id, shortId);
+
+  // 9. Link tags
   if (tagIds.length > 0) {
     await db
       .insert(PostTagsTable)
@@ -233,7 +225,7 @@ export async function importSinglePost(
     await syncPostMedia(db, post.id, contentJson);
   }
 
-  return { title: post.title, slug: post.slug, warnings };
+  return { title: post.title, slug: shortId, warnings };
 }
 
 // --- Image upload (needs env for R2) ---

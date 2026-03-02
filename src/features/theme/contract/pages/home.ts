@@ -6,4 +6,6 @@ export interface HomePageProps {
   totalPosts: number;
   /** Total number of tags (for stats display) */
   totalTags: number;
+  /** Total number of approved guitar tabs (for stats display) */
+  totalGuitarTabs: number;
 }

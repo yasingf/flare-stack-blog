@@ -1,5 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import {
+  getApprovedGuitarTabsCountFn,
   getGuitarTabBySlugFn,
   getGuitarTabMetaFn,
   getGuitarTabsFn,
@@ -21,6 +22,7 @@ export const MEDIA_KEYS = {
   guitarTabMeta: ["media", "guitar-tab-meta"] as const,
   guitarTabDetail: ["media", "guitar-tab-detail"] as const,
   myGuitarTabs: ["media", "my-guitar-tabs"] as const,
+  guitarTabsCount: ["media", "guitar-tabs-count"] as const,
 
   // Child keys (functions for specific queries)
   list: (
@@ -75,6 +77,15 @@ export function linkedMediaKeysQuery(keys: Array<string>) {
 export const totalMediaSizeQuery = queryOptions({
   queryKey: MEDIA_KEYS.totalSize,
   queryFn: () => getTotalMediaSizeFn(),
+});
+
+// ─── 公开吉他谱总数（首页统计用） ───────────────────
+
+export const approvedGuitarTabsCountQuery = queryOptions({
+  queryKey: MEDIA_KEYS.guitarTabsCount,
+  queryFn: async () => {
+    return await getApprovedGuitarTabsCountFn();
+  },
 });
 
 // ─── 吉他谱元数据（管理后台用） ──────────────────────

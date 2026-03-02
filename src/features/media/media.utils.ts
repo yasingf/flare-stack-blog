@@ -1,21 +1,12 @@
 import type { MediaCategory } from "./media.schema";
+import { encodeId } from "@/lib/short-id";
 
 /**
- * 生成吉他谱 URL 友好的 slug
- * 格式：artist-title-shortid（全部小写，非ASCII字符保留，空格和特殊字符替换为-）
+ * 根据吉他谱元数据 ID 生成 8 位短 ID slug
+ * 基于 Feistel 密码编码，非顺序且可逆
  */
-export function generateGuitarTabSlug(artist: string, title: string): string {
-  const raw = [artist, title].filter(Boolean).join("-");
-  // 保留中文/日文/韩文等字符，替换空格和特殊符号为连字符
-  const slug = raw
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-") // 空格/下划线 → -
-    .replace(/[^\p{L}\p{N}-]/gu, "") // 移除非字母数字和连字符
-    .replace(/-+/g, "-") // 合并多个连字符
-    .replace(/^-|-$/g, ""); // 去掉首尾连字符
-  // 添加短 ID 防止冲突
-  const shortId = crypto.randomUUID().slice(0, 6);
-  return slug ? `${slug}-${shortId}` : shortId;
+export function generateGuitarTabSlug(metadataId: number): string {
+  return encodeId(metadataId);
 }
 
 export function getContentTypeFromKey(key: string): string | undefined {
@@ -95,6 +86,31 @@ export function generateKey(fileName: string, prefix?: string): string {
   const key = `${uuid}.${extension}`;
 
   return prefix ? `${prefix}/${key}` : key;
+}
+
+/**
+ * 根据文件内容的 SHA-256 哈希生成存储 key
+ * 格式：[prefix/]<12位hex>.<ext>
+ * 12 位 hex = 48 bits = 281 万亿种组合，碰撞概率极低
+ */
+export function generateHashKey(
+  fileHash: string,
+  fileName: string,
+  prefix?: string,
+): string {
+  const shortHash = fileHash.slice(0, 12);
+  const extension = fileName.split(".").pop()?.toLowerCase() || "bin";
+  const key = `${shortHash}.${extension}`;
+  return prefix ? `${prefix}/${key}` : key;
+}
+
+/**
+ * 计算文件内容的 SHA-256 哈希（hex 字符串）
+ */
+export async function hashFileContent(content: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", content);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /**

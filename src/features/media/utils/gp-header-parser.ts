@@ -384,6 +384,12 @@ function parseGpifXml(xml: string): GpHeaderInfo {
     if (name) trackNames.push(name);
   }
 
+  // 检测内嵌伴奏音轨（BackingTrack）— GP7/8 可能嵌入录音伴奏
+  const hasBackingTrack = /<BackingTrack[\s>]/.test(xml);
+  if (hasBackingTrack) {
+    trackNames.push("Audio Track");
+  }
+
   return {
     title,
     artist,

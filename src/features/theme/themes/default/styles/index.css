@@ -98,50 +98,84 @@ mark {
   mix-blend-mode: normal;
 }
 
-/* Route View Transitions — smooth crossfade with spring-like feel */
+/* Route View Transitions — Apple-level crossfade with layered spring motion */
 ::view-transition-old(root) {
-  animation: vt-fade-out 250ms cubic-bezier(0.4, 0, 0.6, 1) both;
+  animation: vt-fade-out 400ms cubic-bezier(0.4, 0, 0.6, 1) both;
 }
 
 ::view-transition-new(root) {
-  animation: vt-fade-in 400ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+  animation: vt-fade-in 600ms cubic-bezier(0.34, 1.2, 0.64, 1) 80ms both;
 }
 
 /* Morph transitions for named elements (e.g. post titles) */
 ::view-transition-old(post-title),
 ::view-transition-new(post-title) {
-  animation-duration: 400ms;
-  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-duration: 550ms;
+  animation-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
 @keyframes vt-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+  50% {
+    opacity: 0.4;
+    filter: blur(1px);
+  }
   to {
     opacity: 0;
-    transform: scale(0.98) translateY(4px);
+    transform: scale(0.98) translateY(12px);
+    filter: blur(4px);
   }
 }
 
 @keyframes vt-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.98) translateY(-6px);
+    transform: scale(0.97) translateY(-16px);
+    filter: blur(6px);
+  }
+  40% {
+    filter: blur(1px);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.004) translateY(2px);
+    filter: blur(0);
+  }
+  85% {
+    transform: scale(0.999) translateY(-0.5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
   }
 }
 
 @theme {
   --tw-transition-duration: 0.3s;
 
-  /* Apple-like Easing Curves */
+  /* ── Easing Curves — organic, spring-like, character-rich ── */
   --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-heavy: cubic-bezier(0.22, 1.8, 0.36, 1);
+  --ease-spring-soft: cubic-bezier(0.38, 1.2, 0.54, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --ease-gentle: cubic-bezier(0.4, 0, 0, 1);
+  --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --ease-bounce: cubic-bezier(0.34, 1.7, 0.6, 0.9);
 
-  /* Animation Durations */
-  --duration-fast: 200ms;
-  --duration-base: 350ms;
-  --duration-slow: 500ms;
-  --duration-slower: 700ms;
+  /* ── Animation Durations — deliberate, refined ── */
+  --duration-fast: 300ms;
+  --duration-base: 500ms;
+  --duration-slow: 700ms;
+  --duration-slower: 1000ms;
+  --duration-dreamy: 1400ms;
 
   /* Awwwards Style Font Families */
   --font-serif: "Noto Serif SC Variable", serif;
@@ -193,28 +227,38 @@ mark {
     transition:
       background-color var(--duration-slow) var(--ease-apple),
       color var(--duration-slow) var(--ease-apple);
-    line-height: 1.6;
-    /* Warm layered background: subtle gradient wash + fine paper grain + geometric line art */
+    line-height: 1.65;
+    /* Rich layered background: gradient washes + paper grain + geometric accents + aurora tint */
     background-image:
-      /* 顶部到中部的渐变调色 — 让导航栏区域更通透 */
-      linear-gradient(
-        to bottom,
-        hsl(var(--background) / 0) 0%,
-        hsl(var(--accent) / 0.018) 30%,
-        hsl(var(--accent) / 0.008) 60%,
-        hsl(var(--background) / 0) 100%
+      /* 顶部柔光 radial — 让导航栏更通透 */
+      radial-gradient(
+        ellipse 100% 40% at 50% 0%,
+        hsl(var(--accent) / 0.03) 0%,
+        transparent 60%
       ),
       /* 大椭圆式的淡 accent 色渐变 — 左上 */
         radial-gradient(
-          ellipse 80% 60% at 20% 10%,
-          hsl(var(--accent) / 0.03) 0%,
-          transparent 60%
+          ellipse 80% 60% at 12% 6%,
+          hsl(var(--accent) / 0.04) 0%,
+          transparent 50%
         ),
       /* 大椭圆式的淡 accent 色渐变 — 右下 */
         radial-gradient(
-          ellipse 70% 50% at 85% 90%,
-          hsl(var(--accent) / 0.025) 0%,
+          ellipse 70% 50% at 90% 88%,
+          hsl(var(--accent) / 0.035) 0%,
+          transparent 45%
+        ),
+      /* 中央偏右的柔和暖光 */
+        radial-gradient(
+          ellipse 50% 40% at 65% 40%,
+          hsl(var(--accent) / 0.018) 0%,
           transparent 55%
+        ),
+      /* 左下方的微弱补色暖光 */
+        radial-gradient(
+          ellipse 40% 35% at 20% 75%,
+          hsl(var(--accent) / 0.015) 0%,
+          transparent 50%
         ),
       /* 细微纸纹颗粒 — 24px网格 */
         radial-gradient(
@@ -226,14 +270,23 @@ mark {
         circle at 75% 75%,
         hsl(var(--foreground) / 0.008) 1px,
         transparent 1px
-      );
+      ),
+      /* 极淡交叉点阵装饰 — 48px 网格 */
+        radial-gradient(
+          circle at 50% 50%,
+          hsl(var(--accent) / 0.008) 0.5px,
+          transparent 0.5px
+        );
     background-size:
       100% 100%,
       100% 100%,
       100% 100%,
+      100% 100%,
+      100% 100%,
       24px 24px,
-      24px 24px;
-    background-attachment: fixed, fixed, fixed, scroll, scroll;
+      24px 24px,
+      48px 48px;
+    background-attachment: fixed, fixed, fixed, fixed, fixed, scroll, scroll, scroll;
   }
 
   ::selection {
@@ -244,14 +297,19 @@ mark {
     @apply leading-relaxed;
   }
 
-  /* Apple-like stagger entrance animation with spring overshoot */
+  /* ── Apple-like stagger entrance with gentle spring overshoot ── */
   @keyframes apple-fade-up {
     from {
       opacity: 0;
       transform: translateY(20px);
     }
-    70% {
+    50% {
+      opacity: 0.85;
       transform: translateY(-3px);
+    }
+    75% {
+      opacity: 1;
+      transform: translateY(1px);
     }
     to {
       opacity: 1;
@@ -262,19 +320,32 @@ mark {
   @keyframes apple-fade-in {
     from {
       opacity: 0;
+      transform: scale(0.97);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.008);
     }
     to {
       opacity: 1;
+      transform: scale(1);
     }
   }
 
   @keyframes apple-scale-in {
     from {
       opacity: 0;
-      transform: scale(0.92);
+      transform: scale(0.88);
+    }
+    45% {
+      opacity: 1;
+      transform: scale(1.04);
     }
     70% {
-      transform: scale(1.02);
+      transform: scale(0.99);
+    }
+    85% {
+      transform: scale(1.005);
     }
     to {
       opacity: 1;
@@ -285,7 +356,14 @@ mark {
   @keyframes apple-slide-in-right {
     from {
       opacity: 0;
-      transform: translateX(-12px);
+      transform: translateX(-20px);
+    }
+    55% {
+      opacity: 1;
+      transform: translateX(4px);
+    }
+    75% {
+      transform: translateX(-1px);
     }
     to {
       opacity: 1;
@@ -293,16 +371,27 @@ mark {
     }
   }
 
-  /* Page entrance: lively content reveal with spring overshoot */
+  /* ── Page entrance: multi-stage spring with blur reveal ── */
   @keyframes page-enter {
     from {
       opacity: 0;
-      transform: translateY(16px) scale(0.98);
-      filter: blur(4px);
+      transform: translateY(20px) scale(0.97);
+      filter: blur(8px);
+    }
+    30% {
+      filter: blur(2px);
+      opacity: 0.6;
     }
     50% {
+      transform: translateY(-4px) scale(1.008);
       filter: blur(0);
-      transform: translateY(-2px) scale(1.005);
+      opacity: 0.95;
+    }
+    70% {
+      transform: translateY(1.5px) scale(0.999);
+    }
+    85% {
+      transform: translateY(-0.5px) scale(1.001);
     }
     to {
       opacity: 1;
@@ -311,26 +400,512 @@ mark {
     }
   }
 
-  /* Smooth card lift on hover */
+  /* ── Card hover glow — warm accent bloom ── */
   @keyframes card-glow {
     from {
       box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
     }
     to {
-      box-shadow: 0 2px 16px -4px hsl(var(--accent) / 0.08);
+      box-shadow:
+        0 8px 32px -6px hsl(var(--accent) / 0.1),
+        0 2px 8px -2px hsl(var(--accent) / 0.06),
+        inset 0 1px 0 0 hsl(var(--accent) / 0.04);
     }
   }
 
-  /* Ambient floating orb for hero decoration */
+  /* ── Ambient floating orb — dreamy organic drift ── */
   @keyframes ambient-float {
     0% {
-      transform: translate(0, 0) scale(1);
+      transform: translate(0, 0) scale(1) rotate(0deg);
     }
-    50% {
-      transform: translate(15px, -20px) scale(1.05);
+    20% {
+      transform: translate(8px, -14px) scale(1.03) rotate(1deg);
+    }
+    40% {
+      transform: translate(14px, -6px) scale(0.98) rotate(-0.5deg);
+    }
+    60% {
+      transform: translate(-6px, 10px) scale(1.05) rotate(0.8deg);
+    }
+    80% {
+      transform: translate(-10px, -4px) scale(0.97) rotate(-0.3deg);
     }
     100% {
-      transform: translate(-10px, 10px) scale(0.97);
+      transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+  }
+
+  /* ── Secondary floating orb — offset rhythm ── */
+  @keyframes ambient-drift {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.5;
+    }
+    25% {
+      transform: translate(-10px, 8px) scale(1.06);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translate(6px, 14px) scale(0.95);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translate(12px, -6px) scale(1.02);
+      opacity: 0.65;
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.5;
+    }
+  }
+
+  /* ── Gentle shimmer — breathing glow ── */
+  @keyframes shimmer {
+    0% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.85;
+    }
+    100% {
+      opacity: 0.4;
+    }
+  }
+
+  /* ── Aurora color shift — subtle hue rotation for decorative elements ── */
+  @keyframes aurora-shift {
+    0% {
+      filter: hue-rotate(0deg) brightness(1);
+    }
+    33% {
+      filter: hue-rotate(15deg) brightness(1.05);
+    }
+    66% {
+      filter: hue-rotate(-10deg) brightness(0.98);
+    }
+    100% {
+      filter: hue-rotate(0deg) brightness(1);
+    }
+  }
+
+  /* ── Magnetic hover — subtle attraction effect ── */
+  @keyframes magnetic-pull {
+    from {
+      transform: translateY(0) scale(1);
+    }
+    to {
+      transform: translateY(-3px) scale(1.015);
+    }
+  }
+
+  /* ── Gentle bounce for interactive elements ── */
+  @keyframes gentle-bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-6px);
+    }
+    60% {
+      transform: translateY(-2px);
+    }
+    80% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* ── Line grow — gentle reveal for decorative lines (no flash) ── */
+  @keyframes line-grow {
+    from {
+      transform: scaleX(0);
+      transform-origin: left;
+      opacity: 0;
+    }
+    60% {
+      opacity: 1;
+    }
+    to {
+      transform: scaleX(1);
+      transform-origin: left;
+      opacity: 1;
+    }
+  }
+
+  /* ── Particle float — for scattered decorative dots ── */
+  @keyframes particle-float {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.3;
+    }
+    25% {
+      transform: translate(4px, -8px) scale(1.2);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translate(-3px, -12px) scale(0.8);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translate(6px, -4px) scale(1.1);
+      opacity: 0.55;
+    }
+  }
+
+  /* ── Breathing scale — organic pulse ── */
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.9;
+    }
+  }
+
+  /* ── Stagger reveal helper — used with CSS custom properties ── */
+  @keyframes stagger-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.99);
+    }
+    65% {
+      opacity: 1;
+      transform: translateY(-1.5px) scale(1.002);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ── Ink spread — for text reveals ── */
+  @keyframes ink-reveal {
+    from {
+      opacity: 0;
+      filter: blur(3px);
+      transform: translateY(5px);
+    }
+    50% {
+      filter: blur(0.5px);
+      opacity: 0.8;
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+  }
+
+  /* ── Subtle border glow pulse ── */
+  @keyframes border-glow {
+    0%, 100% {
+      border-color: hsl(var(--border));
+    }
+    50% {
+      border-color: hsl(var(--accent) / 0.3);
+    }
+  }
+
+  /* ═══ Rich Animation Library — Jelly, Bounce, Elastic, Collision, Morph ═══ */
+
+  /* ── Jelly wobble — playful elastic squash+stretch ── */
+  @keyframes jelly {
+    0% {
+      opacity: 0;
+      transform: scale(0.7, 1.3) translateY(10px);
+    }
+    20% {
+      opacity: 1;
+      transform: scale(1.15, 0.85);
+    }
+    40% {
+      transform: scale(0.92, 1.08) translateY(-3px);
+    }
+    55% {
+      transform: scale(1.04, 0.96);
+    }
+    70% {
+      transform: scale(0.98, 1.02) translateY(1px);
+    }
+    85% {
+      transform: scale(1.01, 0.99);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1, 1) translateY(0);
+    }
+  }
+
+  /* ── Bounce drop — object falling with realistic bounce ── */
+  @keyframes bounce-drop {
+    0% {
+      opacity: 0;
+      transform: translateY(-40px) scaleY(1.1);
+    }
+    25% {
+      opacity: 1;
+      transform: translateY(0) scaleY(0.9) scaleX(1.05);
+    }
+    40% {
+      transform: translateY(-14px) scaleY(1.05) scaleX(0.98);
+    }
+    55% {
+      transform: translateY(0) scaleY(0.95) scaleX(1.02);
+    }
+    70% {
+      transform: translateY(-5px) scaleY(1.02);
+    }
+    82% {
+      transform: translateY(0) scaleY(0.99);
+    }
+    90% {
+      transform: translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ── Elastic scale — overshoot entrance with natural settle ── */
+  @keyframes elastic-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    28% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+    48% {
+      transform: scale(0.94);
+    }
+    64% {
+      transform: scale(1.04);
+    }
+    78% {
+      transform: scale(0.98);
+    }
+    88% {
+      transform: scale(1.01);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* ── Collision slide — element slides in and rebounds off edge ── */
+  @keyframes collision-left {
+    0% {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+    30% {
+      opacity: 1;
+      transform: translateX(8px);
+    }
+    50% {
+      transform: translateX(-4px);
+    }
+    70% {
+      transform: translateX(2px);
+    }
+    85% {
+      transform: translateX(-1px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes collision-right {
+    0% {
+      opacity: 0;
+      transform: translateX(60px);
+    }
+    30% {
+      opacity: 1;
+      transform: translateX(-8px);
+    }
+    50% {
+      transform: translateX(4px);
+    }
+    70% {
+      transform: translateX(-2px);
+    }
+    85% {
+      transform: translateX(1px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* ── Morph blob — smooth shape-shifting entrance ── */
+  @keyframes morph-in {
+    0% {
+      opacity: 0;
+      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+      transform: scale(0.8) rotate(-5deg);
+    }
+    40% {
+      opacity: 1;
+      border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%;
+      transform: scale(1.04) rotate(2deg);
+    }
+    70% {
+      border-radius: 50% 50% 50% 50%;
+      transform: scale(0.99) rotate(-0.5deg);
+    }
+    to {
+      opacity: 1;
+      border-radius: inherit;
+      transform: scale(1) rotate(0);
+    }
+  }
+
+  /* ── Typewriter reveal — characters appearing one by one feel ── */
+  @keyframes typewriter-reveal {
+    0% {
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      transform: translateX(-4px);
+    }
+    60% {
+      clip-path: inset(0 0% 0 0);
+      opacity: 1;
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0% 0 0);
+      transform: translateX(0);
+    }
+  }
+
+  /* ── Pop scale — quick attention-grabbing pop ── */
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    70% {
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* ── Float up — gentle rising with fade ── */
+  @keyframes float-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.96);
+      filter: blur(4px);
+    }
+    50% {
+      filter: blur(0);
+      opacity: 0.9;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* ── Swing in — pendulum-like entrance ── */
+  @keyframes swing-in {
+    0% {
+      opacity: 0;
+      transform: rotate(-8deg) translateY(10px);
+      transform-origin: top center;
+    }
+    40% {
+      opacity: 1;
+      transform: rotate(4deg) translateY(-3px);
+    }
+    60% {
+      transform: rotate(-2deg) translateY(1px);
+    }
+    80% {
+      transform: rotate(1deg);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0) translateY(0);
+    }
+  }
+
+  /* ═══ Elegant Loading Animations ═══ */
+
+  /* ── Dot cascade — three dots with staggered bounce ── */
+  @keyframes dot-bounce {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateY(-10px) scale(1.2);
+      opacity: 1;
+    }
+  }
+
+  /* ── Pulse ring — expanding ring from center ── */
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.6;
+      box-shadow: 0 0 0 0 hsl(var(--accent) / 0.3);
+    }
+    50% {
+      transform: scale(1);
+      opacity: 1;
+      box-shadow: 0 0 0 8px hsl(var(--accent) / 0);
+    }
+    100% {
+      transform: scale(0.8);
+      opacity: 0.6;
+      box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+    }
+  }
+
+  /* ── Bar wave — equalizer-like bars ── */
+  @keyframes bar-wave {
+    0%, 100% {
+      transform: scaleY(0.4);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  /* ── Skeleton shimmer — gradient sweep ── */
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* ── Orbit — circular orbit loading ── */
+  @keyframes orbit {
+    0% {
+      transform: rotate(0deg) translateX(12px) rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg) translateX(12px) rotate(-360deg);
     }
   }
 
@@ -491,6 +1066,210 @@ mark {
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-accent;
   }
+
+  /* ── Stagger delay utility — set --stagger-index via style prop ── */
+  .stagger-item {
+    animation: stagger-fade-up 700ms var(--ease-spring-soft) both;
+    animation-delay: calc(var(--stagger-index, 0) * 100ms);
+  }
+
+  /* ── Magnetic hover effect ── */
+  .hover-magnetic {
+    transition: transform 400ms cubic-bezier(0.34, 1.3, 0.64, 1),
+                box-shadow 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .hover-magnetic:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow:
+      0 8px 24px -6px hsl(var(--accent) / 0.08),
+      0 2px 8px -2px hsl(var(--foreground) / 0.04);
+  }
+  .hover-magnetic:active {
+    transform: translateY(-1px) scale(0.995);
+    transition-duration: 150ms;
+  }
+
+  /* ── Ink reveal text animation ── */
+  .ink-reveal {
+    animation: ink-reveal 900ms var(--ease-out-expo) both;
+  }
+
+  /* ── Ambient glow on hover ── */
+  .hover-glow {
+    position: relative;
+  }
+  .hover-glow::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    opacity: 0;
+    background: radial-gradient(
+      ellipse at 50% 50%,
+      hsl(var(--accent) / 0.06) 0%,
+      transparent 70%
+    );
+    transition: opacity 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .hover-glow:hover::after {
+    opacity: 1;
+  }
+
+  /* ── Decorative dot pattern — attach to a container ── */
+  .dot-pattern {
+    background-image: radial-gradient(
+      circle at center,
+      hsl(var(--accent) / 0.06) 1px,
+      transparent 1px
+    );
+    background-size: 20px 20px;
+  }
+
+  /* ── Breathing border animation ── */
+  .border-breathe {
+    animation: border-glow 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+
+  /* ═══ Rich Animation Utilities ═══ */
+
+  /* ── Jelly entrance ── */
+  .jelly-in {
+    animation: jelly 800ms var(--ease-spring) both;
+  }
+
+  /* ── Bounce drop entrance ── */
+  .bounce-in {
+    animation: bounce-drop 900ms var(--ease-spring-soft) both;
+  }
+
+  /* ── Elastic scale entrance ── */
+  .elastic-in {
+    animation: elastic-in 800ms var(--ease-spring) both;
+  }
+
+  /* ── Collision slide entrance ── */
+  .collision-left {
+    animation: collision-left 700ms var(--ease-spring-soft) both;
+  }
+  .collision-right {
+    animation: collision-right 700ms var(--ease-spring-soft) both;
+  }
+
+  /* ── Pop entrance ── */
+  .pop-in {
+    animation: pop 500ms var(--ease-spring) both;
+  }
+
+  /* ── Float up entrance ── */
+  .float-up {
+    animation: float-up 800ms var(--ease-out-expo) both;
+  }
+
+  /* ── Swing entrance ── */
+  .swing-in {
+    animation: swing-in 800ms var(--ease-spring-soft) both;
+  }
+
+  /* ── Stagger with jelly effect ── */
+  .stagger-jelly {
+    animation: jelly 800ms var(--ease-spring) both;
+    animation-delay: calc(var(--stagger-index, 0) * 80ms);
+  }
+
+  /* ── Stagger with bounce effect ── */
+  .stagger-bounce {
+    animation: bounce-drop 700ms var(--ease-spring-soft) both;
+    animation-delay: calc(var(--stagger-index, 0) * 70ms);
+  }
+
+  /* ── Stagger with float effect ── */
+  .stagger-float {
+    animation: float-up 700ms var(--ease-out-expo) both;
+    animation-delay: calc(var(--stagger-index, 0) * 90ms);
+  }
+
+  /* ═══ Elegant Loading Components ═══ */
+
+  /* ── Dot cascade loader ── */
+  .loading-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .loading-dots > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: hsl(var(--accent) / 0.6);
+    animation: dot-bounce 1.2s ease-in-out infinite;
+  }
+  .loading-dots > span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .loading-dots > span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  /* ── Pulse ring loader ── */
+  .loading-pulse {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: hsl(var(--accent) / 0.5);
+    animation: pulse-ring 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+
+  /* ── Bar wave loader (equalizer) ── */
+  .loading-bars {
+    display: inline-flex;
+    align-items: end;
+    gap: 3px;
+    height: 20px;
+  }
+  .loading-bars > span {
+    width: 3px;
+    height: 100%;
+    border-radius: 1.5px;
+    background-color: hsl(var(--accent) / 0.5);
+    transform-origin: bottom;
+    animation: bar-wave 1s ease-in-out infinite;
+  }
+  .loading-bars > span:nth-child(1) { animation-delay: 0s; }
+  .loading-bars > span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-bars > span:nth-child(3) { animation-delay: 0.3s; }
+  .loading-bars > span:nth-child(4) { animation-delay: 0.45s; }
+
+  /* ── Orbit loader ── */
+  .loading-orbit {
+    position: relative;
+    width: 28px;
+    height: 28px;
+  }
+  .loading-orbit::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: hsl(var(--accent) / 0.7);
+    top: 50%;
+    left: 50%;
+    margin: -3px 0 0 -3px;
+    animation: orbit 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  .loading-orbit::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: hsl(var(--accent) / 0.35);
+    top: 50%;
+    left: 50%;
+    margin: -2px 0 0 -2px;
+  }
 }
 
 /* Comment Highlight for Anchor Navigation */
@@ -511,5 +1290,23 @@ mark {
 
 .highlight-active {
   @apply relative scroll-mt-25;
-  animation: highlight-flash 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: highlight-flash 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ═══ Accessibility: Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep view transitions minimal but not disabled */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms !important;
+  }
 }

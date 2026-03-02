@@ -7,7 +7,7 @@ import {
 } from "../api/comments.admin.api";
 import { COMMENTS_KEYS } from "@/features/comments/queries";
 
-export function useComments(postId?: number) {
+export function useComments(postId?: number, guitarTabId?: number) {
   const queryClient = useQueryClient();
 
   const createCommentMutation = useMutation({
@@ -33,14 +33,14 @@ export function useComments(postId?: number) {
       return result.data;
     },
     onSuccess: () => {
-      // Invalidate both root comments and all replies queries for this post
-      if (postId) {
+      // Invalidate both root comments and all replies queries
+      if (postId || guitarTabId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENTS_KEYS.roots(postId),
+          queryKey: COMMENTS_KEYS.roots(postId, guitarTabId),
           exact: false,
         });
         queryClient.invalidateQueries({
-          queryKey: COMMENTS_KEYS.repliesLists(postId),
+          queryKey: COMMENTS_KEYS.repliesLists(postId, guitarTabId),
           exact: false,
         });
       }
@@ -63,14 +63,14 @@ export function useComments(postId?: number) {
   const deleteCommentMutation = useMutation({
     mutationFn: deleteCommentFn,
     onSuccess: () => {
-      // Invalidate both root comments and all replies queries for this post
-      if (postId) {
+      // Invalidate both root comments and all replies queries
+      if (postId || guitarTabId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENTS_KEYS.roots(postId),
+          queryKey: COMMENTS_KEYS.roots(postId, guitarTabId),
           exact: false,
         });
         queryClient.invalidateQueries({
-          queryKey: COMMENTS_KEYS.repliesLists(postId),
+          queryKey: COMMENTS_KEYS.repliesLists(postId, guitarTabId),
           exact: false,
         });
       }

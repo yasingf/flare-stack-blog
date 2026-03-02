@@ -1,6 +1,7 @@
 import { handleEmailMessage } from "@/features/email/email.queue";
 import { app } from "@/lib/hono";
 import { queueMessageSchema } from "@/lib/queue/queue.schema";
+import { runSlugMigrationIfNeeded } from "@/lib/slug-migration";
 
 export { CommentModerationWorkflow } from "@/features/comments/workflows/comment-moderation";
 export { ExportWorkflow } from "@/features/import-export/workflows/export.workflow";
@@ -24,6 +25,9 @@ declare module "@tanstack/react-start" {
 
 export default {
   fetch(request, env, ctx) {
+    // 一次性 slug 迁移（后台执行，不阻塞请求）
+    ctx.waitUntil(runSlugMigrationIfNeeded(env));
+
     return app.fetch(request, env, ctx);
   },
   async queue(batch, env) {

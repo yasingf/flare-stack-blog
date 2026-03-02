@@ -52,17 +52,36 @@ export class CommentModerationWorkflow extends WorkflowEntrypoint<Env, Params> {
 
     const post = await step.do("fetch post", async () => {
       const db = getDb(this.env);
-      return await PostService.findPostById(
-        { db, env: this.env },
-        { id: comment.postId },
-      );
+      if (comment.postId) {
+        return await PostService.findPostById(
+          { db, env: this.env },
+          { id: comment.postId },
+        );
+      }
+      // For guitar tab comments, look up the guitar tab info
+      if (comment.guitarTabId) {
+        const tab = await db.query.GuitarTabMetadataTable.findFirst({
+          where: (t, { eq }) => eq(t.id, comment.guitarTabId!),
+          columns: { slug: true, title: true },
+        });
+        if (tab) {
+          return {
+            title: tab.title || "吉他谱",
+            slug: tab.slug ?? String(comment.guitarTabId),
+            summary: null as string | null,
+            _isGuitarTab: true as const,
+          };
+        }
+      }
+      return null;
     });
 
     if (!post) {
       console.log(
         JSON.stringify({
-          message: "post not found, skipping moderation",
+          message: "target not found, skipping moderation",
           postId: comment.postId,
+          guitarTabId: comment.guitarTabId,
         }),
       );
       return;
@@ -186,6 +205,8 @@ export class CommentModerationWorkflow extends WorkflowEntrypoint<Env, Params> {
     if (moderationResult.safe && comment.replyToCommentId) {
       await step.do("send reply notification", async () => {
         const db = getDb(this.env);
+        const targetType =
+          "_isGuitarTab" in post ? "guitarTab" : "post";
         await sendReplyNotification(db, this.env, {
           comment: {
             id: comment.id,
@@ -194,7 +215,7 @@ export class CommentModerationWorkflow extends WorkflowEntrypoint<Env, Params> {
             userId: comment.userId,
             content: comment.content,
           },
-          post: { slug: post.slug, title: post.title },
+          target: { slug: post.slug, title: post.title, type: targetType },
         });
       });
     }

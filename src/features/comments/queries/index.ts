@@ -15,30 +15,42 @@ export const COMMENTS_KEYS = {
   admin: ["comments", "admin"] as const,
 
   // Child keys (functions for specific queries)
-  roots: (postId: number) => ["comments", "roots", postId] as const,
-  replies: (postId: number, rootId: number) =>
-    ["comments", "replies", postId, rootId] as const,
-  repliesLists: (postId: number) => ["comments", "replies", postId] as const,
+  roots: (postId?: number, guitarTabId?: number) =>
+    ["comments", "roots", { postId, guitarTabId }] as const,
+  replies: (postId?: number, guitarTabId?: number, rootId?: number) =>
+    ["comments", "replies", { postId, guitarTabId }, rootId] as const,
+  repliesLists: (postId?: number, guitarTabId?: number) =>
+    ["comments", "replies", { postId, guitarTabId }] as const,
   userStats: (userId: string) =>
     ["comments", "admin", "user-stats", userId] as const,
 };
 
-export function rootCommentsByPostIdQuery(postId: number, userId?: string) {
+export function rootCommentsByPostIdQuery(
+  postId?: number,
+  userId?: string,
+  guitarTabId?: number,
+) {
   return queryOptions({
-    queryKey: [...COMMENTS_KEYS.roots(postId), { userId }],
-    queryFn: () => getRootCommentsByPostIdFn({ data: { postId } }),
+    queryKey: [...COMMENTS_KEYS.roots(postId, guitarTabId), { userId }],
+    queryFn: () =>
+      getRootCommentsByPostIdFn({ data: { postId, guitarTabId } }),
   });
 }
 
 export function rootCommentsByPostIdInfiniteQuery(
-  postId: number,
+  postId?: number,
   userId?: string,
+  guitarTabId?: number,
 ) {
   return infiniteQueryOptions({
-    queryKey: [...COMMENTS_KEYS.roots(postId), "infinite", { userId }],
+    queryKey: [
+      ...COMMENTS_KEYS.roots(postId, guitarTabId),
+      "infinite",
+      { userId },
+    ],
     queryFn: ({ pageParam = 0 }) =>
       getRootCommentsByPostIdFn({
-        data: { postId, offset: pageParam, limit: 20 },
+        data: { postId, guitarTabId, offset: pageParam, limit: 20 },
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -52,15 +64,19 @@ export function rootCommentsByPostIdInfiniteQuery(
 }
 
 export function repliesByRootIdInfiniteQuery(
-  postId: number,
+  postId: number | undefined,
   rootId: number,
   userId?: string,
+  guitarTabId?: number,
 ) {
   return infiniteQueryOptions({
-    queryKey: [...COMMENTS_KEYS.replies(postId, rootId), { userId }],
+    queryKey: [
+      ...COMMENTS_KEYS.replies(postId, guitarTabId, rootId),
+      { userId },
+    ],
     queryFn: ({ pageParam = 0 }) =>
       getRepliesByRootIdFn({
-        data: { postId, rootId, offset: pageParam, limit: 20 },
+        data: { postId, guitarTabId, rootId, offset: pageParam, limit: 20 },
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {

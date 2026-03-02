@@ -33,7 +33,9 @@ export async function findByFileHash(
         uploaderId: GuitarTabMetadataTable.uploaderId,
         fileHash: GuitarTabMetadataTable.fileHash,
         slug: GuitarTabMetadataTable.slug,
+        legacySlug: GuitarTabMetadataTable.legacySlug,
         status: GuitarTabMetadataTable.status,
+        viewCount: GuitarTabMetadataTable.viewCount,
         createdAt: GuitarTabMetadataTable.createdAt,
         updatedAt: GuitarTabMetadataTable.updatedAt,
         fileName: MediaTable.fileName,
@@ -129,7 +131,9 @@ export async function getByMediaIdWithCover(
         uploaderId: GuitarTabMetadataTable.uploaderId,
         fileHash: GuitarTabMetadataTable.fileHash,
         slug: GuitarTabMetadataTable.slug,
+        legacySlug: GuitarTabMetadataTable.legacySlug,
         status: GuitarTabMetadataTable.status,
+        viewCount: GuitarTabMetadataTable.viewCount,
         createdAt: GuitarTabMetadataTable.createdAt,
         updatedAt: GuitarTabMetadataTable.updatedAt,
         coverKey: coverMedia.key,
@@ -360,21 +364,72 @@ export interface GuitarTabDetail {
   uploaderImage: string | null;
   slug: string | null;
   status: GuitarTabStatus;
+  viewCount: number;
   createdAt: Date;
 }
 
 /**
  * 根据 slug 获取吉他谱详情（仅 approved）
+ * 支持 8 位短 ID 解码和文本 slug 回退
  */
 export async function getBySlug(
   db: DB,
   slug: string,
 ): Promise<GuitarTabDetail | null> {
+  const { isShortId, decodeId } = await import("@/lib/short-id");
+
   const coverMedia = db
     .select({ id: MediaTable.id, key: MediaTable.key })
     .from(MediaTable)
     .as("cover_media");
 
+  // 尝试通过短 ID 解码为元数据 ID 查询
+  if (isShortId(slug)) {
+    try {
+      const metadataId = decodeId(slug);
+      const result = (
+        await db
+          .select({
+            id: GuitarTabMetadataTable.id,
+            mediaId: GuitarTabMetadataTable.mediaId,
+            key: MediaTable.key,
+            fileName: MediaTable.fileName,
+            sizeInBytes: MediaTable.sizeInBytes,
+            title: GuitarTabMetadataTable.title,
+            artist: GuitarTabMetadataTable.artist,
+            album: GuitarTabMetadataTable.album,
+            tempo: GuitarTabMetadataTable.tempo,
+            trackCount: GuitarTabMetadataTable.trackCount,
+            trackNames: GuitarTabMetadataTable.trackNames,
+            coverKey: coverMedia.key,
+            uploaderName: user.name,
+            uploaderImage: user.image,
+            slug: GuitarTabMetadataTable.slug,
+            status: GuitarTabMetadataTable.status,
+            viewCount: GuitarTabMetadataTable.viewCount,
+            createdAt: GuitarTabMetadataTable.createdAt,
+          })
+          .from(GuitarTabMetadataTable)
+          .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
+          .leftJoin(
+            coverMedia,
+            eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
+          )
+          .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
+          .where(
+            and(
+              eq(GuitarTabMetadataTable.id, metadataId),
+              eq(GuitarTabMetadataTable.status, "approved"),
+            ),
+          )
+          .limit(1)
+      ).at(0);
+
+      if (result) return result as GuitarTabDetail;
+    } catch { /* decode failed, fallback */ }
+  }
+
+  // 回退：按文本 slug 查询（兼容旧数据）
   const result = (
     await db
       .select({
@@ -394,6 +449,7 @@ export async function getBySlug(
         uploaderImage: user.image,
         slug: GuitarTabMetadataTable.slug,
         status: GuitarTabMetadataTable.status,
+        viewCount: GuitarTabMetadataTable.viewCount,
         createdAt: GuitarTabMetadataTable.createdAt,
       })
       .from(GuitarTabMetadataTable)
@@ -483,6 +539,21 @@ export async function getRelatedTabs(
 }
 
 /**
+ * 增加浏览次数
+ */
+export async function incrementViewCount(
+  db: DB,
+  metadataId: number,
+): Promise<void> {
+  await db
+    .update(GuitarTabMetadataTable)
+    .set({
+      viewCount: sql`${GuitarTabMetadataTable.viewCount} + 1`,
+    })
+    .where(eq(GuitarTabMetadataTable.id, metadataId));
+}
+
+/**
  * 更新 slug
  */
 export async function updateSlug(
@@ -517,6 +588,17 @@ export async function getAllApprovedSlugs(
     .orderBy(desc(GuitarTabMetadataTable.updatedAt));
 
   return results as Array<{ slug: string; updatedAt: Date }>;
+}
+
+/**
+ * 获取已审核通过的吉他谱总数（公开统计用）
+ */
+export async function getApprovedCount(db: DB): Promise<number> {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(GuitarTabMetadataTable)
+    .where(eq(GuitarTabMetadataTable.status, "approved"));
+  return result.count;
 }
 
 /**

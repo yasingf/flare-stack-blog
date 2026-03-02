@@ -142,7 +142,16 @@ export function PostsPage({
             </p>
           </div>
         ) : (
-          posts.map((post) => <PostItem key={post.id} post={post} />)
+          posts.map((post, i) => (
+            <div
+              key={post.id}
+              style={{
+                animation: `apple-fade-up 600ms var(--ease-spring-soft) ${Math.min(80 + i * 50, 600)}ms both`,
+              }}
+            >
+              <PostItem post={post} />
+            </div>
+          ))
         )}
       </div>
 
@@ -153,7 +162,11 @@ export function PostsPage({
       >
         {isFetchingNextPage ? (
           <div className="flex flex-col items-center gap-4 animate-in fade-in duration-500 fill-mode-both">
-            <div className="w-1.5 h-1.5 bg-foreground animate-ping" />
+            <div className="loading-dots">
+              <span />
+              <span />
+              <span />
+            </div>
             <span className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground uppercase">
               加载中...
             </span>

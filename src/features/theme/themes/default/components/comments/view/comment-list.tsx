@@ -14,7 +14,8 @@ type RootCommentWithUser = RootCommentWithReplyCount;
 
 interface CommentListProps {
   rootComments: Array<RootCommentWithUser>;
-  postId: number;
+  postId?: number;
+  guitarTabId?: number;
   onReply?: (rootId: number, commentId: number, userName: string) => void;
   onDelete?: (commentId: number) => void;
   replyTarget?: { rootId: number; commentId: number; userName: string } | null;
@@ -28,6 +29,7 @@ interface CommentListProps {
 export const CommentList = ({
   rootComments,
   postId,
+  guitarTabId,
   onReply,
   onDelete,
   replyTarget,
@@ -75,6 +77,7 @@ export const CommentList = ({
           key={root.id}
           root={root}
           postId={postId}
+          guitarTabId={guitarTabId}
           isExpanded={expandedRoots.has(root.id)}
           onToggleExpand={() => toggleExpand(root.id)}
           onReply={onReply}
@@ -93,7 +96,8 @@ export const CommentList = ({
 
 interface RootCommentWithRepliesProps {
   root: RootCommentWithUser;
-  postId: number;
+  postId?: number;
+  guitarTabId?: number;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onReply?: (rootId: number, commentId: number, userName: string) => void;
@@ -109,6 +113,7 @@ interface RootCommentWithRepliesProps {
 function RootCommentWithReplies({
   root,
   postId,
+  guitarTabId,
   isExpanded,
   onToggleExpand,
   onReply,
@@ -126,7 +131,7 @@ function RootCommentWithReplies({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    repliesByRootIdInfiniteQuery(postId, root.id, session?.user.id),
+    repliesByRootIdInfiniteQuery(postId, root.id, session?.user.id, guitarTabId),
   );
 
   const allReplies = repliesData?.pages.flatMap((page) => page.items) ?? [];
