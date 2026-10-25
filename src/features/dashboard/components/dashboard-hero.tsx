@@ -2,6 +2,7 @@ import { Link, useRouteContext } from "@tanstack/react-router";
 import { ArrowRight, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button, buttonClass } from "@/components/ui/button";
+import { classicConfig } from "@/components/layout/classic/classic-config";
 import type { DashboardOverview } from "@/features/dashboard/dashboard.schema";
 import {
   getPublicImageSrc,
@@ -70,10 +71,9 @@ export function DashboardHero({
   isCreating: boolean;
   createLabel: string;
 }) {
-  const { siteConfig } = useRouteContext({ from: "__root__" });
   const { session } = useRouteContext({ from: "/admin" });
   const [imageFailed, setImageFailed] = useState(false);
-  const banner = siteConfig.theme.fuwari.homeBg;
+  const banner = classicConfig.theme.default.background.homeImage;
   const image =
     banner && !imageFailed
       ? getPublicImageSrc(banner, PUBLIC_IMAGE_WIDTH.banner)
