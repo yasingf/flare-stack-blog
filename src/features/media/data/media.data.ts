@@ -1,16 +1,48 @@
-import { and, count, desc, eq, lt, or, sql, sum } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import type { MediaCategory } from "@/features/media/media.schema";
-import type { GuitarTabStatus } from "@/lib/db/schema/guitar-tab-metadata.table";
+import { and, count, desc, eq, inArray, lt, or, sql, sum } from "drizzle-orm";
 import { escapeLikeString } from "@/features/media/data/helper";
 import {
-  GuitarTabMetadataTable,
   MediaTable,
   PostMediaTable,
+  PostsTable,
+  GuitarTabMetadataTable,
   user,
 } from "@/lib/db/schema";
 
 export type Media = typeof MediaTable.$inferSelect;
+
+// An Admin's avatar picked from the media library is a reference, like a Post
+// image. Other users' avatar URLs are not, so they cannot pin media.
+const usedAsAdminAvatar = sql`exists (select 1 from ${user} where ${user.role} = 'admin' and instr(${user.image}, '/images/' || ${MediaTable.key}) > 0)`;
+
+const usedByGuitar = sql`exists (select 1 from ${GuitarTabMetadataTable} where ${GuitarTabMetadataTable.mediaId} = ${MediaTable.id} or ${GuitarTabMetadataTable.coverMediaId} = ${MediaTable.id})`;
+const usedAsUploadedAvatar = sql`${MediaTable.key} like 'avatars/%' and exists (select 1 from ${user} where instr(${user.image}, '/images/' || ${MediaTable.key}) > 0)`;
+const unreferenced = sql`not ${usedByGuitar} and not (${usedAsUploadedAvatar}) and not exists (select 1 from ${PostMediaTable} where ${PostMediaTable.mediaId} = ${MediaTable.id}) and not ${usedAsAdminAvatar}`;
+
+export async function isUsedAsAdminAvatar(db: DB, key: string) {
+  const rows = await db
+    .select({ id: MediaTable.id })
+    .from(MediaTable)
+    .where(and(eq(MediaTable.key, key), usedAsAdminAvatar))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function isUsedByForkContent(db: DB, key: string) {
+  const coverReference = sql`exists (select 1 from ${GuitarTabMetadataTable} where ${GuitarTabMetadataTable.coverMediaId} = ${MediaTable.id})`;
+  const rows = await db
+    .select({ id: MediaTable.id })
+    .from(MediaTable)
+    .where(
+      and(eq(MediaTable.key, key), or(coverReference, usedAsUploadedAvatar)),
+    )
+    .limit(1);
+  return rows.length > 0;
+}
+export type MediaListItem = Media & {
+  postCount: number;
+  isCover: boolean;
+};
 
 export async function insertMedia(
   db: DB,
@@ -18,6 +50,27 @@ export async function insertMedia(
 ): Promise<Media> {
   const [inserted] = await db.insert(MediaTable).values(data).returning();
   return inserted;
+}
+
+export async function findMediaById(db: DB, id: number): Promise<Media | null> {
+  const [media] = await db
+    .select()
+    .from(MediaTable)
+    .where(eq(MediaTable.id, id))
+    .limit(1);
+  return media ?? null;
+}
+
+export async function findMediaByKey(
+  db: DB,
+  key: string,
+): Promise<Media | null> {
+  const [media] = await db
+    .select()
+    .from(MediaTable)
+    .where(eq(MediaTable.key, key))
+    .limit(1);
+  return media ?? null;
 }
 
 export async function deleteMedia(db: DB, key: string) {
@@ -31,15 +84,35 @@ export async function updateMediaName(db: DB, key: string, name: string) {
     .where(eq(MediaTable.key, key));
 }
 
+export async function updateMediaFile(
+  db: DB,
+  key: string,
+  data: {
+    url: string;
+    fileName: string;
+    mimeType: string;
+    sizeInBytes: number;
+    width: number | null | undefined;
+    height: number | null | undefined;
+  },
+): Promise<Media | null> {
+  const [updated] = await db
+    .update(MediaTable)
+    .set({
+      url: data.url,
+      fileName: data.fileName,
+      mimeType: data.mimeType,
+      sizeInBytes: data.sizeInBytes,
+      width: data.width ?? null,
+      height: data.height ?? null,
+    })
+    .where(eq(MediaTable.key, key))
+    .returning();
+  return updated ?? null;
+}
+
 const DEFAULT_PAGE_SIZE = 20;
 
-/**
- * 获取媒体列表 (Cursor-based pagination)
- * @param cursor - 上一页最后一条记录的 id，用于分页
- * @param limit - 每页数量
- * @param search - 搜索文件名
- * @param unusedOnly - 是否只显示未被引用的媒体
- */
 export async function getMediaList(
   db: DB,
   options?: {
@@ -47,18 +120,15 @@ export async function getMediaList(
     limit?: number;
     search?: string;
     unusedOnly?: boolean;
-    category?: MediaCategory;
   },
-): Promise<{ items: Array<Media>; nextCursor: number | null }> {
+): Promise<{ items: Array<MediaListItem>; nextCursor: number | null }> {
   const {
     cursor,
     limit = DEFAULT_PAGE_SIZE,
     search,
     unusedOnly,
-    category,
   } = options ?? {};
 
-  // 构建条件
   const conditions: Array<SQL> = [];
   if (cursor) {
     conditions.push(lt(MediaTable.id, cursor));
@@ -68,341 +138,116 @@ export async function getMediaList(
     conditions.push(sql`${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\'`);
   }
 
-  // 按类别过滤
-  if (category) {
-    switch (category) {
-      case "image":
-        conditions.push(sql`${MediaTable.mimeType} LIKE 'image/%'`);
-        // 排除专辑封面和头像（它们有特殊前缀）
-        conditions.push(
-          sql`${MediaTable.key} NOT LIKE 'album-covers/%'`,
-          sql`${MediaTable.key} NOT LIKE 'avatars/%'`,
-        );
-        break;
-      case "guitar-pro":
-        conditions.push(
-          or(
-            sql`${MediaTable.mimeType} = 'application/x-guitar-pro'`,
-            sql`(${MediaTable.mimeType} = 'application/octet-stream' AND (${MediaTable.key} LIKE '%.gp3' OR ${MediaTable.key} LIKE '%.gp4' OR ${MediaTable.key} LIKE '%.gp5' OR ${MediaTable.key} LIKE '%.gpx' OR ${MediaTable.key} LIKE '%.gp'))`,
-          )!,
-        );
-        break;
-      case "video":
-        conditions.push(sql`${MediaTable.mimeType} LIKE 'video/%'`);
-        break;
-      case "audio":
-        conditions.push(sql`${MediaTable.mimeType} LIKE 'audio/%'`);
-        break;
-      case "album-cover":
-        conditions.push(sql`${MediaTable.key} LIKE 'album-covers/%'`);
-        break;
-      case "avatar":
-        conditions.push(sql`${MediaTable.key} LIKE 'avatars/%'`);
-        break;
-    }
-  }
-
-  // 基础查询
-  const baseQuery = db.select().from(MediaTable).$dynamic();
-
-  // 如果只需要未引用的媒体
   if (unusedOnly) {
-    // 使用 LEFT JOIN 排除存在于 PostMediaTable 中的记录
-    const unusedQuery = db
-      .select({
-        media: MediaTable,
-        postMediaId: PostMediaTable.postId,
-      })
-      .from(MediaTable)
-      .leftJoin(PostMediaTable, eq(MediaTable.id, PostMediaTable.mediaId))
-      .$dynamic();
-
-    conditions.push(sql`${PostMediaTable.postId} IS NULL`);
-
-    const items = await unusedQuery
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(MediaTable.id))
-      .limit(limit + 1)
-      .then((rows) => rows.map((row) => row.media));
-
-    // 判断是否有下一页
-    const hasMore = items.length > limit;
-    if (hasMore) {
-      items.pop(); // 移除多取的一条
-    }
-
-    const nextCursor = hasMore ? (items[items.length - 1]?.id ?? null) : null;
-
-    return { items, nextCursor };
+    conditions.push(unreferenced);
   }
 
-  // 常规查询
-  const items = await baseQuery
+  const items: Array<Media> = await db
+    .select()
+    .from(MediaTable)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(MediaTable.id))
     .limit(limit + 1);
 
-  // 判断是否有下一页
   const hasMore = items.length > limit;
   if (hasMore) {
-    items.pop(); // 移除多取的一条
+    items.pop();
   }
 
   const nextCursor = hasMore ? (items[items.length - 1]?.id ?? null) : null;
 
-  return { items, nextCursor };
+  return { items: await withUsage(db, items), nextCursor };
+}
+
+export async function getUnusedMediaKeys(db: DB): Promise<Array<string>> {
+  const rows = await db
+    .select({ key: MediaTable.key })
+    .from(MediaTable)
+    .where(unreferenced);
+  return rows.map((row) => row.key);
+}
+
+export async function getMediaStats(db: DB) {
+  const [totals] = await db
+    .select({
+      totalCount: count(),
+      totalBytes: sum(MediaTable.sizeInBytes),
+    })
+    .from(MediaTable);
+
+  const [unused] = await db
+    .select({ unusedCount: count() })
+    .from(MediaTable)
+    .where(unreferenced);
+
+  return {
+    totalCount: Number(totals.totalCount ?? 0),
+    unusedCount: Number(unused.unusedCount ?? 0),
+    totalBytes: Number(totals.totalBytes ?? 0),
+  };
 }
 
 export async function getTotalMediaSize(db: DB) {
-  const [result] = await db
-    .select({ total: sum(MediaTable.sizeInBytes) })
-    .from(MediaTable);
-
-  return Number(result.total ?? 0);
+  const stats = await getMediaStats(db);
+  return stats.totalBytes;
 }
 
-// ── 吉他谱列表（含元数据 + 封面） ────────────────────
+const snapshotCoverMediaId = sql<
+  number | null
+>`json_extract(${PostsTable.publicSnapshotJson}, '$.cover.mediaId')`;
 
-export interface GuitarTabWithMeta {
-  id: number;
-  key: string;
-  fileName: string;
-  sizeInBytes: number;
-  createdAt: Date;
-  // 元数据
-  title: string | null;
-  artist: string | null;
-  album: string | null;
-  tempo: number | null;
-  trackCount: number | null;
-  trackNames: string | null;
-  // 封面
-  coverKey: string | null;
-  // 上传者
-  uploaderName: string | null;
-  uploaderImage: string | null;
-  uploaderEmail: string | null;
-  // slug
-  slug: string | null;
-  // 状态
-  status: GuitarTabStatus;
-  // 浏览量
-  viewCount: number | null;
-}
-
-/**
- * 公开吉他谱列表（分页）— 只返回 approved 状态
- */
-export async function getGuitarTabsWithMetaPaginated(
+async function withUsage(
   db: DB,
-  options?: { page?: number; pageSize?: number; search?: string },
-): Promise<{
-  items: Array<GuitarTabWithMeta>;
-  total: number;
-  page: number;
-  pageSize: number;
-}> {
-  const { page = 1, pageSize = 20, search } = options ?? {};
-  const offset = (page - 1) * pageSize;
+  items: Array<Media>,
+): Promise<Array<MediaListItem>> {
+  if (items.length === 0) return [];
 
-  const conditions: Array<SQL> = [];
+  const ids = items.map((item) => item.id);
+  const [countRows, coverRows] = await Promise.all([
+    db
+      .select({
+        mediaId: PostMediaTable.mediaId,
+        postCount: count(),
+      })
+      .from(PostMediaTable)
+      .where(inArray(PostMediaTable.mediaId, ids))
+      .groupBy(PostMediaTable.mediaId),
+    db
+      .select({
+        coverMediaId: PostsTable.coverMediaId,
+        snapshotCoverMediaId,
+      })
+      .from(PostsTable)
+      .where(
+        or(
+          inArray(PostsTable.coverMediaId, ids),
+          inArray(snapshotCoverMediaId, ids),
+        ),
+      ),
+  ]);
 
-  if (search) {
-    const pattern = `%${escapeLikeString(search)}%`;
-    conditions.push(
-      or(
-        sql`${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\'`,
-        sql`${GuitarTabMetadataTable.title} LIKE ${pattern} ESCAPE '\\'`,
-        sql`${GuitarTabMetadataTable.artist} LIKE ${pattern} ESCAPE '\\'`,
-      )!,
-    );
+  const postCountById = new Map(
+    countRows.map((row) => [row.mediaId, Number(row.postCount)]),
+  );
+  const coverIds = new Set<number>();
+  for (const row of coverRows) {
+    if (row.coverMediaId != null) coverIds.add(row.coverMediaId);
+    if (row.snapshotCoverMediaId != null) {
+      coverIds.add(Number(row.snapshotCoverMediaId));
+    }
   }
 
-  // Guitar Pro 类型过滤
-  conditions.push(
-    or(
-      sql`${MediaTable.mimeType} = 'application/x-guitar-pro'`,
-      sql`(${MediaTable.mimeType} = 'application/octet-stream' AND (${MediaTable.key} LIKE '%.gp3' OR ${MediaTable.key} LIKE '%.gp4' OR ${MediaTable.key} LIKE '%.gp5' OR ${MediaTable.key} LIKE '%.gpx' OR ${MediaTable.key} LIKE '%.gp'))`,
-    )!,
-  );
-
-  // 只显示已通过审核的
-  conditions.push(
-    sql`(${GuitarTabMetadataTable.status} = 'approved' OR ${GuitarTabMetadataTable.status} IS NULL)`,
-  );
-
-  const coverMedia = db
-    .select({ id: MediaTable.id, key: MediaTable.key })
-    .from(MediaTable)
-    .as("cover_media");
-
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-  // 查询总数
-  const [{ totalCount }] = await db
-    .select({ totalCount: count() })
-    .from(MediaTable)
-    .leftJoin(
-      GuitarTabMetadataTable,
-      eq(MediaTable.id, GuitarTabMetadataTable.mediaId),
-    )
-    .where(whereClause);
-
-  // 查询数据
-  const rows = await db
-    .select({
-      id: MediaTable.id,
-      key: MediaTable.key,
-      fileName: MediaTable.fileName,
-      sizeInBytes: MediaTable.sizeInBytes,
-      createdAt: MediaTable.createdAt,
-      title: GuitarTabMetadataTable.title,
-      artist: GuitarTabMetadataTable.artist,
-      album: GuitarTabMetadataTable.album,
-      tempo: GuitarTabMetadataTable.tempo,
-      trackCount: GuitarTabMetadataTable.trackCount,
-      trackNames: GuitarTabMetadataTable.trackNames,
-      coverKey: coverMedia.key,
-      uploaderName: user.name,
-      uploaderImage: user.image,
-      uploaderEmail: user.email,
-      slug: GuitarTabMetadataTable.slug,
-      status: GuitarTabMetadataTable.status,
-      viewCount: GuitarTabMetadataTable.viewCount,
-    })
-    .from(MediaTable)
-    .leftJoin(
-      GuitarTabMetadataTable,
-      eq(MediaTable.id, GuitarTabMetadataTable.mediaId),
-    )
-    .leftJoin(
-      coverMedia,
-      eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
-    )
-    .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
-    .where(whereClause)
-    .orderBy(desc(MediaTable.id))
-    .limit(pageSize)
-    .offset(offset);
-
-  const items: Array<GuitarTabWithMeta> = rows.map((r) => ({
-    ...r,
-    status: r.status ?? "approved",
+  return items.map((item) => ({
+    ...item,
+    postCount: postCountById.get(item.id) ?? 0,
+    isCover: coverIds.has(item.id),
   }));
-
-  return { items, total: totalCount, page, pageSize };
 }
 
-/**
- * 管理后台吉他谱列表（cursor-based，含全部状态）
- */
-export async function getGuitarTabsWithMeta(
-  db: DB,
-  options?: {
-    cursor?: number;
-    limit?: number;
-    search?: string;
-    status?: GuitarTabStatus;
-  },
-): Promise<{ items: Array<GuitarTabWithMeta>; nextCursor: number | null }> {
-  const { cursor, limit = 20, search, status: statusFilter } = options ?? {};
-
-  const conditions: Array<SQL> = [];
-  if (cursor) {
-    conditions.push(lt(MediaTable.id, cursor));
-  }
-  if (search) {
-    const pattern = `%${escapeLikeString(search)}%`;
-    // 搜索 fileName 和 metadata 的 title / artist
-    conditions.push(
-      or(
-        sql`${MediaTable.fileName} LIKE ${pattern} ESCAPE '\\'`,
-        sql`${GuitarTabMetadataTable.title} LIKE ${pattern} ESCAPE '\\'`,
-        sql`${GuitarTabMetadataTable.artist} LIKE ${pattern} ESCAPE '\\'`,
-      )!,
-    );
-  }
-
-  // Guitar Pro 类型过滤
-  conditions.push(
-    or(
-      sql`${MediaTable.mimeType} = 'application/x-guitar-pro'`,
-      sql`(${MediaTable.mimeType} = 'application/octet-stream' AND (${MediaTable.key} LIKE '%.gp3' OR ${MediaTable.key} LIKE '%.gp4' OR ${MediaTable.key} LIKE '%.gp5' OR ${MediaTable.key} LIKE '%.gpx' OR ${MediaTable.key} LIKE '%.gp'))`,
-    )!,
-  );
-
-  // 按状态过滤
-  if (statusFilter) {
-    conditions.push(eq(GuitarTabMetadataTable.status, statusFilter));
-  }
-
-  // 这里用一个 cover alias 来 JOIN 封面图
-  const coverMedia = db
-    .select({
-      id: MediaTable.id,
-      key: MediaTable.key,
-    })
-    .from(MediaTable)
-    .as("cover_media");
-
+export async function deleteUnusedMedia(db: DB): Promise<Array<string>> {
   const rows = await db
-    .select({
-      id: MediaTable.id,
-      key: MediaTable.key,
-      fileName: MediaTable.fileName,
-      sizeInBytes: MediaTable.sizeInBytes,
-      createdAt: MediaTable.createdAt,
-      title: GuitarTabMetadataTable.title,
-      artist: GuitarTabMetadataTable.artist,
-      album: GuitarTabMetadataTable.album,
-      tempo: GuitarTabMetadataTable.tempo,
-      trackCount: GuitarTabMetadataTable.trackCount,
-      trackNames: GuitarTabMetadataTable.trackNames,
-      coverKey: coverMedia.key,
-      uploaderName: user.name,
-      uploaderImage: user.image,
-      uploaderEmail: user.email,
-      slug: GuitarTabMetadataTable.slug,
-      status: GuitarTabMetadataTable.status,
-      viewCount: GuitarTabMetadataTable.viewCount,
-    })
-    .from(MediaTable)
-    .leftJoin(
-      GuitarTabMetadataTable,
-      eq(MediaTable.id, GuitarTabMetadataTable.mediaId),
-    )
-    .leftJoin(
-      coverMedia,
-      eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
-    )
-    .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(MediaTable.id))
-    .limit(limit + 1);
-
-  const hasMore = rows.length > limit;
-  if (hasMore) rows.pop();
-  const nextCursor = hasMore ? (rows[rows.length - 1]?.id ?? null) : null;
-
-  const items: Array<GuitarTabWithMeta> = rows.map((r) => ({
-    ...r,
-    status: r.status ?? "approved",
-  }));
-
-  return { items, nextCursor };
-}
-
-/**
- * 根据 media key 获取 media ID
- */
-export async function getMediaByKey(
-  db: DB,
-  key: string,
-): Promise<Media | undefined> {
-  const [result] = await db
-    .select()
-    .from(MediaTable)
-    .where(eq(MediaTable.key, key))
-    .limit(1);
-  return result;
+    .delete(MediaTable)
+    .where(unreferenced)
+    .returning({ key: MediaTable.key });
+  return rows.map((row) => row.key);
 }

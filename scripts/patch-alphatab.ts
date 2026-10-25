@@ -46,5 +46,7 @@ if (patched) {
   writeFileSync(TARGET, code, "utf-8");
   console.log("[patch-alphatab] ✓ BeamingHelper null guard applied");
 } else {
-  console.log("[patch-alphatab] Already patched or pattern not found, skipping.");
+  console.log(
+    "[patch-alphatab] Already patched or pattern not found, skipping.",
+  );
 }

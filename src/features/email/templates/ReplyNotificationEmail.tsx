@@ -1,88 +1,60 @@
-import { EmailLayout } from "./EmailLayout";
+import type { Locale } from "@/lib/i18n";
+import { m } from "@/paraglide/messages";
+import {
+  EmailButton,
+  EmailDivider,
+  EmailHeading,
+  EmailLayout,
+  EmailLink,
+  EmailNote,
+  EmailPanel,
+  EmailText,
+} from "./EmailLayout";
+import type { EmailSite } from "./email-theme";
 
 interface ReplyNotificationEmailProps {
+  commentUrl: string;
+  locale: Locale;
   postTitle: string;
   replierName: string;
   replyPreview: string;
-  commentUrl: string;
+  site: EmailSite;
   unsubscribeUrl: string;
 }
 
 export const ReplyNotificationEmail = ({
+  commentUrl,
+  locale,
   postTitle,
   replierName,
   replyPreview,
-  commentUrl,
+  site,
   unsubscribeUrl,
 }: ReplyNotificationEmailProps) => {
   return (
     <EmailLayout
-      previewText={`${replierName} 回复了您在《${postTitle}》下的评论`}
+      locale={locale}
+      site={site}
+      previewText={m.email_comment_reply_preview(
+        { replierName, postTitle },
+        { locale },
+      )}
     >
-      <h1
-        style={{
-          fontFamily: '"Playfair Display", "Georgia", serif',
-          fontSize: "20px",
-          fontWeight: "500",
-          color: "#1a1a1a",
-          marginBottom: "24px",
-          lineHeight: "1.4",
-        }}
-      >
-        收到新的回复
-      </h1>
-      <p style={{ fontSize: "14px", color: "#444", lineHeight: "1.6" }}>
-        <strong>{replierName}</strong> 回复了您的评论：
-      </p>
-      <blockquote
-        style={{
-          borderLeft: "2px solid #e5e5e5",
-          margin: "24px 0",
-          paddingLeft: "16px",
-          fontStyle: "italic",
-          color: "#666",
-          fontSize: "14px",
-          lineHeight: "1.6",
-        }}
-      >
-        {replyPreview}
-      </blockquote>
-      <div style={{ marginTop: "32px", marginBottom: "40px" }}>
-        <a
-          href={commentUrl}
-          style={{
-            backgroundColor: "#1a1a1a",
-            color: "#ffffff",
-            padding: "12px 24px",
-            textDecoration: "none",
-            fontSize: "13px",
-            display: "inline-block",
-            letterSpacing: "0.05em",
-          }}
-        >
-          查看完整回复
-        </a>
-      </div>
-      <div
-        style={{
-          paddingTop: "20px",
-          borderTop: "1px solid #f9f9f9",
-        }}
-      >
-        <p style={{ fontSize: "12px", color: "#999", margin: "0" }}>
-          不想再接收此类通知？
-          <a
-            href={unsubscribeUrl}
-            style={{
-              color: "#999",
-              textDecoration: "underline",
-              marginLeft: "4px",
-            }}
-          >
-            一键退订
-          </a>
-        </p>
-      </div>
+      <EmailHeading>{m.email_comment_reply_title({}, { locale })}</EmailHeading>
+      <EmailText>
+        {m.email_comment_reply_intro({ replierName }, { locale })}
+      </EmailText>
+      <EmailPanel>{replyPreview}</EmailPanel>
+      <EmailButton href={commentUrl}>
+        {m.email_comment_reply_action({}, { locale })}
+      </EmailButton>
+      <EmailDivider />
+      <EmailNote>
+        {m.email_comment_reply_unsubscribe_hint({}, { locale })}{" "}
+        <EmailLink href={unsubscribeUrl}>
+          {m.email_comment_reply_unsubscribe_action({}, { locale })}
+        </EmailLink>
+      </EmailNote>
     </EmailLayout>
   );
 };

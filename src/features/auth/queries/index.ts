@@ -1,46 +1,34 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
-import {
-  getIsEmailConfiguredFn,
-  getSessionFn,
-  getUserListFn,
-} from "../auth.api";
+import { authClient } from "@/lib/auth/auth-client";
+import { orpc } from "@/lib/orpc";
 
-export const AUTH_KEYS = {
-  all: ["auth"] as const,
-
-  // Leaf keys (static arrays - no child queries)
+const AUTH_KEYS = {
   session: ["auth", "session"] as const,
-  emailConfig: ["auth", "email-config"] as const,
-
-  // Child keys (functions for specific queries)
-  hasPassword: (userId?: string) => ["auth", "has-password", userId] as const,
-
-  // Admin: 用户列表
-  users: ["auth", "users"] as const,
-  userList: (page: number, search?: string) =>
-    ["auth", "users", page, search ?? ""] as const,
 };
 
 export const sessionQuery = queryOptions({
   queryKey: AUTH_KEYS.session,
   queryFn: async () => {
-    const session = await getSessionFn();
-    return session;
+    if (import.meta.env.SSR) {
+      const { getRequestSession } =
+        await import("@/lib/auth/get-request-session");
+      return getRequestSession();
+    }
+    const result = await authClient.getSession();
+    return result.data ?? null;
   },
 });
 
-export const emailConfiguredQuery = queryOptions({
-  queryKey: AUTH_KEYS.emailConfig,
-  queryFn: async () => {
-    const isEmailConfigured = await getIsEmailConfiguredFn();
-    return isEmailConfigured;
-  },
-});
+export const emailConfiguredQuery = orpc.email.configured.queryOptions();
 
-export function userListQueryOptions(page: number = 1, search?: string) {
-  return queryOptions({
-    queryKey: AUTH_KEYS.userList(page, search),
-    queryFn: () =>
-      getUserListFn({ data: { page, limit: 20, search: search || undefined } }),
-  });
+export function resetAuthBoundQueries(queryClient: QueryClient) {
+  queryClient.removeQueries({ queryKey: AUTH_KEYS.session });
+  void queryClient.invalidateQueries({ queryKey: orpc.comments.key() });
+  void queryClient.invalidateQueries({ queryKey: orpc.email.key() });
+  void queryClient.invalidateQueries({ queryKey: orpc.friendLinks.mine.key() });
+}
+
+export function userListQueryOptions(page = 1, search?: string) {
+  return orpc.adminUsers.queryOptions({ input: { page, search } });
 }

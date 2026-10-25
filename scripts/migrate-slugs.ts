@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 /*
  * @Author: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
  * @Date: 2026-03-01 15:32:58
@@ -6,7 +7,6 @@
  * @FilePath: /flare-stack-blog/scripts/migrate-slugs.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-#!/usr/bin/env bun
 /**
  * 迁移脚本：将已有帖子和吉他谱的 slug 更新为 8 位短 ID
  *
@@ -22,9 +22,11 @@ const db = new Database(DB_PATH);
 
 // ── 迁移帖子 slug ──
 console.log("=== 帖子 slug 迁移 ===");
-const posts = db.query<{ id: number; slug: string; title: string }, []>(
-  "SELECT id, slug, title FROM posts",
-).all();
+const posts = db
+  .query<{ id: number; slug: string; title: string }, []>(
+    "SELECT id, slug, title FROM posts",
+  )
+  .all();
 
 for (const post of posts) {
   const shortId = encodeId(post.id);
@@ -40,10 +42,12 @@ for (const post of posts) {
 
 // ── 迁移吉他谱 slug ──
 console.log("\n=== 吉他谱 slug 迁移 ===");
-const tabs = db.query<
-  { id: number; slug: string | null; title: string; artist: string },
-  []
->("SELECT id, slug, title, artist FROM guitar_tab_metadata").all();
+const tabs = db
+  .query<
+    { id: number; slug: string | null; title: string; artist: string },
+    []
+  >("SELECT id, slug, title, artist FROM guitar_tab_metadata")
+  .all();
 
 for (const tab of tabs) {
   const shortId = encodeId(tab.id);

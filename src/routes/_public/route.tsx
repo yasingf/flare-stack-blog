@@ -1,61 +1,63 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
-import { toast } from "sonner";
-import theme from "@theme";
-import { authClient } from "@/lib/auth/auth.client";
+import { PublicLayout as SitePublicLayout } from "@/components/layout/public-layout";
+import { Toaster } from "@/components/layout/toaster";
+import { useLogout } from "@/features/auth/hooks/use-logout";
+import { authClient } from "@/lib/auth/auth-client";
 import { CACHE_CONTROL } from "@/lib/constants";
-import { AUTH_KEYS } from "@/features/auth/queries";
-
-import { blogConfig } from "@/blog.config";
+import { clientEnv } from "@/lib/env/client.env";
+import { isExternalNavHref } from "@/features/config/utils/nav-links";
+import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/_public")({
   component: PublicLayout,
   headers: () => {
     return CACHE_CONTROL.public;
   },
-  head: () => ({
-    links: (theme.config.preloadImages ?? []).map((href) => ({
-      rel: "preload" as const,
-      as: "image",
-      href,
-    })),
-  }),
-});
-
-const allNavOptions = [
-  { label: "主页", to: "/" as const, id: "home" },
-  { label: "文章", to: "/posts" as const, id: "posts" },
-  { label: "吉他谱", to: "/guitar-tabs" as const, id: "guitar-tabs" },
-  { label: "友链", to: "/friend-links" as const, id: "friend-links" },
-];
-
-const navOptions = allNavOptions.filter((opt) => {
-  if (opt.id === "guitar-tabs" && !blogConfig.features.guitarTabs) return false;
-  return true;
+  head: () => {
+    const env = clientEnv();
+    return {
+      scripts: env.VITE_UMAMI_WEBSITE_ID
+        ? [
+            {
+              src: "/stats.js",
+              defer: true,
+              "data-website-id": env.VITE_UMAMI_WEBSITE_ID,
+            },
+          ]
+        : [],
+    };
+  },
 });
 
 function PublicLayout() {
   const navigate = useNavigate();
+  const { siteConfig } = useRouteContext({ from: "__root__" });
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
-  const queryClient = useQueryClient();
+  const { logout } = useLogout();
 
-  const logout = async () => {
-    const { error } = await authClient.signOut();
-    if (error) {
-      toast.error("会话终止失败, 请稍后重试。", {
-        description: error.message,
-      });
-      return;
-    }
-
-    queryClient.removeQueries({ queryKey: AUTH_KEYS.session });
-
-    toast.success("会话已终止", {
-      description: "你已安全退出当前会话。",
-    });
-  };
+  const navOptions = [
+    { id: "home", label: m.nav_home(), href: "/", external: false },
+    { id: "posts", label: m.nav_posts(), href: "/posts", external: false },
+    ...siteConfig.navLinks.map((link, index) => ({
+      id: `custom-${index}`,
+      label: link.label,
+      href: link.href,
+      external: isExternalNavHref(link.href),
+    })),
+    {
+      id: "friend-links",
+      label: m.nav_friend_links(),
+      href: "/friend-links",
+      external: false,
+    },
+  ];
 
   // Global shortcut: Cmd/Ctrl + K to navigate to search
   useEffect(() => {
@@ -63,7 +65,7 @@ function PublicLayout() {
       const isToggle = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
       if (isToggle) {
         e.preventDefault();
-        navigate({ to: "/search" });
+        void navigate({ to: "/search" });
       }
     };
     window.addEventListener("keydown", onKey);
@@ -72,15 +74,15 @@ function PublicLayout() {
 
   return (
     <>
-      <theme.PublicLayout
+      <SitePublicLayout
         navOptions={navOptions}
         user={session?.user}
         isSessionLoading={isSessionPending}
         logout={logout}
       >
         <Outlet />
-      </theme.PublicLayout>
-      <theme.Toaster />
+      </SitePublicLayout>
+      <Toaster />
     </>
   );
 }

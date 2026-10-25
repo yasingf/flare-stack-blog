@@ -1,3 +1,4 @@
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   index,
   integer,
@@ -5,25 +6,17 @@ import {
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-import { createdAt, id, updatedAt } from "./helper";
 import { user } from "./auth.table";
+import { createdAt, id, updatedAt } from "./helper";
 import { PostsTable } from "./posts.table";
-import { GuitarTabMetadataTable } from "./guitar-tab-metadata.table";
-import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
-import type { JSONContent } from "@tiptap/react";
 
-export const COMMENT_STATUSES = [
-  "pending",
-  "published",
-  "deleted",
-  "verifying",
-] as const;
+export const COMMENT_STATUSES = ["published", "deleted"] as const;
 
 export const CommentsTable = sqliteTable(
   "comments",
   {
     id,
-    content: text({ mode: "json" }).$type<JSONContent>(),
+    content: text(),
     rootId: integer("root_id").references(
       (): AnySQLiteColumn => CommentsTable.id,
       {
@@ -36,21 +29,17 @@ export const CommentsTable = sqliteTable(
     ),
     status: text("status", { enum: COMMENT_STATUSES })
       .notNull()
-      .default("verifying"),
-    aiReason: text("ai_reason"),
+      .default("published"),
 
-    /** Associated post ID (null for guitar tab comments) */
-    postId: integer("post_id").references(() => PostsTable.id, {
-      onDelete: "cascade",
-    }),
-    /** Associated guitar tab ID (null for post comments) */
-    guitarTabId: integer("guitar_tab_id").references(
-      () => GuitarTabMetadataTable.id,
-      { onDelete: "cascade" },
-    ),
-    userId: text("user_id")
+    postId: integer("post_id")
       .notNull()
-      .references(() => user.id, { onDelete: "set null" }),
+      .references(() => PostsTable.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    /**
+     * When an Admin dealt with the Comment, by replying or by marking it
+     * handled; it then no longer waits for a reply. Admin-only.
+     */
+    handledAt: integer("handled_at", { mode: "timestamp" }),
 
     createdAt,
     updatedAt,
@@ -64,11 +53,6 @@ export const CommentsTable = sqliteTable(
     index("comments_user_created_idx").on(table.userId, table.createdAt),
     index("comments_status_created_idx").on(table.status, table.createdAt),
     index("comments_global_created_idx").on(table.createdAt),
-    index("comments_guitar_tab_root_created_idx").on(
-      table.guitarTabId,
-      table.rootId,
-      table.createdAt,
-    ),
   ],
 );
 

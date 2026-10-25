@@ -5,33 +5,63 @@ import {
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { z } from "zod";
-import theme from "@theme";
+import { siteConfigQuery, siteDomainQuery } from "@/features/config/queries";
+import {
+  POSTS_PER_PAGE,
+  PostsPage,
+} from "@/features/posts/components/posts-page";
+import { PostsPageSkeleton } from "@/features/posts/components/posts-page-skeleton";
+import { categoriesQueryOptions } from "@/features/categories/queries";
 import { postsInfiniteQueryOptions } from "@/features/posts/queries";
-import { blogConfig } from "@/blog.config";
+import {
+  PostCategoryNameSchema,
+  PostTagNameSchema,
+} from "@/features/posts/schema/posts.schema";
+import { withTagFilter } from "@/features/posts/utils/post-public-search";
 import { tagsQueryOptions } from "@/features/tags/queries";
-
-const { postsPerPage } = theme.config.posts;
+import { buildCanonicalUrl, canonicalLink } from "@/lib/seo";
+import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/_public/posts")({
   validateSearch: z.object({
-    tagName: z.string().optional(),
+    tagName: PostTagNameSchema,
+    categoryName: PostCategoryNameSchema,
+    uncategorized: z
+      .union([z.boolean(), z.literal("true"), z.literal("false")])
+      .transform((value) => value === true || value === "true")
+      .optional(),
   }),
   component: RouteComponent,
   pendingComponent: PostsSkeleton,
-  loaderDeps: ({ search: { tagName } }) => ({ tagName }),
+  loaderDeps: ({ search }) => ({
+    tagName: search.tagName,
+    categoryName: search.categoryName,
+    uncategorized: search.uncategorized,
+  }),
   loader: async ({ context, deps }) => {
-    await Promise.all([
+    const [, , , domain, siteConfig] = await Promise.all([
       context.queryClient.prefetchInfiniteQuery(
         postsInfiniteQueryOptions({
           tagName: deps.tagName,
-          limit: postsPerPage,
+          categoryName: deps.categoryName,
+          uncategorized: deps.uncategorized,
+          limit: POSTS_PER_PAGE,
         }),
       ),
       context.queryClient.prefetchQuery(tagsQueryOptions),
+      context.queryClient.prefetchQuery(categoriesQueryOptions),
+      context.queryClient.ensureQueryData(siteDomainQuery),
+      context.queryClient.ensureQueryData(siteConfigQuery),
     ]);
 
     return {
-      title: "全部文章",
+      title: m.posts_title(),
+      description: siteConfig.description,
+      canonicalHref: buildCanonicalUrl(domain, "/posts", {
+        tagName: deps.tagName,
+        categoryName: deps.categoryName,
+        uncategorized: deps.uncategorized ? "true" : undefined,
+      }),
     };
   },
   head: ({ loaderData }) => ({
@@ -41,41 +71,45 @@ export const Route = createFileRoute("/_public/posts")({
       },
       {
         name: "description",
-        content: blogConfig.description,
+        content: loaderData?.description,
       },
     ],
+    links: [canonicalLink(loaderData?.canonicalHref ?? "/posts")],
   }),
 });
 
 function RouteComponent() {
-  const { tagName } = Route.useSearch();
+  const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useSuspenseInfiniteQuery(
-      postsInfiniteQueryOptions({ tagName, limit: postsPerPage }),
+      postsInfiniteQueryOptions({
+        tagName: search.tagName,
+        categoryName: search.categoryName,
+        uncategorized: search.uncategorized,
+        limit: POSTS_PER_PAGE,
+      }),
     );
 
   const posts = useMemo(() => {
     return data.pages.flatMap((page) => page.items);
   }, [data]);
 
-  const handleTagClick = (clickedTag: string) => {
-    navigate({
-      search: {
-        tagName: clickedTag === tagName ? undefined : clickedTag,
-      },
-      replace: true, // Replace history to avoid back-button clutter
+  const handleTagClick = (clickedTag?: string) => {
+    void navigate({
+      search: withTagFilter(clickedTag),
+      replace: true,
     });
   };
 
   return (
-    <theme.PostsPage
+    <PostsPage
       posts={posts}
       tags={tags}
-      selectedTag={tagName}
+      selectedTag={search.tagName}
       onTagClick={handleTagClick}
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
@@ -85,5 +119,5 @@ function RouteComponent() {
 }
 
 function PostsSkeleton() {
-  return <theme.PostsPageSkeleton />;
+  return <PostsPageSkeleton />;
 }

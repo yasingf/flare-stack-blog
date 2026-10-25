@@ -1,34 +1,22 @@
-import { cva } from "class-variance-authority";
-import * as React from "react";
-import type { VariantProps } from "class-variance-authority";
+import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
+import "./badge.css";
 
-const badgeVariants = cva(
-  "inline-flex items-center border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition-colors focus:outline-none",
-  {
-    variants: {
-      variant: {
-        default: "border-foreground/20 bg-foreground text-background",
-        secondary: "border-border/40 bg-muted/50 text-muted-foreground",
-        destructive: "border-destructive/30 bg-destructive/10 text-destructive",
-        outline: "border-border/40 text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
 
-export interface BadgeProps
-  extends
-    React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
+/** A short status or tag label. */
+export function Badge({
+  tone = "neutral",
+  size = "md",
+  className,
+  ...props
+}: ComponentProps<"span"> & { tone?: BadgeTone; size?: "sm" | "md" }) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <span
+      {...props}
+      className={cn("fuwari-badge", className)}
+      data-tone={tone}
+      data-size={size}
+    />
   );
 }
-
-export { Badge, badgeVariants };

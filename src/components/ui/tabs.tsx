@@ -1,123 +1,101 @@
-import * as React from "react";
+import { Link, type LinkProps } from "@tanstack/react-router";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { moveSelection } from "./roving-selection";
+import "./tabs.css";
 
-const TabsContext = React.createContext<{
-  value: string;
-  onChange: (value: string) => void;
-} | null>(null);
+export interface TabItem<T extends string> {
+  value: T;
+  label: ReactNode;
+  /** A number shown after the label, such as how many items the tab holds. */
+  count?: ReactNode;
+  disabled?: boolean;
+}
 
-const Tabs = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    defaultValue?: string;
-    value?: string;
-    onValueChange?: (value: string) => void;
-  }
->(
-  (
-    {
-      className,
-      defaultValue,
-      value: controlledValue,
-      onValueChange,
-      ...props
-    },
-    ref,
-  ) => {
-    const [uncontrolledValue, setUncontrolledValue] =
-      React.useState(defaultValue);
-    const isControlled = controlledValue !== undefined;
-    const value = isControlled ? controlledValue : uncontrolledValue;
-
-    const onChange = React.useCallback(
-      (newValue: string) => {
-        if (!isControlled) {
-          setUncontrolledValue(newValue);
-        }
-        onValueChange?.(newValue);
-      },
-      [isControlled, onValueChange],
-    );
-
-    return (
-      <TabsContext.Provider value={{ value: value || "", onChange }}>
-        <div ref={ref} className={cn("", className)} {...props} />
-      </TabsContext.Provider>
-    );
-  },
-);
-Tabs.displayName = "Tabs";
-
-const TabsList = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "inline-flex items-center gap-4 border-b border-border/30",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsList.displayName = "TabsList";
-
-const TabsTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { value: string }
->(({ className, value, onClick, ...props }, ref) => {
-  const context = React.useContext(TabsContext);
-  if (!context) throw new Error("TabsTrigger must be used within Tabs");
-
-  const isActive = context.value === value;
-
+function TabLabel({ label, count }: { label: ReactNode; count?: ReactNode }) {
   return (
-    <button
-      ref={ref}
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      data-state={isActive ? "active" : "inactive"}
-      className={cn(
-        "pb-3 text-[10px] font-mono uppercase tracking-widest transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 border-b-2 -mb-px",
-        isActive
-          ? "text-foreground border-foreground"
-          : "text-muted-foreground/50 border-transparent hover:text-foreground",
-        className,
+    <>
+      {label}
+      {count === undefined ? null : (
+        <>
+          {" "}
+          <span className="fuwari-tab-count">{count}</span>
+        </>
       )}
-      onClick={(e) => {
-        context.onChange(value);
-        onClick?.(e);
-      }}
-      {...props}
-    />
+    </>
   );
-});
-TabsTrigger.displayName = "TabsTrigger";
+}
 
-const TabsContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { value: string }
->(({ className, value, ...props }, ref) => {
-  const context = React.useContext(TabsContext);
-  if (!context) throw new Error("TabsContent must be used within Tabs");
-
-  if (context.value !== value) return null;
-
+/**
+ * Underlined tabs that switch a panel or filter a list. Arrow keys, Home and
+ * End move between them; `children` follow the tabs, such as a spinner.
+ */
+export function Tabs<T extends string>({
+  items,
+  value,
+  onValueChange,
+  className,
+  children,
+  ...props
+}: Omit<ComponentProps<"div">, "role" | "onChange"> & {
+  items: ReadonlyArray<TabItem<T>>;
+  value: T;
+  onValueChange: (value: T) => void;
+  "aria-label": string;
+}) {
   return (
     <div
-      ref={ref}
-      role="tabpanel"
-      data-state="active"
-      className={cn(
-        "mt-4 focus-visible:outline-none animate-in fade-in duration-200",
-        className,
-      )}
       {...props}
-    />
+      role="tablist"
+      className={cn("fuwari-tabs", className)}
+      onKeyDown={(event) => moveSelection(event, items, value, onValueChange)}
+    >
+      {items.map((item) => {
+        const selected = item.value === value;
+        return (
+          <button
+            key={item.value}
+            type="button"
+            role="tab"
+            data-value={item.value}
+            aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
+            disabled={item.disabled}
+            className="fuwari-tab"
+            onClick={() => onValueChange(item.value)}
+          >
+            <TabLabel label={item.label} count={item.count} />
+          </button>
+        );
+      })}
+      {children}
+    </div>
   );
-});
-TabsContent.displayName = "TabsContent";
+}
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+/** The same tabs as links between routes; the current one is marked as the page. */
+export function TabNav<T extends string>({
+  items,
+  value,
+  className,
+  ...props
+}: Omit<ComponentProps<"nav">, "children"> & {
+  items: ReadonlyArray<Omit<TabItem<T>, "disabled"> & { to: LinkProps["to"] }>;
+  value: T;
+  "aria-label": string;
+}) {
+  return (
+    <nav {...props} className={cn("fuwari-tabs", className)}>
+      {items.map((item) => (
+        <Link
+          key={item.value}
+          to={item.to}
+          aria-current={item.value === value ? "page" : undefined}
+          className="fuwari-tab"
+        >
+          <TabLabel label={item.label} count={item.count} />
+        </Link>
+      ))}
+    </nav>
+  );
+}

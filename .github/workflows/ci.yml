@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     paths-ignore:
       - "**.md"
       - ".agent/**"
@@ -16,7 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -24,7 +29,7 @@ jobs:
           bun-version: latest
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
@@ -34,14 +39,24 @@ jobs:
       - name: Install dependencies
         run: bun ci
 
-      - name: Setup Wrangler Config
-        run: cp wrangler.example.jsonc wrangler.jsonc
-
       - name: Lint Check
         run: bun lint
 
-      - name: Type Check
-        run: bun tsc --noEmit
+      - name: Compile Paraglide Runtime
+        run: bun run i18n:compile
 
-      - name: Run Tests
+      - name: Translation Check
+        run: bun run i18n:verify && bun run i18n:prune-unused --check
+
+      - name: Type Check
+        run: bun typecheck
+
+      # Same command Workers Builds runs to deploy, so a broken build fails here first.
+      - name: Build
+        run: bun run build
+
+      - name: Run Node Tests
+        run: bun run test:node
+
+      - name: Run Integration Tests
         run: bun run test

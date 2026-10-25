@@ -1,109 +1,218 @@
+import type { Editor, NodeViewProps } from "@tiptap/react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
-import { Check, Copy } from "lucide-react";
-import { useEffect, useState } from "react";
-import { LANGUAGES } from "./languages";
-import type { NodeViewProps } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
 import {
-  getHighlighter,
-  loadLanguage,
-  themes as shikiThemes,
-} from "@/lib/shiki";
-import DropdownMenu from "@/components/ui/dropdown-menu";
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+  type MouseEvent,
+} from "react";
+import { ShikiHtml } from "@/components/content/shiki-html";
+import { ThemedMermaidDiagram } from "@/components/content/themed-mermaid-diagram";
+import { CodeCopyButton } from "@/components/ui/copy-button";
+import { codeBlockHighlightKey } from "@/features/posts/utils/apply-code-block-highlighting";
+import { isMermaidLanguage, PLAIN_TEXT } from "@/lib/code-languages";
+import { cn } from "@/lib/utils";
+import { CodeBlockHighlightContext } from "./code-block-highlight-context";
+import {
+  codeBlockTextPos,
+  isTextSelectionInsideCodeBlock,
+  requestEditorCodeHighlight,
+  resolveEditorCodeHighlightHtml,
+  scheduleIdle,
+  textOffsetFromPoint,
+} from "./highlight";
+import { LanguagePicker } from "./language-picker";
+
+function selectionIsInCodeBlock(
+  editor: Editor,
+  getPos: () => number | undefined,
+) {
+  if (!editor.isEditable || !editor.isFocused) return false;
+  const { selection, doc } = editor.state;
+  if (!(selection instanceof TextSelection)) return false;
+  let pos: number | undefined;
+  try {
+    pos = getPos();
+  } catch {
+    return false;
+  }
+  if (typeof pos !== "number") return false;
+  const current = doc.nodeAt(pos);
+  if (!current || current.type.name !== "codeBlock") return false;
+  return isTextSelectionInsideCodeBlock(
+    selection.from,
+    selection.to,
+    pos,
+    current.nodeSize,
+  );
+}
 
 export function CodeBlockView({
   node,
-  updateAttributes,
   editor,
+  getPos,
+  updateAttributes,
 }: NodeViewProps) {
-  const [copied, setCopied] = useState(false);
-  const [themeStyles, setThemeStyles] = useState<React.CSSProperties>({});
-  const language = node.attrs.language || "text";
+  const snapshotHtml = useContext(CodeBlockHighlightContext);
+  const [, rerender] = useReducer((tick: number) => tick + 1, 0);
+  const [computedHtml, setComputedHtml] = useState<string | undefined>();
+  const [computedKey, setComputedKey] = useState<string | null>(null);
+
+  const language = node.attrs.language || PLAIN_TEXT;
+  const code = node.textContent;
+  const editing = selectionIsInCodeBlock(editor, getPos);
+  const resolvedHtml = resolveEditorCodeHighlightHtml(
+    language,
+    code,
+    snapshotHtml,
+  );
+  const currentKey = codeBlockHighlightKey(language, code);
+  const html =
+    resolvedHtml ?? (computedKey === currentKey ? computedHtml : undefined);
+  const isMermaid = isMermaidLanguage(language);
+  const showDiagram = isMermaid && !editing && code.trim() !== "";
+  const showPreview = !isMermaid && Boolean(html) && !editing;
 
   useEffect(() => {
-    let mounted = true;
-
-    // Load language and theme styles
-    const init = async () => {
-      await loadLanguage(language);
-
-      const h = await getHighlighter();
-      const lightTheme = h.getTheme(shikiThemes.light);
-      const darkTheme = h.getTheme(shikiThemes.dark);
-
-      if (mounted) {
-        setThemeStyles({
-          "--shiki-light": lightTheme.fg,
-          "--shiki-dark": darkTheme.fg,
-          "--shiki-light-bg": lightTheme.bg,
-          "--shiki-dark-bg": darkTheme.bg,
-        } as React.CSSProperties);
-
-        // Trigger re-decoration in shiki plugin
-        const tr = editor.state.tr.setMeta("shikiUpdate", true);
-        editor.view.dispatch(tr);
-      }
-    };
-
-    init();
-
+    const sync = () => rerender();
+    editor.on("selectionUpdate", sync);
+    editor.on("focus", sync);
+    editor.on("blur", sync);
     return () => {
-      mounted = false;
+      editor.off("selectionUpdate", sync);
+      editor.off("focus", sync);
+      editor.off("blur", sync);
     };
-  }, [language, editor]);
+  }, [editor]);
 
-  const handleCopy = () => {
-    const code = node.textContent;
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    if (editing || html || isMermaid) return;
+    const requestedLanguage = language;
+    const requestedCode = code;
+    let cancelled = false;
+    const cancelIdle = scheduleIdle(() => {
+      void requestEditorCodeHighlight(requestedLanguage, requestedCode).then(
+        (next) => {
+          if (cancelled || !next) return;
+          setComputedKey(
+            codeBlockHighlightKey(requestedLanguage, requestedCode),
+          );
+          setComputedHtml(next);
+        },
+      );
+    });
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
+  }, [editing, html, isMermaid, language, code]);
+
+  const enterSourceEditing = (
+    event: MouseEvent<HTMLDivElement>,
+    offset: number,
+  ) => {
+    if (!editor.isEditable || event.button !== 0) return;
+    event.preventDefault();
+    const pos = getPos();
+    if (typeof pos !== "number") return;
+    const target = codeBlockTextPos(pos, offset, code.length);
+    editor.chain().focus().setTextSelection(target).run();
   };
 
-  return (
-    <NodeViewWrapper className="my-12 group relative max-w-full outline-none [&.ProseMirror-selectednode]:outline-none [&.ProseMirror-selectednode]:ring-0 [&.ProseMirror-selectednode]:shadow-none">
-      <div className="relative rounded-sm border border-zinc-200/40 dark:border-zinc-800/40 hover:border-zinc-300/60 dark:hover:border-zinc-700/60 transition-colors duration-500">
-        {/* Minimal Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200/10 dark:border-zinc-800/10 bg-zinc-100 dark:bg-zinc-800 select-none rounded-t-sm">
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-mono font-medium text-muted-foreground/80">
-              <DropdownMenu
-                value={language}
-                onChange={(val) => updateAttributes({ language: val })}
-                options={LANGUAGES.map((lang) => ({
-                  label: lang.label,
-                  value: lang.value,
-                }))}
-              />
-            </span>
-          </div>
+  const handlePreviewMouseDown = (event: MouseEvent<HTMLDivElement>) =>
+    enterSourceEditing(
+      event,
+      textOffsetFromPoint(event.currentTarget, event.clientX, event.clientY) ??
+        0,
+    );
 
-          <button
-            onClick={handleCopy}
-            contentEditable={false}
-            className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-all duration-300"
-          >
-            {copied ? (
-              <span className="animate-in fade-in slide-in-from-right-1 opacity-70">
-                已复制
-              </span>
-            ) : null}
-            <div className="p-0.5 opacity-60 group-hover/btn:opacity-100 transition-opacity">
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-            </div>
-          </button>
+  // A point in the diagram maps to no source offset; edit from the end.
+  const handleDiagramMouseDown = (event: MouseEvent<HTMLDivElement>) =>
+    enterSourceEditing(event, code.length);
+
+  return (
+    <NodeViewWrapper className="not-prose group relative my-6 max-w-full outline-none [&.ProseMirror-selectednode]:outline-none [&.ProseMirror-selectednode]:ring-0 [&.ProseMirror-selectednode]:shadow-none">
+      <div className="expressive-code relative overflow-hidden rounded-xl border border-black/10 bg-(--fuwari-code-bg) shadow-sm transition-colors dark:border-white/10">
+        <div
+          contentEditable={false}
+          className="absolute top-2 right-2 z-10 flex items-center gap-1"
+        >
+          <CodeCopyButton code={code} />
+          {editor.isEditable ? (
+            <LanguagePicker
+              value={language}
+              onChange={(id) => updateAttributes({ language: id })}
+            />
+          ) : null}
         </div>
 
-        {/* Code Area */}
-        <div
-          className="shiki relative overflow-x-auto custom-scrollbar rounded-b-sm"
-          style={themeStyles}
+        <pre
+          className={cn(
+            "relative m-0 overflow-x-auto custom-scrollbar",
+            (showPreview || showDiagram) && "hidden",
+          )}
         >
           <NodeViewContent
             as="div"
-            className="p-6 font-mono text-sm leading-relaxed outline-none min-w-full w-fit"
+            className="block w-fit min-w-full px-5 py-4 font-mono text-sm leading-relaxed whitespace-pre outline-none fuwari-text-90"
             spellCheck={false}
           />
-        </div>
+        </pre>
+
+        {showDiagram ? (
+          <div
+            contentEditable={false}
+            className={cn(editor.isEditable && "cursor-text")}
+            onMouseDown={handleDiagramMouseDown}
+          >
+            <MermaidPreview code={code} highlightedHtml={resolvedHtml} />
+          </div>
+        ) : null}
+
+        {showPreview ? (
+          <div
+            contentEditable={false}
+            className={cn(
+              "overflow-x-auto custom-scrollbar",
+              editor.isEditable && "cursor-text",
+            )}
+            onMouseDown={handlePreviewMouseDown}
+          >
+            <ShikiHtml html={html ?? ""} />
+          </div>
+        ) : null}
       </div>
     </NodeViewWrapper>
+  );
+}
+
+/**
+ * A Mermaid block at rest: the diagram, with the source (highlighted when the
+ * snapshot has it) until it renders and on a syntax error.
+ */
+function MermaidPreview({
+  code,
+  highlightedHtml,
+}: {
+  code: string;
+  highlightedHtml?: string;
+}) {
+  return (
+    <ThemedMermaidDiagram
+      source={code}
+      fallback={
+        highlightedHtml ? (
+          <div className="overflow-x-auto custom-scrollbar">
+            <ShikiHtml html={highlightedHtml} />
+          </div>
+        ) : (
+          <pre className="m-0 overflow-x-auto custom-scrollbar px-5 py-4 font-mono text-sm leading-relaxed whitespace-pre fuwari-text-90">
+            <code>{code}</code>
+          </pre>
+        )
+      }
+    />
   );
 }

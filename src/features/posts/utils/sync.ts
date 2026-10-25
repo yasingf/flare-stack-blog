@@ -7,19 +7,25 @@ export async function calculatePostHash(post: {
   tagIds: Array<number>;
   slug: string;
   publishedAt: Date | string | null;
-  readTimeInMinutes: number;
+  pinnedAt?: Date | string | null;
+  coverMediaId?: number | null;
+  categoryId?: number | null;
 }): Promise<string> {
+  const toISOOrNull = (d: Date | string | null) =>
+    d instanceof Date ? d.toISOString() : d;
+
   const stateToHash = {
     title: post.title,
     contentJson: post.contentJson,
     summary: post.summary,
-    tagIds: [...post.tagIds].sort(),
+    // String order, not numeric: stored revision hashes were computed with
+    // the default sort, and must keep matching.
+    tagIds: post.tagIds.map(String).sort().map(Number),
     slug: post.slug,
-    publishedAt:
-      post.publishedAt instanceof Date
-        ? post.publishedAt.toISOString()
-        : post.publishedAt,
-    readTimeInMinutes: post.readTimeInMinutes,
+    publishedAt: toISOOrNull(post.publishedAt),
+    pinnedAt: toISOOrNull(post.pinnedAt ?? null),
+    coverMediaId: post.coverMediaId ?? null,
+    categoryId: post.categoryId ?? null,
   };
 
   const msgUint8 = new TextEncoder().encode(JSON.stringify(stateToHash));

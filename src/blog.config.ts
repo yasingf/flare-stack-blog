@@ -1,36 +1,39 @@
 import { clientEnv } from "@/lib/env/client.env";
+import type { SiteConfig } from "@/features/config/site-config.schema";
 
 const env = clientEnv();
 
 export const blogConfig = {
-  title: env.VITE_BLOG_TITLE || "Flare Stack Blog",
-  name: env.VITE_BLOG_NAME || "blog",
-  author: env.VITE_BLOG_AUTHOR || "作者",
-  description:
-    env.VITE_BLOG_DESCRIPTION || "这是博客的描述，写一段话介绍一下这个博客，",
-  features: {
-    guitarTabs: env.VITE_ENABLE_GUITAR_TABS,
-  },
-  social: {
-    github: env.VITE_BLOG_GITHUB || "https://github.com/example",
-    email: env.VITE_BLOG_EMAIL || "demo@example.com",
+  title: env.VITE_BLOG_TITLE || "Yasin's Blog",
+  author: env.VITE_BLOG_AUTHOR || "Yasin",
+  description: env.VITE_BLOG_DESCRIPTION || "一些教程，吉他谱和个人的碎碎念",
+  social: [
+    {
+      platform: "github",
+      url: env.VITE_BLOG_GITHUB || "https://github.com/yasingf",
+    },
+    {
+      platform: "email",
+      url: `mailto:${env.VITE_BLOG_EMAIL || "yasingfls@outlook.com"}`,
+    },
+    { platform: "rss", url: "/rss.xml" },
+  ],
+  navLinks: env.VITE_ENABLE_GUITAR_TABS
+    ? [{ label: "吉他谱", href: "/guitar-tabs" }]
+    : [],
+  icons: {
+    faviconSvg: "/favicon.svg",
+    faviconIco: "/favicon.ico",
+    favicon96: "/favicon-96x96.png",
+    appleTouchIcon: "/apple-touch-icon.png",
+    webApp192: "/web-app-manifest-192x192.png",
+    webApp512: "/web-app-manifest-512x512.png",
   },
   theme: {
-    default: {
-      background: {
-        homeImage: env.VITE_DEFAULT_HOME_IMAGE || "", // R2 path or external URL (hero on homepage)
-        globalImage: env.VITE_DEFAULT_GLOBAL_IMAGE || "", // R2 path or external URL (all other pages + scroll target)
-        light: { opacity: env.VITE_DEFAULT_LIGHT_OPACITY ?? 0.15 }, // opacity in light mode
-        dark: { opacity: env.VITE_DEFAULT_DARK_OPACITY ?? 0.1 }, // opacity in dark mode
-        backdropBlur: env.VITE_DEFAULT_BACKDROP_BLUR ?? 8, // px, Gaussian blur
-        transitionDuration: env.VITE_DEFAULT_TRANSITION_DURATION ?? 600, // ms, route crossfade (0-3000)
-      },
-    },
     fuwari: {
-      homeBg: env.VITE_FUWARI_HOME_BG || "/images/home-bg.png",
+      homeBg: env.VITE_FUWARI_HOME_BG || "/images/home-bg.webp",
       avatar: env.VITE_FUWARI_AVATAR || "/images/avatar.png",
+      primaryHue: 250,
     },
   },
-};
-
-export type BlogConfig = typeof blogConfig;
+} as const satisfies SiteConfig;

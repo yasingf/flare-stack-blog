@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { memo } from "react";
-import type { GuitarTabWithMeta } from "../data/media.data";
+import type { GuitarTabWithMeta } from "@/features/guitar-tabs/data";
 
 // ── 工具函数 ──────────────────────────────────────────
 

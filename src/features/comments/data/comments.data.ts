@@ -1,10 +1,41 @@
+import {
+  and,
+  count,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
-import { and, count, desc, eq, like, sql } from "drizzle-orm";
-import type { CommentStatus } from "@/lib/db/schema";
+import {
+  COMMENT_PAGE_SIZE,
+  COMMENT_REPLY_PREVIEW_LIMIT,
+} from "@/features/comments/comment-thread";
 import { buildCommentWhereClause } from "@/features/comments/data/helper";
-import { CommentsTable, PostsTable, user } from "@/lib/db/schema";
+import type { CommentStatus } from "@/lib/db/schema";
+import { CommentsTable, user } from "@/lib/db/schema";
 
-const DEFAULT_PAGE_SIZE = 20;
+const commentListColumns = {
+  id: CommentsTable.id,
+  content: CommentsTable.content,
+  rootId: CommentsTable.rootId,
+  replyToCommentId: CommentsTable.replyToCommentId,
+  postId: CommentsTable.postId,
+  userId: CommentsTable.userId,
+  status: CommentsTable.status,
+  createdAt: CommentsTable.createdAt,
+  updatedAt: CommentsTable.updatedAt,
+  user: {
+    id: user.id,
+    name: user.name,
+    image: user.image,
+    role: user.role,
+    mutedAt: user.mutedAt,
+  },
+};
 
 export async function insertComment(
   db: DB,
@@ -20,50 +51,46 @@ export async function findCommentById(db: DB, id: number) {
   });
 }
 
+function visibleRootCondition(db: DB, postId: number) {
+  const threadReplies = alias(CommentsTable, "thread_replies");
+  return and(
+    eq(CommentsTable.postId, postId),
+    isNull(CommentsTable.rootId),
+    or(
+      eq(CommentsTable.status, "published"),
+      and(
+        eq(CommentsTable.status, "deleted"),
+        exists(
+          db
+            .select({ id: threadReplies.id })
+            .from(threadReplies)
+            .where(
+              and(
+                eq(threadReplies.rootId, CommentsTable.id),
+                eq(threadReplies.status, "published"),
+              ),
+            ),
+        ),
+      ),
+    ),
+  );
+}
+
 export async function getRootCommentsByPostId(
   db: DB,
   postId: number,
   options: {
-    guitarTabId?: number;
     offset?: number;
     limit?: number;
-    status?: CommentStatus | Array<CommentStatus>;
-    viewerId?: string;
   } = {},
 ) {
-  const { guitarTabId, offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
-
-  const conditions = buildCommentWhereClause({
-    postId,
-    guitarTabId,
-    status,
-    viewerId,
-    rootOnly: true,
-  });
+  const { offset = 0, limit = COMMENT_PAGE_SIZE } = options;
 
   const comments = await db
-    .select({
-      id: CommentsTable.id,
-      content: CommentsTable.content,
-      rootId: CommentsTable.rootId,
-      replyToCommentId: CommentsTable.replyToCommentId,
-      postId: CommentsTable.postId,
-      guitarTabId: CommentsTable.guitarTabId,
-      userId: CommentsTable.userId,
-      status: CommentsTable.status,
-      aiReason: CommentsTable.aiReason,
-      createdAt: CommentsTable.createdAt,
-      updatedAt: CommentsTable.updatedAt,
-      user: {
-        id: user.id,
-        name: user.name,
-        image: user.image,
-        role: user.role,
-      },
-    })
+    .select(commentListColumns)
     .from(CommentsTable)
     .leftJoin(user, eq(CommentsTable.userId, user.id))
-    .where(conditions)
+    .where(visibleRootCondition(db, postId))
     .orderBy(desc(CommentsTable.createdAt))
     .limit(Math.min(limit, 100))
     .offset(offset);
@@ -71,31 +98,66 @@ export async function getRootCommentsByPostId(
   return comments;
 }
 
-export async function getRootCommentsByPostIdCount(
+export async function getVisibleRootById(
   db: DB,
   postId: number,
-  options: {
-    guitarTabId?: number;
-    status?: CommentStatus | Array<CommentStatus>;
-    viewerId?: string;
-  } = {},
+  rootId: number,
 ) {
-  const { guitarTabId, status, viewerId } = options;
+  const comments = await db
+    .select(commentListColumns)
+    .from(CommentsTable)
+    .leftJoin(user, eq(CommentsTable.userId, user.id))
+    .where(and(visibleRootCondition(db, postId), eq(CommentsTable.id, rootId)))
+    .limit(1);
 
-  const conditions = buildCommentWhereClause({
-    postId,
-    guitarTabId,
-    status,
-    viewerId,
-    rootOnly: true,
-  });
+  return comments[0] ?? null;
+}
 
+export async function getPublishedCommentsCount(db: DB, postId: number) {
   const result = await db
     .select({ count: count() })
     .from(CommentsTable)
-    .where(conditions);
+    .where(
+      and(
+        eq(CommentsTable.postId, postId),
+        eq(CommentsTable.status, "published"),
+      ),
+    );
 
   return result[0].count;
+}
+
+export async function getPublishedReplyCountsByRootIds(
+  db: DB,
+  postId: number,
+  rootIds: Array<number>,
+) {
+  const counts = new Map<number, number>();
+  if (rootIds.length === 0) {
+    return counts;
+  }
+
+  const rows = await db
+    .select({
+      rootId: CommentsTable.rootId,
+      value: count(),
+    })
+    .from(CommentsTable)
+    .where(
+      and(
+        eq(CommentsTable.postId, postId),
+        inArray(CommentsTable.rootId, rootIds),
+        eq(CommentsTable.status, "published"),
+      ),
+    )
+    .groupBy(CommentsTable.rootId);
+
+  for (const row of rows) {
+    if (row.rootId != null) {
+      counts.set(row.rootId, row.value);
+    }
+  }
+  return counts;
 }
 
 export async function getReplyCountByRootId(
@@ -103,19 +165,15 @@ export async function getReplyCountByRootId(
   postId: number,
   rootId: number,
   options: {
-    guitarTabId?: number;
     status?: CommentStatus | Array<CommentStatus>;
-    viewerId?: string;
   } = {},
 ) {
-  const { guitarTabId, status, viewerId } = options;
+  const { status } = options;
 
   const conditions = buildCommentWhereClause({
     postId,
-    guitarTabId,
     rootId,
     status,
-    viewerId,
   });
 
   const result = await db
@@ -124,6 +182,59 @@ export async function getReplyCountByRootId(
     .where(conditions);
 
   return result[0].count;
+}
+
+async function withReplyToUsers<T extends { replyToCommentId: number | null }>(
+  db: DB,
+  replies: Array<T>,
+) {
+  const targetIds = [
+    ...new Set(
+      replies
+        .map((reply) => reply.replyToCommentId)
+        .filter((id): id is number => id != null),
+    ),
+  ];
+  if (targetIds.length === 0) {
+    return replies.map((reply) => ({ ...reply, replyTo: null }));
+  }
+
+  const targets = await db
+    .select({
+      id: CommentsTable.id,
+      userId: CommentsTable.userId,
+    })
+    .from(CommentsTable)
+    .where(inArray(CommentsTable.id, targetIds));
+
+  const userIds = [
+    ...new Set(
+      targets
+        .map((target) => target.userId)
+        .filter((id): id is string => id != null),
+    ),
+  ];
+  const users =
+    userIds.length === 0
+      ? []
+      : await db
+          .select({ id: user.id, name: user.name })
+          .from(user)
+          .where(inArray(user.id, userIds));
+  const userById = new Map(users.map((row) => [row.id, row]));
+  const replyToByCommentId = new Map(
+    targets.map((target) => [
+      target.id,
+      target.userId ? (userById.get(target.userId) ?? null) : null,
+    ]),
+  );
+
+  return replies.map((reply) => ({
+    ...reply,
+    replyTo: reply.replyToCommentId
+      ? (replyToByCommentId.get(reply.replyToCommentId) ?? null)
+      : null,
+  }));
 }
 
 export async function getRepliesByRootId(
@@ -131,108 +242,51 @@ export async function getRepliesByRootId(
   postId: number,
   rootId: number,
   options: {
-    guitarTabId?: number;
     offset?: number;
     limit?: number;
-    status?: CommentStatus | Array<CommentStatus>;
-    viewerId?: string;
   } = {},
 ) {
-  const { guitarTabId, offset = 0, limit = DEFAULT_PAGE_SIZE, status, viewerId } = options;
-
-  const conditions = buildCommentWhereClause({
-    postId,
-    guitarTabId,
-    rootId,
-    status,
-    viewerId,
-  });
+  const { offset = 0, limit = COMMENT_PAGE_SIZE } = options;
 
   const replies = await db
-    .select({
-      id: CommentsTable.id,
-      content: CommentsTable.content,
-      rootId: CommentsTable.rootId,
-      replyToCommentId: CommentsTable.replyToCommentId,
-      postId: CommentsTable.postId,
-      guitarTabId: CommentsTable.guitarTabId,
-      userId: CommentsTable.userId,
-      status: CommentsTable.status,
-      aiReason: CommentsTable.aiReason,
-      createdAt: CommentsTable.createdAt,
-      updatedAt: CommentsTable.updatedAt,
-      user: {
-        id: user.id,
-        name: user.name,
-        image: user.image,
-        role: user.role,
-      },
-    })
+    .select(commentListColumns)
     .from(CommentsTable)
     .leftJoin(user, eq(CommentsTable.userId, user.id))
-    .where(conditions)
+    .where(
+      and(eq(CommentsTable.postId, postId), eq(CommentsTable.rootId, rootId)),
+    )
     .orderBy(CommentsTable.createdAt)
     .limit(Math.min(limit, 100))
     .offset(offset);
 
-  // Fetch replyTo user info separately for each reply
-  const repliesWithReplyTo = await Promise.all(
-    replies.map(async (reply) => {
-      if (!reply.replyToCommentId) {
-        return { ...reply, replyTo: null };
-      }
-
-      const replyToComment = await findCommentById(db, reply.replyToCommentId);
-      if (!replyToComment) {
-        return { ...reply, replyTo: null };
-      }
-
-      const replyToUserInfo = await db.query.user.findFirst({
-        where: eq(user.id, replyToComment.userId),
-        columns: {
-          id: true,
-          name: true,
-        },
-      });
-
-      return {
-        ...reply,
-        replyTo: replyToUserInfo
-          ? { id: replyToUserInfo.id, name: replyToUserInfo.name }
-          : null,
-      };
-    }),
-  );
-
-  return repliesWithReplyTo;
+  return withReplyToUsers(db, replies);
 }
 
-export async function getRepliesByRootIdCount(
+export async function getReplyPreviewsByRootIds(
   db: DB,
   postId: number,
-  rootId: number,
-  options: {
-    guitarTabId?: number;
-    status?: CommentStatus | Array<CommentStatus>;
-    viewerId?: string;
-  } = {},
+  rootIds: Array<number>,
 ) {
-  const { guitarTabId, status, viewerId } = options;
+  const previews = new Map<
+    number,
+    Awaited<ReturnType<typeof getRepliesByRootId>>
+  >();
+  if (rootIds.length === 0) {
+    return previews;
+  }
 
-  const conditions = buildCommentWhereClause({
-    postId,
-    guitarTabId,
-    rootId,
-    status,
-    viewerId,
-  });
-
-  const result = await db
-    .select({ count: count() })
-    .from(CommentsTable)
-    .where(conditions);
-
-  return result[0].count;
+  const pages = await Promise.all(
+    rootIds.map(async (rootId) => ({
+      rootId,
+      replies: await getRepliesByRootId(db, postId, rootId, {
+        limit: COMMENT_REPLY_PREVIEW_LIMIT,
+      }),
+    })),
+  );
+  for (const page of pages) {
+    previews.set(page.rootId, page.replies);
+  }
+  return previews;
 }
 
 export async function getCommentsByUserId(
@@ -244,7 +298,7 @@ export async function getCommentsByUserId(
     status?: CommentStatus | Array<CommentStatus>;
   } = {},
 ) {
-  const { offset = 0, limit = DEFAULT_PAGE_SIZE, status } = options;
+  const { offset = 0, limit = COMMENT_PAGE_SIZE, status } = options;
 
   const conditions = buildCommentWhereClause({ userId, status });
 
@@ -257,105 +311,6 @@ export async function getCommentsByUserId(
     .offset(offset);
 
   return comments;
-}
-
-export async function getAllComments(
-  db: DB,
-  options: {
-    offset?: number;
-    limit?: number;
-    status?: CommentStatus | Array<CommentStatus>;
-    postId?: number;
-    userId?: string;
-    userName?: string;
-  } = {},
-) {
-  const {
-    offset = 0,
-    limit = DEFAULT_PAGE_SIZE,
-    status,
-    postId,
-    userId,
-    userName,
-  } = options;
-
-  const conditions = buildCommentWhereClause({ status, postId, userId });
-  const finalConditions = userName
-    ? and(conditions, like(user.name, `%${userName}%`))
-    : conditions;
-
-  const parentComment = alias(CommentsTable, "parent_comment");
-  const parentUser = alias(user, "parent_user");
-
-  const comments = await db
-    .select({
-      id: CommentsTable.id,
-      content: CommentsTable.content,
-      rootId: CommentsTable.rootId,
-      replyToCommentId: CommentsTable.replyToCommentId,
-      postId: CommentsTable.postId,
-      guitarTabId: CommentsTable.guitarTabId,
-      userId: CommentsTable.userId,
-      status: CommentsTable.status,
-      aiReason: CommentsTable.aiReason,
-      createdAt: CommentsTable.createdAt,
-      updatedAt: CommentsTable.updatedAt,
-      user: {
-        id: user.id,
-        name: user.name,
-        image: user.image,
-        role: user.role,
-      },
-      post: {
-        title: PostsTable.title,
-        slug: PostsTable.slug,
-      },
-      replyToUser: {
-        id: parentUser.id,
-        name: parentUser.name,
-      },
-    })
-    .from(CommentsTable)
-    .leftJoin(user, eq(CommentsTable.userId, user.id))
-    .leftJoin(PostsTable, eq(CommentsTable.postId, PostsTable.id))
-    .leftJoin(
-      parentComment,
-      eq(CommentsTable.replyToCommentId, parentComment.id),
-    )
-    .leftJoin(parentUser, eq(parentComment.userId, parentUser.id))
-    .where(finalConditions)
-    .orderBy(desc(CommentsTable.createdAt))
-    .limit(Math.min(limit, 100))
-    .offset(offset);
-
-  return comments;
-}
-
-export async function getAllCommentsCount(
-  db: DB,
-  options: {
-    status?: CommentStatus | Array<CommentStatus>;
-    postId?: number;
-    userId?: string;
-    userName?: string;
-  } = {},
-) {
-  const { status, postId, userId, userName } = options;
-
-  const conditions = buildCommentWhereClause({ status, postId, userId });
-  const finalConditions = userName
-    ? and(conditions, like(user.name, `%${userName}%`))
-    : conditions;
-
-  let query = db.select({ count: count() }).from(CommentsTable).$dynamic();
-
-  if (userName) {
-    query = query.leftJoin(user, eq(CommentsTable.userId, user.id));
-  }
-
-  const result = await query.where(finalConditions);
-
-  return result[0].count;
 }
 
 export async function updateComment(
@@ -371,46 +326,25 @@ export async function updateComment(
   return comment;
 }
 
-export async function deleteComment(db: DB, id: number) {
-  await db.delete(CommentsTable).where(eq(CommentsTable.id, id));
-}
-
-export async function getUserCommentStats(db: DB, userId: string) {
-  const [stats] = await db
-    .select({
-      totalComments: count(),
-      rejectedComments: sql<number>`sum(case when ${CommentsTable.status} = 'deleted' then 1 else 0 end)`,
-    })
-    .from(CommentsTable)
-    .where(eq(CommentsTable.userId, userId));
-
-  const [userInfo] = await db
-    .select({
-      registeredAt: user.createdAt,
-    })
-    .from(user)
-    .where(eq(user.id, userId));
-
-  return {
-    totalComments: stats.totalComments || 0,
-    rejectedComments: Number(stats.rejectedComments) || 0,
-    registeredAt: userInfo.registeredAt,
-  };
-}
-
 export async function getCommentAuthorWithEmail(db: DB, commentId: number) {
   const result = await db
     .select({
       userId: CommentsTable.userId,
       userName: user.name,
       userEmail: user.email,
+      userRole: user.role,
     })
     .from(CommentsTable)
     .leftJoin(user, eq(CommentsTable.userId, user.id))
     .where(eq(CommentsTable.id, commentId))
     .limit(1);
 
-  if (result.length === 0 || !result[0].userEmail) {
+  if (
+    result.length === 0 ||
+    !result[0].userId ||
+    !result[0].userName ||
+    !result[0].userEmail
+  ) {
     return null;
   }
 
@@ -418,5 +352,35 @@ export async function getCommentAuthorWithEmail(db: DB, commentId: number) {
     id: result[0].userId,
     name: result[0].userName,
     email: result[0].userEmail,
+    role: result[0].userRole,
   };
+}
+
+/** Handling a Comment is bookkeeping, not an edit: `updated_at` stays. */
+export const keepUpdatedAt = { updatedAt: sql`${CommentsTable.updatedAt}` };
+
+/** Sets when an Admin handled a Comment; null puts it back in the queue. */
+export async function setCommentHandledAt(
+  db: DB,
+  id: number,
+  handledAt: Date | null,
+) {
+  const [comment] = await db
+    .update(CommentsTable)
+    .set({ handledAt, ...keepUpdatedAt })
+    .where(eq(CommentsTable.id, id))
+    .returning({ id: CommentsTable.id });
+  return comment ?? null;
+}
+
+/** Marks a Comment handled unless it already is, keeping the first time. */
+export async function markCommentHandledOnce(
+  db: DB,
+  id: number,
+  handledAt: Date,
+) {
+  await db
+    .update(CommentsTable)
+    .set({ handledAt, ...keepUpdatedAt })
+    .where(and(eq(CommentsTable.id, id), isNull(CommentsTable.handledAt)));
 }

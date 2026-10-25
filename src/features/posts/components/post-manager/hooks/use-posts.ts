@@ -1,129 +1,149 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { statusFilterToApi } from "../types";
-import type {
-  PostListItem,
-  SortDirection,
-  SortField,
-  StatusFilter,
-} from "../types";
 import {
-  deletePostFn,
-  getPostsCountFn,
-  getPostsFn,
-  startPostProcessWorkflowFn,
-  updatePostFn,
-} from "@/features/posts/api/posts.admin.api";
-
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { GetPostsInput } from "@/features/posts/schema/posts.schema";
+import { adminPostsQuery } from "@/features/posts/queries";
+import { orpc, orpcClient } from "@/lib/orpc";
 import { ADMIN_ITEMS_PER_PAGE } from "@/lib/constants";
-import { POSTS_KEYS } from "@/features/posts/queries";
-import { toLocalDateString } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
+import type { PostListLocation } from "../list-position";
+import type { AdminPostListItem } from "../types";
+import { statusFilterToApi } from "../types";
 
-interface UsePostsOptions {
-  page: number;
-  status: StatusFilter;
-  sortDir: SortDirection;
-  sortBy: SortField;
-  search: string;
-}
-
-export function usePosts({
+export function adminPostsListParams({
   page,
   status,
-  sortDir,
   sortBy,
   search,
-}: UsePostsOptions) {
-  const apiStatus = statusFilterToApi(status);
-
-  const listParams = {
+  category,
+  tag,
+}: PostListLocation): GetPostsInput {
+  return {
     offset: (page - 1) * ADMIN_ITEMS_PER_PAGE,
     limit: ADMIN_ITEMS_PER_PAGE,
-    status: apiStatus,
-    sortDir,
+    status: statusFilterToApi(status),
+    sortDir: "DESC",
     sortBy,
     search: search || undefined,
+    categoryId: typeof category === "number" ? category : undefined,
+    uncategorized: category === "none" || undefined,
+    tagId: tag,
   };
+}
 
-  const countParams = {
-    status: apiStatus,
-    search: search || undefined,
-  };
-
+export function usePosts(location: PostListLocation) {
   const postsQuery = useQuery({
-    queryKey: POSTS_KEYS.adminList(listParams),
-    queryFn: () => getPostsFn({ data: listParams }),
+    ...adminPostsQuery(adminPostsListParams(location)),
+    placeholderData: keepPreviousData,
   });
 
-  const countQuery = useQuery({
-    queryKey: POSTS_KEYS.count(countParams),
-    queryFn: () => getPostsCountFn({ data: countParams }),
-  });
-
-  const totalPages = Math.ceil((countQuery.data ?? 0) / ADMIN_ITEMS_PER_PAGE);
+  const totalCount = postsQuery.data?.total ?? 0;
+  const totalPages = Math.ceil(totalCount / ADMIN_ITEMS_PER_PAGE);
 
   return {
-    posts: postsQuery.data ?? [],
-    totalCount: countQuery.data ?? 0,
+    posts: postsQuery.data?.items ?? [],
+    totalCount,
     totalPages,
+    statusCounts: postsQuery.data?.statusCounts,
+    isFetching: postsQuery.isFetching,
+    isPlaceholderData: postsQuery.isPlaceholderData,
+    refetch: postsQuery.refetch,
     isPending: postsQuery.isPending,
     error: postsQuery.error,
   };
 }
 
-interface UseDeletePostOptions {
-  onSuccess?: () => void;
+/** Refreshes every view of a post after it changes outside the editor's autosave. */
+export function invalidatePostQueries(queryClient: QueryClient, id: number) {
+  return Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: orpc.posts.admin.get.key({ input: { id } }),
+    }),
+    queryClient.invalidateQueries({ queryKey: orpc.posts.admin.list.key() }),
+    queryClient.invalidateQueries({ queryKey: orpc.posts.list.key() }),
+    queryClient.invalidateQueries({ queryKey: orpc.dashboard.key() }),
+  ]);
 }
 
-export function useDeletePost({ onSuccess }: UseDeletePostOptions = {}) {
+interface MutationCallbacks {
+  onSuccess?: () => void;
+  onError?: () => void;
+}
+
+export function useUnpublishPost({
+  onSuccess,
+  onError,
+}: MutationCallbacks = {}) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (post: PostListItem) => deletePostFn({ data: { id: post.id } }),
-    onSuccess: (_data, post) => {
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.adminLists });
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.counts });
-      toast.success("条目已删除", {
-        description: `条目 "${post.title}" 已删除成功`,
-      });
+    mutationFn: (id: number) => orpcClient.posts.admin.unpublish({ id }),
+    onSuccess: (_result, id) => {
+      toast.success(m.editor_header_unpublish());
+      void invalidatePostQueries(queryClient, id);
       onSuccess?.();
     },
-    onError: (_error, post) => {
-      toast.error("删除条目失败", {
-        description: `删除条目 "${post.title}" 失败`,
-      });
+    onError: () => {
+      toast.error(m.editor_action_unpublish_failed());
+      onError?.();
     },
   });
 }
 
-interface UseUnpublishPostOptions {
-  onSuccess?: () => void;
-}
-
-export function useUnpublishPost({ onSuccess }: UseUnpublishPostOptions = {}) {
+export function useTogglePostPin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (post: PostListItem) => {
-      // 1. 将状态改为 draft
-      await updatePostFn({ data: { id: post.id, data: { status: "draft" } } });
-      // 2. 触发下架工作流
-      const clientToday = toLocalDateString(new Date());
-      await startPostProcessWorkflowFn({
-        data: { id: post.id, status: "draft", clientToday },
-      });
+    mutationFn: (post: Pick<AdminPostListItem, "id" | "pinnedAt">) =>
+      orpcClient.posts.admin.update({
+        id: post.id,
+        data: { pinnedAt: post.pinnedAt ? null : new Date() },
+      }),
+    onSuccess: async (_result, post) => {
+      await invalidatePostQueries(queryClient, post.id);
+      toast.success(
+        post.pinnedAt
+          ? m.admin_posts_toast_unpinned()
+          : m.admin_posts_toast_pinned(),
+      );
     },
-    onSuccess: (_data, post) => {
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.adminLists });
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.counts });
-      toast.success("文章已下架", {
-        description: `"${post.title}" 已从前台移除`,
+    onError: () => {
+      toast.error(m.admin_posts_toast_pin_failed());
+    },
+  });
+}
+
+export function useDeletePost({
+  onSuccess,
+}: Pick<MutationCallbacks, "onSuccess"> = {}) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (post: Pick<AdminPostListItem, "id" | "title">) => {
+      await orpcClient.posts.admin.remove({ id: post.id });
+      return post;
+    },
+    onSuccess: async (post) => {
+      await queryClient.invalidateQueries({
+        queryKey: orpc.posts.admin.list.key(),
+      });
+      toast.success(m.admin_posts_toast_delete_success(), {
+        description: m.admin_posts_toast_delete_success_desc({
+          title: post.title,
+        }),
       });
       onSuccess?.();
     },
     onError: (_error, post) => {
-      toast.error("下架失败", {
-        description: `"${post.title}" 下架失败，请重试`,
+      toast.error(m.admin_posts_toast_delete_failed(), {
+        description: m.admin_posts_toast_delete_failed_desc({
+          title: post.title,
+        }),
       });
     },
   });

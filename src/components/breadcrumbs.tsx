@@ -4,13 +4,18 @@ import { Fragment } from "react";
 export function Breadcrumbs() {
   const matches = useRouterState({ select: (s) => s.matches });
 
-  const breadcrumbs = matches.flatMap(({ pathname, loaderData }) => {
+  const candidates = matches.flatMap(({ pathname, loaderData }) => {
     const title =
-      typeof loaderData === "object" && "title" in loaderData
+      loaderData && typeof loaderData === "object" && "title" in loaderData
         ? loaderData.title
         : undefined;
     return title ? [{ title, path: pathname }] : [];
   });
+
+  const breadcrumbs = candidates.filter(
+    (crumb, index) =>
+      candidates.findIndex((item) => item.path === crumb.path) === index,
+  );
 
   if (breadcrumbs.length === 0) return null;
 

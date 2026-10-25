@@ -1,52 +1,12 @@
-import type { DB as DBType } from "@/lib/db";
 import type {
   Auth as AuthType,
   Session as SessionType,
 } from "@/lib/auth/auth.server";
+import type { DB as DBType } from "@/lib/db";
 import type { QueueMessage } from "@/lib/queue/queue.schema";
-import type { ThemeRouterConfig } from "@/features/theme/registry";
 
 declare global {
-  interface PostProcessWorkflowParams {
-    postId: number;
-    isPublished: boolean;
-    publishedAt?: string;
-    isFuturePost?: boolean;
-  }
-
-  interface ScheduledPublishWorkflowParams {
-    postId: number;
-    publishedAt: string;
-  }
-
-  interface CommentModerationWorkflowParams {
-    commentId: number;
-  }
-
-  interface ExportWorkflowParams {
-    taskId: string;
-    postIds?: Array<number>;
-    status?: "draft" | "published";
-  }
-
-  interface ImportWorkflowParams {
-    taskId: string;
-    r2Key: string;
-    mode: "native" | "markdown";
-  }
-
-  interface GuitarTabProcessWorkflowParams {
-    mediaId: number;
-    r2Key: string;
-  }
-
   interface Env extends Cloudflare.Env {
-    POST_PROCESS_WORKFLOW: Workflow<PostProcessWorkflowParams>;
-    COMMENT_MODERATION_WORKFLOW: Workflow<CommentModerationWorkflowParams>;
-    SCHEDULED_PUBLISH_WORKFLOW: Workflow<ScheduledPublishWorkflowParams>;
-    EXPORT_WORKFLOW: Workflow<ExportWorkflowParams>;
-    IMPORT_WORKFLOW: Workflow<ImportWorkflowParams>;
-    GUITAR_TAB_PROCESS_WORKFLOW: Workflow<GuitarTabProcessWorkflowParams>;
     QUEUE: Queue<QueueMessage>;
   }
 
@@ -72,5 +32,6 @@ declare global {
   };
 
   const __APP_VERSION__: string;
-  const __THEME_CONFIG__: ThemeRouterConfig;
+  /** Identifies the deployed build; see the Workers Cache key in server.ts. */
+  const __BUILD_ID__: string;
 }

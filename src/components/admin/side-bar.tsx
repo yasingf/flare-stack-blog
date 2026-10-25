@@ -7,9 +7,8 @@ import {
   LayoutDashboard,
   Link2,
   LogOut,
-  MessageSquare,
   Settings,
-  Tag,
+  Globe,
   User,
   Users,
   X,
@@ -25,10 +24,10 @@ import { toast } from "sonner";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import { ThemeToggle } from "@/components/common/theme-toggle";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { authClient } from "@/lib/auth/auth.client";
-import { AUTH_KEYS } from "@/features/auth/queries";
+import { authClient } from "@/lib/auth/auth-client";
+import { resetAuthBoundQueries } from "@/features/auth/queries";
 import { cn } from "@/lib/utils";
-import { blogConfig } from "@/blog.config";
+import { useClassicConfig } from "@/components/layout/classic/classic-config";
 
 interface NavItem {
   path: keyof FileRoutesByTo;
@@ -37,6 +36,52 @@ interface NavItem {
   exact: boolean;
 }
 
+const navItems = [
+  { path: "/admin/seo", icon: Globe, label: "站长工具", exact: false },
+  {
+    path: "/admin",
+    icon: LayoutDashboard,
+    label: "概览",
+    exact: true,
+  },
+  {
+    path: "/admin/posts",
+    icon: FileText,
+    label: "文章管理",
+    exact: false,
+  },
+  {
+    path: "/admin/media",
+    icon: ImageIcon,
+    label: "媒体库",
+    exact: false,
+  },
+  {
+    path: "/admin/guitar-tabs",
+    icon: Guitar,
+    label: "吉他谱审核",
+    exact: false,
+  },
+  {
+    path: "/admin/friend-links",
+    icon: Link2,
+    label: "友链管理",
+    exact: false,
+  },
+  {
+    path: "/admin/users",
+    icon: Users,
+    label: "用户管理",
+    exact: false,
+  },
+  {
+    path: "/admin/settings",
+    icon: Settings,
+    label: "系统设置",
+    exact: false,
+  },
+] satisfies Array<NavItem>;
+
 export function SideBar({
   isMobileSidebarOpen,
   closeMobileSidebar,
@@ -44,6 +89,7 @@ export function SideBar({
   isMobileSidebarOpen: boolean;
   closeMobileSidebar: () => void;
 }) {
+  const blogConfig = useClassicConfig();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
@@ -116,68 +162,11 @@ export function SideBar({
       return;
     }
 
-    queryClient.removeQueries({ queryKey: AUTH_KEYS.session });
+    resetAuthBoundQueries(queryClient);
 
     toast.success("已退出登录");
-    navigate({ to: "/login" });
+    void navigate({ to: "/login" });
   };
-
-  const navItems = [
-    {
-      path: "/admin",
-      icon: LayoutDashboard,
-      label: "概览",
-      exact: true,
-    },
-    {
-      path: "/admin/posts",
-      icon: FileText,
-      label: "文章管理",
-      exact: false,
-    },
-    {
-      path: "/admin/tags",
-      icon: Tag,
-      label: "标签管理",
-      exact: false,
-    },
-    {
-      path: "/admin/media",
-      icon: ImageIcon,
-      label: "媒体库",
-      exact: false,
-    },
-    {
-      path: "/admin/guitar-tabs",
-      icon: Guitar,
-      label: "吉他谱审核",
-      exact: false,
-    },
-    {
-      path: "/admin/comments",
-      icon: MessageSquare,
-      label: "评论管理",
-      exact: false,
-    },
-    {
-      path: "/admin/friend-links",
-      icon: Link2,
-      label: "友链管理",
-      exact: false,
-    },
-    {
-      path: "/admin/users",
-      icon: Users,
-      label: "用户管理",
-      exact: false,
-    },
-    {
-      path: "/admin/settings",
-      icon: Settings,
-      label: "系统设置",
-      exact: false,
-    },
-  ] satisfies Array<NavItem>;
 
   return (
     <>
@@ -190,6 +179,7 @@ export function SideBar({
 
       {/* Sidebar */}
       <aside
+        aria-label="管理后台"
         className={cn(
           "fixed inset-y-0 left-0 z-70 w-72 md:w-64 border-r border-border/30 flex flex-col bg-background transform transition-transform duration-300 ease-in-out md:sticky md:top-0 md:h-screen md:translate-x-0",
           isMobileSidebarOpen
@@ -206,6 +196,7 @@ export function SideBar({
           </Link>
           <button
             onClick={closeMobileSidebar}
+            aria-label="关闭菜单"
             className="md:hidden p-2 text-muted-foreground hover:text-foreground"
           >
             <X size={20} strokeWidth={1.5} />

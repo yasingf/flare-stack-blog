@@ -3,88 +3,89 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { FloatingPopover } from "@/components/ui/floating-popover";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
+import "./field.css";
 
 interface DatePickerProps {
+  /** UTC calendar dates in YYYY-MM-DD format. */
   value: string;
   onChange: (date: string) => void;
+  today?: string;
+  maxDate?: string;
   className?: string;
+  id?: string;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
+  id,
   value,
   onChange,
+  today,
+  maxDate,
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
-  // Parse initial value or default to today
-  const initialDate = value ? new Date(value) : new Date();
-  const [viewDate, setViewDate] = useState(initialDate);
-
-  const daysOfWeek = ["日", "一", "二", "三", "四", "五", "六"];
+  const todayDate = today ?? new Date().toISOString().slice(0, 10);
+  const activeDate = value || todayDate;
+  const [viewDate, setViewDate] = useState(
+    () => new Date(`${activeDate}T00:00:00Z`),
+  );
+  const locale = getLocale();
+  const localeTag = locale === "zh" ? "zh-CN" : "en-US";
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    setViewDate(new Date(`${activeDate}T00:00:00Z`));
+  }, [activeDate]);
+
+  const daysOfWeek = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(localeTag, {
+      weekday: "narrow",
+      timeZone: "UTC",
+    }).format(new Date(Date.UTC(2024, 0, 7 + index))),
+  );
 
   const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    return new Date(year, month + 1, 0).getDate();
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   };
 
   const getFirstDayOfMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    return new Date(year, month, 1).getDay();
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    return new Date(Date.UTC(year, month, 1)).getUTCDay();
   };
 
-  const changeMonth = (offset: number) => {
-    const newDate = new Date(
-      viewDate.getFullYear(),
-      viewDate.getMonth() + offset,
-      1,
+  const adjacentMonth = (offset: number) =>
+    new Date(
+      Date.UTC(viewDate.getUTCFullYear(), viewDate.getUTCMonth() + offset, 1),
     );
-    setViewDate(newDate);
+
+  const formatMonth = (date: Date) =>
+    date.toLocaleString(localeTag, {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+
+  const dayValue = (day: number) => {
+    const year = viewDate.getUTCFullYear();
+    const month = (viewDate.getUTCMonth() + 1).toString().padStart(2, "0");
+    const dayStr = day.toString().padStart(2, "0");
+    return `${year}-${month}-${dayStr}`;
   };
 
   const handleDayClick = (day: number) => {
-    const year = viewDate.getFullYear();
-    const month = (viewDate.getMonth() + 1).toString().padStart(2, "0");
-    const dayStr = day.toString().padStart(2, "0");
-    const dateString = `${year}-${month}-${dayStr}`;
-
-    onChange(dateString);
+    onChange(dayValue(day));
     setIsOpen(false);
-  };
-
-  const isSelected = (day: number) => {
-    if (!value) return false;
-    const currentYear = viewDate.getFullYear();
-    const currentMonth = viewDate.getMonth();
-    const [vYear, vMonth, vDay] = value.split("-").map(Number);
-    return vYear === currentYear && vMonth - 1 === currentMonth && vDay === day;
-  };
-
-  const isToday = (day: number) => {
-    const today = new Date();
-    return (
-      today.getDate() === day &&
-      today.getMonth() === viewDate.getMonth() &&
-      today.getFullYear() === viewDate.getFullYear()
-    );
+    triggerRef.current?.focus();
   };
 
   const renderCalendar = () => {
@@ -97,26 +98,32 @@ const DatePicker: React.FC<DatePickerProps> = ({
     }
 
     for (let i = 1; i <= daysInMonth; i++) {
-      const selected = isSelected(i);
-      const today = isToday(i);
+      const date = dayValue(i);
+      const selected = date === value;
+      const isToday = date === todayDate;
+      const disabled = Boolean(maxDate && date > maxDate);
 
       slots.push(
         <button
           key={i}
+          type="button"
+          disabled={disabled}
+          aria-pressed={selected}
+          aria-current={isToday ? "date" : undefined}
           onClick={() => handleDayClick(i)}
           className={`
-            w-8 h-8 text-[11px] font-mono flex items-center justify-center transition-all relative
+            w-8 h-8 text-xs flex items-center justify-center rounded-lg transition-all relative disabled:cursor-not-allowed disabled:opacity-30
             ${
               selected
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                ? "bg-(--fuwari-primary) text-white"
+                : "fuwari-text-75 enabled:hover:bg-(--fuwari-btn-regular-bg)"
             }
-            ${today && !selected ? "text-foreground font-medium" : ""}
+            ${isToday && !selected ? "font-medium fuwari-text-90" : ""}
           `}
         >
           {i}
-          {today && !selected && (
-            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-px bg-foreground"></div>
+          {isToday && !selected && (
+            <div className="absolute bottom-1 left-1/2 h-px w-1 -translate-x-1/2 bg-(--fuwari-primary)"></div>
           )}
         </button>,
       );
@@ -126,68 +133,91 @@ const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-            relative w-full bg-transparent border-b border-border/40 text-sm font-light pl-8 pr-4 py-3 cursor-pointer select-none transition-all
-            ${isOpen ? "border-foreground" : "hover:border-foreground/50"}
-        `}
+    <div className={`relative ${className}`}>
+      <button
+        id={id}
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        onClick={() => {
+          if (!isOpen) setViewDate(new Date(`${activeDate}T00:00:00Z`));
+          setIsOpen(!isOpen);
+        }}
+        className="fuwari-input relative cursor-pointer pl-9 text-left"
       >
         <CalendarIcon
-          className={`absolute left-0 top-1/2 -translate-y-1/2 transition-colors ${
-            isOpen ? "text-foreground" : "text-muted-foreground/50"
-          }`}
+          className="absolute left-3 top-1/2 -translate-y-1/2 fuwari-text-50"
           size={14}
           strokeWidth={1.5}
         />
-        <span className={value ? "opacity-100" : "opacity-40"}>
-          {value || "选择日期"}
+        <span className={value ? "" : "fuwari-text-30"}>
+          {value || m.common_select_date()}
         </span>
-      </div>
+      </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-2 bg-popover border border-border/30 p-4 w-70 animate-in fade-in duration-200">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-serif font-medium text-foreground">
-              {viewDate.toLocaleString("zh-CN", {
-                month: "long",
-                year: "numeric",
-              })}
-            </h4>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => changeMonth(-1)}
-                className="text-muted-foreground/50 hover:text-foreground transition-colors p-1"
-              >
-                <ChevronLeft size={14} strokeWidth={1.5} />
-              </button>
-              <button
-                onClick={() => changeMonth(1)}
-                className="text-muted-foreground/50 hover:text-foreground transition-colors p-1"
-              >
-                <ChevronRight size={14} strokeWidth={1.5} />
-              </button>
-            </div>
+      <FloatingPopover
+        open={isOpen}
+        anchor={isOpen ? triggerRef.current : null}
+        onDismiss={() => setIsOpen(false)}
+        returnFocusOnEscape
+        // The chosen day, else today, else the first day that can be picked.
+        initialFocus={() =>
+          calendarRef.current?.querySelector<HTMLElement>(
+            '[aria-pressed="true"]',
+          ) ??
+          calendarRef.current?.querySelector<HTMLElement>(
+            '[aria-current="date"]:enabled',
+          ) ??
+          calendarRef.current?.querySelector<HTMLElement>("button:enabled") ??
+          null
+        }
+        role="dialog"
+        aria-label={m.common_select_date()}
+        className="w-70 p-4"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-medium fuwari-text-90">
+            {formatMonth(viewDate)}
+          </h4>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={formatMonth(adjacentMonth(-1))}
+              onClick={() => setViewDate(adjacentMonth(-1))}
+              className="p-1 fuwari-text-50 hover:text-(--fuwari-primary) transition-colors"
+            >
+              <ChevronLeft size={14} strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              aria-label={formatMonth(adjacentMonth(1))}
+              onClick={() => setViewDate(adjacentMonth(1))}
+              className="p-1 fuwari-text-50 hover:text-(--fuwari-primary) transition-colors"
+            >
+              <ChevronRight size={14} strokeWidth={1.5} />
+            </button>
           </div>
-
-          {/* Grid Header (Days) */}
-          <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {daysOfWeek.map((d) => (
-              <div
-                key={d}
-                className="w-8 text-center text-[9px] font-mono text-muted-foreground/40 uppercase"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Grid Body */}
-          <div className="grid grid-cols-7 gap-0.5">{renderCalendar()}</div>
         </div>
-      )}
+
+        {/* Grid Header (Days) */}
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
+          {daysOfWeek.map((d, index) => (
+            <div
+              key={index}
+              className="w-8 text-center text-[11px] fuwari-text-30"
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Grid Body */}
+        <div ref={calendarRef} className="grid grid-cols-7 gap-0.5">
+          {renderCalendar()}
+        </div>
+      </FloatingPopover>
     </div>
   );
 };

@@ -1,60 +1,76 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
+import { orpc } from "@/lib/orpc";
+import type { QueryClient } from "@tanstack/react-query";
 import {
+  ClientOnly,
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
-  createRootRouteWithContext,
+  useRouteContext,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import type { QueryClient } from "@tanstack/react-query";
+import { createIsomorphicFn } from "@tanstack/react-start";
+import { lazy, Suspense, type ComponentType } from "react";
 import { ThemeProvider } from "@/components/common/theme-provider";
-
-import TanStackQueryDevtools from "@/integrations/tanstack-query/devtools";
+import { getFuwariThemeStyle } from "@/components/layout/document-style";
+import { siteConfigQuery } from "@/features/config/queries";
+import { getLocale } from "@/paraglide/runtime";
 import appCss from "@/styles.css?url";
-import { blogConfig } from "@/blog.config";
-import { clientEnv } from "@/lib/env/client.env";
-import { getSeoVerificationFn } from "@/features/config/config.api";
 
 interface MyRouterContext {
   queryClient: QueryClient;
 }
 
+const loadDevtools = createIsomorphicFn()
+  .client(() => import("@/integrations/tanstack-devtools"))
+  .server(() =>
+    Promise.resolve({
+      default: function DevtoolsPlaceholder() {
+        return null;
+      },
+    }),
+  );
+
+const AppDevtools = lazy(
+  () => loadDevtools() as Promise<{ default: ComponentType }>,
+);
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  loader: async () => {
-    // SSR 侧获取 SEO 验证码
-    try {
-      const seoVerification = await getSeoVerificationFn();
-      return { seoVerification };
-    } catch {
-      return { seoVerification: null };
-    }
+  beforeLoad: async ({ context }) => {
+    const siteConfig =
+      await context.queryClient.ensureQueryData(siteConfigQuery);
+    const verification = await context.queryClient.ensureQueryData(
+      orpc.seo.verification.queryOptions(),
+    );
+    return { siteConfig, verification };
+  },
+  loader: async ({ context }) => {
+    return {
+      siteConfig: context.siteConfig,
+      verification: context.verification,
+      currentYear: new Date().getUTCFullYear(),
+    };
   },
   head: ({ loaderData }) => {
-    const env = clientEnv();
-    const seo = loaderData?.seoVerification;
-
-    // 构建 SEO 验证 meta tags
-    const seoMeta: Array<Record<string, string>> = [];
-    if (seo?.googleVerification) {
-      seoMeta.push({
-        name: "google-site-verification",
-        content: seo.googleVerification,
-      });
-    }
-    if (seo?.bingVerification) {
-      seoMeta.push({
-        name: "msvalidate.01",
-        content: seo.bingVerification,
-      });
-    }
-    if (seo?.baiduVerification) {
-      seoMeta.push({
-        name: "baidu-site-verification",
-        content: seo.baiduVerification,
-      });
-    }
-
     return {
       meta: [
+        ...(loaderData?.verification.google
+          ? [
+              {
+                name: "google-site-verification",
+                content: loaderData.verification.google,
+              },
+            ]
+          : []),
+        ...(loaderData?.verification.bing
+          ? [{ name: "msvalidate.01", content: loaderData.verification.bing }]
+          : []),
+        ...(loaderData?.verification.baidu
+          ? [
+              {
+                name: "baidu-site-verification",
+                content: loaderData.verification.baidu,
+              },
+            ]
+          : []),
         {
           charSet: "utf-8",
         },
@@ -63,34 +79,33 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
           content: "width=device-width, initial-scale=1",
         },
         {
-          title: blogConfig.title,
+          title: loaderData?.siteConfig?.title,
         },
         {
           name: "description",
-          content: blogConfig.description,
+          content: loaderData?.siteConfig?.description,
         },
-        ...seoMeta,
       ],
       links: [
         {
           rel: "icon",
           type: "image/svg+xml",
-          href: "/favicon.svg",
+          href: loaderData?.siteConfig?.icons.faviconSvg,
         },
         {
           rel: "icon",
           type: "image/png",
-          href: "/favicon-96x96.png",
+          href: loaderData?.siteConfig?.icons.favicon96,
           sizes: "96x96",
         },
         {
           rel: "shortcut icon",
-          href: "/favicon.ico",
+          href: loaderData?.siteConfig?.icons.faviconIco,
         },
         {
           rel: "apple-touch-icon",
           type: "image/png",
-          href: "/apple-touch-icon.png",
+          href: loaderData?.siteConfig?.icons.appleTouchIcon,
           sizes: "180x180",
         },
         {
@@ -107,41 +122,44 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
           title: "RSS Feed",
           href: "/rss.xml",
         },
+        {
+          rel: "alternate",
+          type: "application/atom+xml",
+          title: "Atom Feed",
+          href: "/atom.xml",
+        },
+        {
+          rel: "alternate",
+          type: "application/feed+json",
+          title: "JSON Feed",
+          href: "/feed.json",
+        },
       ],
-      scripts: env.VITE_UMAMI_WEBSITE_ID
-        ? [
-            {
-              src: "/stats.js",
-              defer: true,
-              "data-website-id": env.VITE_UMAMI_WEBSITE_ID,
-            },
-          ]
-        : [],
     };
   },
   shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const locale = getLocale();
+  const { siteConfig } = useRouteContext({ from: "__root__" });
+
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      style={getFuwariThemeStyle(siteConfig)}
+    >
       <head>
         <HeadContent />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
-        <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
+        <ClientOnly>
+          <Suspense fallback={null}>
+            <AppDevtools />
+          </Suspense>
+        </ClientOnly>
         <Scripts />
       </body>
     </html>

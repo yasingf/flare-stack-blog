@@ -9,54 +9,62 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as AdminRouteRouteImport } from './routes/admin/route'
-import { Route as UserRouteRouteImport } from './routes/_user/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
-import { Route as AuthRouteRouteImport } from './routes/_auth/route'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AtomDotxmlRouteImport } from './routes/atom[.]xml'
+import { Route as FeedDotjsonRouteImport } from './routes/feed[.]json'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
+import { Route as SiteDotwebmanifestRouteImport } from './routes/site[.]webmanifest'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StatsDotjsRouteImport } from './routes/stats[.]js'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
-import { Route as UserSubmitGuitarTabRouteImport } from './routes/_user/submit-guitar-tab'
-import { Route as UserSubmitFriendLinkRouteImport } from './routes/_user/submit-friend-link'
-import { Route as UserProfileRouteImport } from './routes/_user/profile'
-import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
-import { Route as PublicSearchRouteImport } from './routes/_public/search'
-import { Route as PublicPostsRouteImport } from './routes/_public/posts'
-import { Route as PublicGuitarTabsRouteImport } from './routes/_public/guitar-tabs'
+import { Route as PublicSplatRouteImport } from './routes/_public/$'
+import { Route as PublicAuthRouteRouteImport } from './routes/_public/_auth/route'
+import { Route as PublicUserRouteRouteImport } from './routes/_public/_user/route'
 import { Route as PublicFriendLinksRouteImport } from './routes/_public/friend-links'
-import { Route as AuthVerifyEmailRouteImport } from './routes/_auth/verify-email'
-import { Route as AuthResetLinkRouteImport } from './routes/_auth/reset-link'
-import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
-import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as PublicGuitarTabsRouteImport } from './routes/_public/guitar-tabs'
+import { Route as PublicPostsRouteImport } from './routes/_public/posts'
+import { Route as PublicSearchRouteImport } from './routes/_public/search'
+import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminSplatRouteImport } from './routes/admin/$'
 import { Route as AdminPostsRouteRouteImport } from './routes/admin/posts/route'
-import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
-import { Route as AdminTagsIndexRouteImport } from './routes/admin/tags/index'
-import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
-import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
-import { Route as AdminMediaIndexRouteImport } from './routes/admin/media/index'
-import { Route as AdminGuitarTabsIndexRouteImport } from './routes/admin/guitar-tabs/index'
-import { Route as AdminFriendLinksIndexRouteImport } from './routes/admin/friend-links/index'
-import { Route as AdminCommentsIndexRouteImport } from './routes/admin/comments/index'
-import { Route as PublicPostSlugRouteImport } from './routes/_public/post/$slug'
+import { Route as AdminSeoRouteImport } from './routes/admin/seo'
+import { Route as AdminSettingsRouteRouteImport } from './routes/admin/settings/route'
+import { Route as ApiSplatRouteImport } from './routes/api.$'
+import { Route as ApiAuthRouteImport } from './routes/api.auth'
+import { Route as ApiSendRouteImport } from './routes/api.send'
+import { Route as ImagesSplatRouteImport } from './routes/images.$'
+import { Route as PublicAuthForgotPasswordRouteImport } from './routes/_public/_auth/forgot-password'
+import { Route as PublicAuthLoginRouteImport } from './routes/_public/_auth/login'
+import { Route as PublicAuthRegisterRouteImport } from './routes/_public/_auth/register'
+import { Route as PublicAuthResetLinkRouteImport } from './routes/_public/_auth/reset-link'
+import { Route as PublicAuthVerifyEmailRouteImport } from './routes/_public/_auth/verify-email'
+import { Route as PublicUserProfileRouteImport } from './routes/_public/_user/profile'
+import { Route as PublicUserSubmitFriendLinkRouteImport } from './routes/_public/_user/submit-friend-link'
+import { Route as PublicUserSubmitGuitarTabRouteImport } from './routes/_public/_user/submit-guitar-tab'
 import { Route as PublicGuitarTabSlugRouteImport } from './routes/_public/guitar-tab/$slug'
-import { Route as AdminPostsEditIdRouteImport } from './routes/admin/posts/edit.$id'
+import { Route as PublicPostSlugRouteImport } from './routes/_public/post/$slug'
+import { Route as AdminFriendLinksIndexRouteImport } from './routes/admin/friend-links/index'
+import { Route as AdminGuitarTabsIndexRouteImport } from './routes/admin/guitar-tabs/index'
+import { Route as AdminMediaIndexRouteImport } from './routes/admin/media/index'
+import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
+import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
+import { Route as AdminSettingsApiKeysRouteImport } from './routes/admin/settings/api-keys'
+import { Route as AdminSettingsMaintenanceRouteImport } from './routes/admin/settings/maintenance'
+import { Route as AdminSettingsMutedUsersRouteImport } from './routes/admin/settings/muted-users'
+import { Route as AdminSettingsNotificationsRouteImport } from './routes/admin/settings/notifications'
+import { Route as AdminSettingsSiteRouteImport } from './routes/admin/settings/site'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
+import { Route as AdminPostsEditIdRouteRouteImport } from './routes/admin/posts/edit.$id/route'
+import { Route as AdminPostsEditIdIndexRouteImport } from './routes/admin/posts/edit.$id/index'
+import { Route as AdminPostsEditIdHistoryRouteImport } from './routes/admin/posts/edit.$id/history'
+import { Route as AdminPostsEditIdHistoryRevisionIdRouteImport } from './routes/admin/posts/edit.$id/history_.$revisionId'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RssDotxmlRoute = RssDotxmlRouteImport.update({
-  id: '/rss.xml',
-  path: '/rss.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -64,61 +72,57 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UserRouteRoute = UserRouteRouteImport.update({
-  id: '/_user',
+const AtomDotxmlRoute = AtomDotxmlRouteImport.update({
+  id: '/atom.xml',
+  path: '/atom.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicRouteRoute = PublicRouteRouteImport.update({
-  id: '/_public',
+const FeedDotjsonRoute = FeedDotjsonRouteImport.update({
+  id: '/feed.json',
+  path: '/feed.json',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRouteRoute = AuthRouteRouteImport.update({
-  id: '/_auth',
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRouteRoute,
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SiteDotwebmanifestRoute = SiteDotwebmanifestRouteImport.update({
+  id: '/site.webmanifest',
+  path: '/site.webmanifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsDotjsRoute = StatsDotjsRouteImport.update({
+  id: '/stats.js',
+  path: '/stats.js',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const UserSubmitGuitarTabRoute = UserSubmitGuitarTabRouteImport.update({
-  id: '/submit-guitar-tab',
-  path: '/submit-guitar-tab',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const UserSubmitFriendLinkRoute = UserSubmitFriendLinkRouteImport.update({
-  id: '/submit-friend-link',
-  path: '/submit-friend-link',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const UserProfileRoute = UserProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => UserRouteRoute,
-} as any)
-const PublicUnsubscribeRoute = PublicUnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
+const PublicSplatRoute = PublicSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const PublicSearchRoute = PublicSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
+const PublicAuthRouteRoute = PublicAuthRouteRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const PublicPostsRoute = PublicPostsRouteImport.update({
-  id: '/posts',
-  path: '/posts',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicGuitarTabsRoute = PublicGuitarTabsRouteImport.update({
-  id: '/guitar-tabs',
-  path: '/guitar-tabs',
+const PublicUserRouteRoute = PublicUserRouteRouteImport.update({
+  id: '/_user',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicFriendLinksRoute = PublicFriendLinksRouteImport.update({
@@ -126,59 +130,127 @@ const PublicFriendLinksRoute = PublicFriendLinksRouteImport.update({
   path: '/friend-links',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => AuthRouteRoute,
+const PublicGuitarTabsRoute = PublicGuitarTabsRouteImport.update({
+  id: '/guitar-tabs',
+  path: '/guitar-tabs',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthResetLinkRoute = AuthResetLinkRouteImport.update({
-  id: '/reset-link',
-  path: '/reset-link',
-  getParentRoute: () => AuthRouteRoute,
+const PublicPostsRoute = PublicPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthRegisterRoute = AuthRegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => AuthRouteRoute,
+const PublicSearchRoute = PublicSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AuthRouteRoute,
+const PublicUnsubscribeRoute = PublicUnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => AuthRouteRoute,
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSplatRoute = AdminSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminPostsRouteRoute = AdminPostsRouteRouteImport.update({
   id: '/posts',
   path: '/posts',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminTagsIndexRoute = AdminTagsIndexRouteImport.update({
-  id: '/tags/',
-  path: '/tags/',
+const AdminSettingsRouteRoute = AdminSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => AdminRouteRoute,
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminPostsRouteRoute,
+const ApiAuthRoute = ApiAuthRouteImport.update({
+  id: '/api/auth',
+  path: '/api/auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminMediaIndexRoute = AdminMediaIndexRouteImport.update({
-  id: '/media/',
-  path: '/media/',
+const ApiSendRoute = ApiSendRouteImport.update({
+  id: '/api/send',
+  path: '/api/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImagesSplatRoute = ImagesSplatRouteImport.update({
+  id: '/images/$',
+  path: '/images/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicAuthForgotPasswordRoute =
+  PublicAuthForgotPasswordRouteImport.update({
+    id: '/forgot-password',
+    path: '/forgot-password',
+    getParentRoute: () => PublicAuthRouteRoute,
+  } as any)
+const PublicAuthLoginRoute = PublicAuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicAuthRegisterRoute = PublicAuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicAuthResetLinkRoute = PublicAuthResetLinkRouteImport.update({
+  id: '/reset-link',
+  path: '/reset-link',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicAuthVerifyEmailRoute = PublicAuthVerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicUserProfileRoute = PublicUserProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => PublicUserRouteRoute,
+} as any)
+const PublicUserSubmitFriendLinkRoute =
+  PublicUserSubmitFriendLinkRouteImport.update({
+    id: '/submit-friend-link',
+    path: '/submit-friend-link',
+    getParentRoute: () => PublicUserRouteRoute,
+  } as any)
+const PublicUserSubmitGuitarTabRoute =
+  PublicUserSubmitGuitarTabRouteImport.update({
+    id: '/submit-guitar-tab',
+    path: '/submit-guitar-tab',
+    getParentRoute: () => PublicUserRouteRoute,
+  } as any)
+const PublicGuitarTabSlugRoute = PublicGuitarTabSlugRouteImport.update({
+  id: '/guitar-tab/$slug',
+  path: '/guitar-tab/$slug',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicPostSlugRoute = PublicPostSlugRouteImport.update({
+  id: '/post/$slug',
+  path: '/post/$slug',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const AdminFriendLinksIndexRoute = AdminFriendLinksIndexRouteImport.update({
+  id: '/friend-links/',
+  path: '/friend-links/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminGuitarTabsIndexRoute = AdminGuitarTabsIndexRouteImport.update({
@@ -186,267 +258,417 @@ const AdminGuitarTabsIndexRoute = AdminGuitarTabsIndexRouteImport.update({
   path: '/guitar-tabs/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminFriendLinksIndexRoute = AdminFriendLinksIndexRouteImport.update({
-  id: '/friend-links/',
-  path: '/friend-links/',
+const AdminMediaIndexRoute = AdminMediaIndexRouteImport.update({
+  id: '/media/',
+  path: '/media/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminCommentsIndexRoute = AdminCommentsIndexRouteImport.update({
-  id: '/comments/',
-  path: '/comments/',
+const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminPostsRouteRoute,
+} as any)
+const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminSettingsRouteRoute,
+} as any)
+const AdminSettingsApiKeysRoute = AdminSettingsApiKeysRouteImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => AdminSettingsRouteRoute,
+} as any)
+const AdminSettingsMaintenanceRoute =
+  AdminSettingsMaintenanceRouteImport.update({
+    id: '/maintenance',
+    path: '/maintenance',
+    getParentRoute: () => AdminSettingsRouteRoute,
+  } as any)
+const AdminSettingsMutedUsersRoute = AdminSettingsMutedUsersRouteImport.update({
+  id: '/muted-users',
+  path: '/muted-users',
+  getParentRoute: () => AdminSettingsRouteRoute,
+} as any)
+const AdminSettingsNotificationsRoute =
+  AdminSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AdminSettingsRouteRoute,
+  } as any)
+const AdminSettingsSiteRoute = AdminSettingsSiteRouteImport.update({
+  id: '/site',
+  path: '/site',
+  getParentRoute: () => AdminSettingsRouteRoute,
+} as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const PublicPostSlugRoute = PublicPostSlugRouteImport.update({
-  id: '/post/$slug',
-  path: '/post/$slug',
-  getParentRoute: () => PublicRouteRoute,
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => ApiAuthRoute,
 } as any)
-const PublicGuitarTabSlugRoute = PublicGuitarTabSlugRouteImport.update({
-  id: '/guitar-tab/$slug',
-  path: '/guitar-tab/$slug',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const AdminPostsEditIdRoute = AdminPostsEditIdRouteImport.update({
+const AdminPostsEditIdRouteRoute = AdminPostsEditIdRouteRouteImport.update({
   id: '/edit/$id',
   path: '/edit/$id',
   getParentRoute: () => AdminPostsRouteRoute,
 } as any)
+const AdminPostsEditIdIndexRoute = AdminPostsEditIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminPostsEditIdRouteRoute,
+} as any)
+const AdminPostsEditIdHistoryRoute = AdminPostsEditIdHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AdminPostsEditIdRouteRoute,
+} as any)
+const AdminPostsEditIdHistoryRevisionIdRoute =
+  AdminPostsEditIdHistoryRevisionIdRouteImport.update({
+    id: '/history_/$revisionId',
+    path: '/history/$revisionId',
+    getParentRoute: () => AdminPostsEditIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof PublicIndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/atom.xml': typeof AtomDotxmlRoute
+  '/feed.json': typeof FeedDotjsonRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/rss.xml': typeof RssDotxmlRoute
+  '/site.webmanifest': typeof SiteDotwebmanifestRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats.js': typeof StatsDotjsRoute
   '/admin/posts': typeof AdminPostsRouteRouteWithChildren
-  '/forgot-password': typeof AuthForgotPasswordRoute
-  '/login': typeof AuthLoginRoute
-  '/register': typeof AuthRegisterRoute
-  '/reset-link': typeof AuthResetLinkRoute
-  '/verify-email': typeof AuthVerifyEmailRoute
+  '/admin/settings': typeof AdminSettingsRouteRouteWithChildren
+  '/$': typeof PublicSplatRoute
   '/friend-links': typeof PublicFriendLinksRoute
   '/guitar-tabs': typeof PublicGuitarTabsRoute
   '/posts': typeof PublicPostsRoute
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
-  '/profile': typeof UserProfileRoute
-  '/submit-friend-link': typeof UserSubmitFriendLinkRoute
-  '/submit-guitar-tab': typeof UserSubmitGuitarTabRoute
-  '/': typeof PublicIndexRoute
+  '/admin/$': typeof AdminSplatRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
+  '/api/send': typeof ApiSendRoute
+  '/images/$': typeof ImagesSplatRoute
   '/admin/': typeof AdminIndexRoute
+  '/forgot-password': typeof PublicAuthForgotPasswordRoute
+  '/login': typeof PublicAuthLoginRoute
+  '/register': typeof PublicAuthRegisterRoute
+  '/reset-link': typeof PublicAuthResetLinkRoute
+  '/verify-email': typeof PublicAuthVerifyEmailRoute
+  '/profile': typeof PublicUserProfileRoute
+  '/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
+  '/submit-guitar-tab': typeof PublicUserSubmitGuitarTabRoute
   '/guitar-tab/$slug': typeof PublicGuitarTabSlugRoute
   '/post/$slug': typeof PublicPostSlugRoute
-  '/admin/comments': typeof AdminCommentsIndexRoute
-  '/admin/friend-links': typeof AdminFriendLinksIndexRoute
-  '/admin/guitar-tabs': typeof AdminGuitarTabsIndexRoute
-  '/admin/media': typeof AdminMediaIndexRoute
-  '/admin/posts/': typeof AdminPostsIndexRoute
-  '/admin/settings': typeof AdminSettingsIndexRoute
-  '/admin/tags': typeof AdminTagsIndexRoute
-  '/admin/users': typeof AdminUsersIndexRoute
-  '/admin/posts/edit/$id': typeof AdminPostsEditIdRoute
-}
-export interface FileRoutesByTo {
-  '/robots.txt': typeof RobotsDottxtRoute
-  '/rss.xml': typeof RssDotxmlRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/forgot-password': typeof AuthForgotPasswordRoute
-  '/login': typeof AuthLoginRoute
-  '/register': typeof AuthRegisterRoute
-  '/reset-link': typeof AuthResetLinkRoute
-  '/verify-email': typeof AuthVerifyEmailRoute
-  '/friend-links': typeof PublicFriendLinksRoute
-  '/guitar-tabs': typeof PublicGuitarTabsRoute
-  '/posts': typeof PublicPostsRoute
-  '/search': typeof PublicSearchRoute
-  '/unsubscribe': typeof PublicUnsubscribeRoute
-  '/profile': typeof UserProfileRoute
-  '/submit-friend-link': typeof UserSubmitFriendLinkRoute
-  '/submit-guitar-tab': typeof UserSubmitGuitarTabRoute
-  '/': typeof PublicIndexRoute
-  '/admin': typeof AdminIndexRoute
-  '/guitar-tab/$slug': typeof PublicGuitarTabSlugRoute
-  '/post/$slug': typeof PublicPostSlugRoute
-  '/admin/comments': typeof AdminCommentsIndexRoute
-  '/admin/friend-links': typeof AdminFriendLinksIndexRoute
-  '/admin/guitar-tabs': typeof AdminGuitarTabsIndexRoute
-  '/admin/media': typeof AdminMediaIndexRoute
-  '/admin/posts': typeof AdminPostsIndexRoute
-  '/admin/settings': typeof AdminSettingsIndexRoute
-  '/admin/tags': typeof AdminTagsIndexRoute
-  '/admin/users': typeof AdminUsersIndexRoute
-  '/admin/posts/edit/$id': typeof AdminPostsEditIdRoute
-}
-export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/_auth': typeof AuthRouteRouteWithChildren
-  '/_public': typeof PublicRouteRouteWithChildren
-  '/_user': typeof UserRouteRouteWithChildren
-  '/admin': typeof AdminRouteRouteWithChildren
-  '/robots.txt': typeof RobotsDottxtRoute
-  '/rss.xml': typeof RssDotxmlRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin/posts': typeof AdminPostsRouteRouteWithChildren
-  '/_auth/forgot-password': typeof AuthForgotPasswordRoute
-  '/_auth/login': typeof AuthLoginRoute
-  '/_auth/register': typeof AuthRegisterRoute
-  '/_auth/reset-link': typeof AuthResetLinkRoute
-  '/_auth/verify-email': typeof AuthVerifyEmailRoute
-  '/_public/friend-links': typeof PublicFriendLinksRoute
-  '/_public/guitar-tabs': typeof PublicGuitarTabsRoute
-  '/_public/posts': typeof PublicPostsRoute
-  '/_public/search': typeof PublicSearchRoute
-  '/_public/unsubscribe': typeof PublicUnsubscribeRoute
-  '/_user/profile': typeof UserProfileRoute
-  '/_user/submit-friend-link': typeof UserSubmitFriendLinkRoute
-  '/_user/submit-guitar-tab': typeof UserSubmitGuitarTabRoute
-  '/_public/': typeof PublicIndexRoute
-  '/admin/': typeof AdminIndexRoute
-  '/_public/guitar-tab/$slug': typeof PublicGuitarTabSlugRoute
-  '/_public/post/$slug': typeof PublicPostSlugRoute
-  '/admin/comments/': typeof AdminCommentsIndexRoute
+  '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
+  '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
+  '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
+  '/admin/settings/notifications': typeof AdminSettingsNotificationsRoute
+  '/admin/settings/site': typeof AdminSettingsSiteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/admin/friend-links/': typeof AdminFriendLinksIndexRoute
   '/admin/guitar-tabs/': typeof AdminGuitarTabsIndexRoute
   '/admin/media/': typeof AdminMediaIndexRoute
   '/admin/posts/': typeof AdminPostsIndexRoute
   '/admin/settings/': typeof AdminSettingsIndexRoute
-  '/admin/tags/': typeof AdminTagsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
-  '/admin/posts/edit/$id': typeof AdminPostsEditIdRoute
+  '/admin/posts/edit/$id': typeof AdminPostsEditIdRouteRouteWithChildren
+  '/admin/posts/edit/$id/history': typeof AdminPostsEditIdHistoryRoute
+  '/admin/posts/edit/$id/': typeof AdminPostsEditIdIndexRoute
+  '/admin/posts/edit/$id/history/$revisionId': typeof AdminPostsEditIdHistoryRevisionIdRoute
+}
+export interface FileRoutesByTo {
+  '/atom.xml': typeof AtomDotxmlRoute
+  '/feed.json': typeof FeedDotjsonRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
+  '/site.webmanifest': typeof SiteDotwebmanifestRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats.js': typeof StatsDotjsRoute
+  '/': typeof PublicIndexRoute
+  '/$': typeof PublicSplatRoute
+  '/friend-links': typeof PublicFriendLinksRoute
+  '/guitar-tabs': typeof PublicGuitarTabsRoute
+  '/posts': typeof PublicPostsRoute
+  '/search': typeof PublicSearchRoute
+  '/unsubscribe': typeof PublicUnsubscribeRoute
+  '/admin/$': typeof AdminSplatRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
+  '/api/send': typeof ApiSendRoute
+  '/images/$': typeof ImagesSplatRoute
+  '/admin': typeof AdminIndexRoute
+  '/forgot-password': typeof PublicAuthForgotPasswordRoute
+  '/login': typeof PublicAuthLoginRoute
+  '/register': typeof PublicAuthRegisterRoute
+  '/reset-link': typeof PublicAuthResetLinkRoute
+  '/verify-email': typeof PublicAuthVerifyEmailRoute
+  '/profile': typeof PublicUserProfileRoute
+  '/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
+  '/submit-guitar-tab': typeof PublicUserSubmitGuitarTabRoute
+  '/guitar-tab/$slug': typeof PublicGuitarTabSlugRoute
+  '/post/$slug': typeof PublicPostSlugRoute
+  '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
+  '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
+  '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
+  '/admin/settings/notifications': typeof AdminSettingsNotificationsRoute
+  '/admin/settings/site': typeof AdminSettingsSiteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/admin/friend-links': typeof AdminFriendLinksIndexRoute
+  '/admin/guitar-tabs': typeof AdminGuitarTabsIndexRoute
+  '/admin/media': typeof AdminMediaIndexRoute
+  '/admin/posts': typeof AdminPostsIndexRoute
+  '/admin/settings': typeof AdminSettingsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
+  '/admin/posts/edit/$id/history': typeof AdminPostsEditIdHistoryRoute
+  '/admin/posts/edit/$id': typeof AdminPostsEditIdIndexRoute
+  '/admin/posts/edit/$id/history/$revisionId': typeof AdminPostsEditIdHistoryRevisionIdRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/_public': typeof PublicRouteRouteWithChildren
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/atom.xml': typeof AtomDotxmlRoute
+  '/feed.json': typeof FeedDotjsonRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/rss.xml': typeof RssDotxmlRoute
+  '/site.webmanifest': typeof SiteDotwebmanifestRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats.js': typeof StatsDotjsRoute
+  '/_public/_auth': typeof PublicAuthRouteRouteWithChildren
+  '/_public/_user': typeof PublicUserRouteRouteWithChildren
+  '/admin/posts': typeof AdminPostsRouteRouteWithChildren
+  '/admin/settings': typeof AdminSettingsRouteRouteWithChildren
+  '/_public/$': typeof PublicSplatRoute
+  '/_public/friend-links': typeof PublicFriendLinksRoute
+  '/_public/guitar-tabs': typeof PublicGuitarTabsRoute
+  '/_public/posts': typeof PublicPostsRoute
+  '/_public/search': typeof PublicSearchRoute
+  '/_public/unsubscribe': typeof PublicUnsubscribeRoute
+  '/admin/$': typeof AdminSplatRoute
+  '/admin/seo': typeof AdminSeoRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
+  '/api/send': typeof ApiSendRoute
+  '/images/$': typeof ImagesSplatRoute
+  '/_public/': typeof PublicIndexRoute
+  '/admin/': typeof AdminIndexRoute
+  '/_public/_auth/forgot-password': typeof PublicAuthForgotPasswordRoute
+  '/_public/_auth/login': typeof PublicAuthLoginRoute
+  '/_public/_auth/register': typeof PublicAuthRegisterRoute
+  '/_public/_auth/reset-link': typeof PublicAuthResetLinkRoute
+  '/_public/_auth/verify-email': typeof PublicAuthVerifyEmailRoute
+  '/_public/_user/profile': typeof PublicUserProfileRoute
+  '/_public/_user/submit-friend-link': typeof PublicUserSubmitFriendLinkRoute
+  '/_public/_user/submit-guitar-tab': typeof PublicUserSubmitGuitarTabRoute
+  '/_public/guitar-tab/$slug': typeof PublicGuitarTabSlugRoute
+  '/_public/post/$slug': typeof PublicPostSlugRoute
+  '/admin/settings/api-keys': typeof AdminSettingsApiKeysRoute
+  '/admin/settings/maintenance': typeof AdminSettingsMaintenanceRoute
+  '/admin/settings/muted-users': typeof AdminSettingsMutedUsersRoute
+  '/admin/settings/notifications': typeof AdminSettingsNotificationsRoute
+  '/admin/settings/site': typeof AdminSettingsSiteRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/admin/friend-links/': typeof AdminFriendLinksIndexRoute
+  '/admin/guitar-tabs/': typeof AdminGuitarTabsIndexRoute
+  '/admin/media/': typeof AdminMediaIndexRoute
+  '/admin/posts/': typeof AdminPostsIndexRoute
+  '/admin/settings/': typeof AdminSettingsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/posts/edit/$id': typeof AdminPostsEditIdRouteRouteWithChildren
+  '/admin/posts/edit/$id/history': typeof AdminPostsEditIdHistoryRoute
+  '/admin/posts/edit/$id/': typeof AdminPostsEditIdIndexRoute
+  '/admin/posts/edit/$id/history_/$revisionId': typeof AdminPostsEditIdHistoryRevisionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/admin'
+    | '/atom.xml'
+    | '/feed.json'
     | '/robots.txt'
     | '/rss.xml'
+    | '/site.webmanifest'
     | '/sitemap.xml'
+    | '/stats.js'
     | '/admin/posts'
-    | '/forgot-password'
-    | '/login'
-    | '/register'
-    | '/reset-link'
-    | '/verify-email'
+    | '/admin/settings'
+    | '/$'
     | '/friend-links'
     | '/guitar-tabs'
     | '/posts'
     | '/search'
     | '/unsubscribe'
-    | '/profile'
-    | '/submit-friend-link'
-    | '/submit-guitar-tab'
-    | '/'
+    | '/admin/$'
+    | '/admin/seo'
+    | '/api/$'
+    | '/api/auth'
+    | '/api/send'
+    | '/images/$'
     | '/admin/'
-    | '/guitar-tab/$slug'
-    | '/post/$slug'
-    | '/admin/comments'
-    | '/admin/friend-links'
-    | '/admin/guitar-tabs'
-    | '/admin/media'
-    | '/admin/posts/'
-    | '/admin/settings'
-    | '/admin/tags'
-    | '/admin/users'
-    | '/admin/posts/edit/$id'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/robots.txt'
-    | '/rss.xml'
-    | '/sitemap.xml'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-link'
     | '/verify-email'
-    | '/friend-links'
-    | '/guitar-tabs'
-    | '/posts'
-    | '/search'
-    | '/unsubscribe'
     | '/profile'
     | '/submit-friend-link'
     | '/submit-guitar-tab'
-    | '/'
-    | '/admin'
     | '/guitar-tab/$slug'
     | '/post/$slug'
-    | '/admin/comments'
-    | '/admin/friend-links'
-    | '/admin/guitar-tabs'
-    | '/admin/media'
-    | '/admin/posts'
-    | '/admin/settings'
-    | '/admin/tags'
-    | '/admin/users'
-    | '/admin/posts/edit/$id'
-  id:
-    | '__root__'
-    | '/_auth'
-    | '/_public'
-    | '/_user'
-    | '/admin'
-    | '/robots.txt'
-    | '/rss.xml'
-    | '/sitemap.xml'
-    | '/admin/posts'
-    | '/_auth/forgot-password'
-    | '/_auth/login'
-    | '/_auth/register'
-    | '/_auth/reset-link'
-    | '/_auth/verify-email'
-    | '/_public/friend-links'
-    | '/_public/guitar-tabs'
-    | '/_public/posts'
-    | '/_public/search'
-    | '/_public/unsubscribe'
-    | '/_user/profile'
-    | '/_user/submit-friend-link'
-    | '/_user/submit-guitar-tab'
-    | '/_public/'
-    | '/admin/'
-    | '/_public/guitar-tab/$slug'
-    | '/_public/post/$slug'
-    | '/admin/comments/'
+    | '/admin/settings/api-keys'
+    | '/admin/settings/maintenance'
+    | '/admin/settings/muted-users'
+    | '/admin/settings/notifications'
+    | '/admin/settings/site'
+    | '/api/auth/$'
     | '/admin/friend-links/'
     | '/admin/guitar-tabs/'
     | '/admin/media/'
     | '/admin/posts/'
     | '/admin/settings/'
-    | '/admin/tags/'
     | '/admin/users/'
     | '/admin/posts/edit/$id'
+    | '/admin/posts/edit/$id/history'
+    | '/admin/posts/edit/$id/'
+    | '/admin/posts/edit/$id/history/$revisionId'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/atom.xml'
+    | '/feed.json'
+    | '/robots.txt'
+    | '/rss.xml'
+    | '/site.webmanifest'
+    | '/sitemap.xml'
+    | '/stats.js'
+    | '/'
+    | '/$'
+    | '/friend-links'
+    | '/guitar-tabs'
+    | '/posts'
+    | '/search'
+    | '/unsubscribe'
+    | '/admin/$'
+    | '/admin/seo'
+    | '/api/$'
+    | '/api/auth'
+    | '/api/send'
+    | '/images/$'
+    | '/admin'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-link'
+    | '/verify-email'
+    | '/profile'
+    | '/submit-friend-link'
+    | '/submit-guitar-tab'
+    | '/guitar-tab/$slug'
+    | '/post/$slug'
+    | '/admin/settings/api-keys'
+    | '/admin/settings/maintenance'
+    | '/admin/settings/muted-users'
+    | '/admin/settings/notifications'
+    | '/admin/settings/site'
+    | '/api/auth/$'
+    | '/admin/friend-links'
+    | '/admin/guitar-tabs'
+    | '/admin/media'
+    | '/admin/posts'
+    | '/admin/settings'
+    | '/admin/users'
+    | '/admin/posts/edit/$id/history'
+    | '/admin/posts/edit/$id'
+    | '/admin/posts/edit/$id/history/$revisionId'
+  id:
+    | '__root__'
+    | '/_public'
+    | '/admin'
+    | '/atom.xml'
+    | '/feed.json'
+    | '/robots.txt'
+    | '/rss.xml'
+    | '/site.webmanifest'
+    | '/sitemap.xml'
+    | '/stats.js'
+    | '/_public/_auth'
+    | '/_public/_user'
+    | '/admin/posts'
+    | '/admin/settings'
+    | '/_public/$'
+    | '/_public/friend-links'
+    | '/_public/guitar-tabs'
+    | '/_public/posts'
+    | '/_public/search'
+    | '/_public/unsubscribe'
+    | '/admin/$'
+    | '/admin/seo'
+    | '/api/$'
+    | '/api/auth'
+    | '/api/send'
+    | '/images/$'
+    | '/_public/'
+    | '/admin/'
+    | '/_public/_auth/forgot-password'
+    | '/_public/_auth/login'
+    | '/_public/_auth/register'
+    | '/_public/_auth/reset-link'
+    | '/_public/_auth/verify-email'
+    | '/_public/_user/profile'
+    | '/_public/_user/submit-friend-link'
+    | '/_public/_user/submit-guitar-tab'
+    | '/_public/guitar-tab/$slug'
+    | '/_public/post/$slug'
+    | '/admin/settings/api-keys'
+    | '/admin/settings/maintenance'
+    | '/admin/settings/muted-users'
+    | '/admin/settings/notifications'
+    | '/admin/settings/site'
+    | '/api/auth/$'
+    | '/admin/friend-links/'
+    | '/admin/guitar-tabs/'
+    | '/admin/media/'
+    | '/admin/posts/'
+    | '/admin/settings/'
+    | '/admin/users/'
+    | '/admin/posts/edit/$id'
+    | '/admin/posts/edit/$id/history'
+    | '/admin/posts/edit/$id/'
+    | '/admin/posts/edit/$id/history_/$revisionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthRouteRoute: typeof AuthRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
-  UserRouteRoute: typeof UserRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  AtomDotxmlRoute: typeof AtomDotxmlRoute
+  FeedDotjsonRoute: typeof FeedDotjsonRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   RssDotxmlRoute: typeof RssDotxmlRoute
+  SiteDotwebmanifestRoute: typeof SiteDotwebmanifestRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StatsDotjsRoute: typeof StatsDotjsRoute
+  ApiSplatRoute: typeof ApiSplatRoute
+  ApiAuthRoute: typeof ApiAuthRouteWithChildren
+  ApiSendRoute: typeof ApiSendRoute
+  ImagesSplatRoute: typeof ImagesSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rss.xml': {
-      id: '/rss.xml'
-      path: '/rss.xml'
-      fullPath: '/rss.xml'
-      preLoaderRoute: typeof RssDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -456,33 +678,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_user': {
-      id: '/_user'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof UserRouteRouteImport
+    '/atom.xml': {
+      id: '/atom.xml'
+      path: '/atom.xml'
+      fullPath: '/atom.xml'
+      preLoaderRoute: typeof AtomDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_public': {
-      id: '/_public'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof PublicRouteRouteImport
+    '/feed.json': {
+      id: '/feed.json'
+      path: '/feed.json'
+      fullPath: '/feed.json'
+      preLoaderRoute: typeof FeedDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthRouteRouteImport
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/site.webmanifest': {
+      id: '/site.webmanifest'
+      path: '/site.webmanifest'
+      fullPath: '/site.webmanifest'
+      preLoaderRoute: typeof SiteDotwebmanifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats.js': {
+      id: '/stats.js'
+      path: '/stats.js'
+      fullPath: '/stats.js'
+      preLoaderRoute: typeof StatsDotjsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_public/': {
       id: '/_public/'
@@ -491,53 +734,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_user/submit-guitar-tab': {
-      id: '/_user/submit-guitar-tab'
-      path: '/submit-guitar-tab'
-      fullPath: '/submit-guitar-tab'
-      preLoaderRoute: typeof UserSubmitGuitarTabRouteImport
-      parentRoute: typeof UserRouteRoute
-    }
-    '/_user/submit-friend-link': {
-      id: '/_user/submit-friend-link'
-      path: '/submit-friend-link'
-      fullPath: '/submit-friend-link'
-      preLoaderRoute: typeof UserSubmitFriendLinkRouteImport
-      parentRoute: typeof UserRouteRoute
-    }
-    '/_user/profile': {
-      id: '/_user/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof UserProfileRouteImport
-      parentRoute: typeof UserRouteRoute
-    }
-    '/_public/unsubscribe': {
-      id: '/_public/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof PublicUnsubscribeRouteImport
+    '/_public/$': {
+      id: '/_public/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof PublicSplatRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_public/search': {
-      id: '/_public/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof PublicSearchRouteImport
+    '/_public/_auth': {
+      id: '/_public/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicAuthRouteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_public/posts': {
-      id: '/_public/posts'
-      path: '/posts'
-      fullPath: '/posts'
-      preLoaderRoute: typeof PublicPostsRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/guitar-tabs': {
-      id: '/_public/guitar-tabs'
-      path: '/guitar-tabs'
-      fullPath: '/guitar-tabs'
-      preLoaderRoute: typeof PublicGuitarTabsRouteImport
+    '/_public/_user': {
+      id: '/_public/_user'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicUserRouteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/friend-links': {
@@ -547,40 +762,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicFriendLinksRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/_auth/verify-email': {
-      id: '/_auth/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof AuthVerifyEmailRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/_public/guitar-tabs': {
+      id: '/_public/guitar-tabs'
+      path: '/guitar-tabs'
+      fullPath: '/guitar-tabs'
+      preLoaderRoute: typeof PublicGuitarTabsRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_auth/reset-link': {
-      id: '/_auth/reset-link'
-      path: '/reset-link'
-      fullPath: '/reset-link'
-      preLoaderRoute: typeof AuthResetLinkRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/_public/posts': {
+      id: '/_public/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof PublicPostsRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_auth/register': {
-      id: '/_auth/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof AuthRegisterRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/_public/search': {
+      id: '/_public/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof PublicSearchRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_auth/login': {
-      id: '/_auth/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/_public/unsubscribe': {
+      id: '/_public/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof PublicUnsubscribeRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_auth/forgot-password': {
-      id: '/_auth/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof AuthForgotPasswordRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/$': {
+      id: '/admin/$'
+      path: '/$'
+      fullPath: '/admin/$'
+      preLoaderRoute: typeof AdminSplatRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/posts': {
       id: '/admin/posts'
@@ -589,25 +811,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPostsRouteRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/users/': {
-      id: '/admin/users/'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersIndexRouteImport
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/tags/': {
-      id: '/admin/tags/'
-      path: '/tags'
-      fullPath: '/admin/tags'
-      preLoaderRoute: typeof AdminTagsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/settings/': {
-      id: '/admin/settings/'
+    '/admin/settings': {
+      id: '/admin/settings'
       path: '/settings'
       fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      preLoaderRoute: typeof AdminSettingsRouteRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth': {
+      id: '/api/auth'
+      path: '/api/auth'
+      fullPath: '/api/auth'
+      preLoaderRoute: typeof ApiAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/send': {
+      id: '/api/send'
+      path: '/api/send'
+      fullPath: '/api/send'
+      preLoaderRoute: typeof ApiSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/images/$': {
+      id: '/images/$'
+      path: '/images/$'
+      fullPath: '/images/$'
+      preLoaderRoute: typeof ImagesSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/_auth/forgot-password': {
+      id: '/_public/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof PublicAuthForgotPasswordRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_auth/login': {
+      id: '/_public/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof PublicAuthLoginRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_auth/register': {
+      id: '/_public/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof PublicAuthRegisterRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_auth/reset-link': {
+      id: '/_public/_auth/reset-link'
+      path: '/reset-link'
+      fullPath: '/reset-link'
+      preLoaderRoute: typeof PublicAuthResetLinkRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_auth/verify-email': {
+      id: '/_public/_auth/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof PublicAuthVerifyEmailRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_user/profile': {
+      id: '/_public/_user/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof PublicUserProfileRouteImport
+      parentRoute: typeof PublicUserRouteRoute
+    }
+    '/_public/_user/submit-friend-link': {
+      id: '/_public/_user/submit-friend-link'
+      path: '/submit-friend-link'
+      fullPath: '/submit-friend-link'
+      preLoaderRoute: typeof PublicUserSubmitFriendLinkRouteImport
+      parentRoute: typeof PublicUserRouteRoute
+    }
+    '/_public/_user/submit-guitar-tab': {
+      id: '/_public/_user/submit-guitar-tab'
+      path: '/submit-guitar-tab'
+      fullPath: '/submit-guitar-tab'
+      preLoaderRoute: typeof PublicUserSubmitGuitarTabRouteImport
+      parentRoute: typeof PublicUserRouteRoute
+    }
+    '/_public/guitar-tab/$slug': {
+      id: '/_public/guitar-tab/$slug'
+      path: '/guitar-tab/$slug'
+      fullPath: '/guitar-tab/$slug'
+      preLoaderRoute: typeof PublicGuitarTabSlugRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/post/$slug': {
+      id: '/_public/post/$slug'
+      path: '/post/$slug'
+      fullPath: '/post/$slug'
+      preLoaderRoute: typeof PublicPostSlugRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/admin/friend-links/': {
+      id: '/admin/friend-links/'
+      path: '/friend-links'
+      fullPath: '/admin/friend-links/'
+      preLoaderRoute: typeof AdminFriendLinksIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/guitar-tabs/': {
+      id: '/admin/guitar-tabs/'
+      path: '/guitar-tabs'
+      fullPath: '/admin/guitar-tabs/'
+      preLoaderRoute: typeof AdminGuitarTabsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/media/': {
+      id: '/admin/media/'
+      path: '/media'
+      fullPath: '/admin/media/'
+      preLoaderRoute: typeof AdminMediaIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/posts/': {
@@ -617,79 +951,133 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPostsIndexRouteImport
       parentRoute: typeof AdminPostsRouteRoute
     }
-    '/admin/media/': {
-      id: '/admin/media/'
-      path: '/media'
-      fullPath: '/admin/media'
-      preLoaderRoute: typeof AdminMediaIndexRouteImport
+    '/admin/settings/': {
+      id: '/admin/settings/'
+      path: '/'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/settings/api-keys': {
+      id: '/admin/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/admin/settings/api-keys'
+      preLoaderRoute: typeof AdminSettingsApiKeysRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/settings/maintenance': {
+      id: '/admin/settings/maintenance'
+      path: '/maintenance'
+      fullPath: '/admin/settings/maintenance'
+      preLoaderRoute: typeof AdminSettingsMaintenanceRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/settings/muted-users': {
+      id: '/admin/settings/muted-users'
+      path: '/muted-users'
+      fullPath: '/admin/settings/muted-users'
+      preLoaderRoute: typeof AdminSettingsMutedUsersRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/settings/notifications': {
+      id: '/admin/settings/notifications'
+      path: '/notifications'
+      fullPath: '/admin/settings/notifications'
+      preLoaderRoute: typeof AdminSettingsNotificationsRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/settings/site': {
+      id: '/admin/settings/site'
+      path: '/site'
+      fullPath: '/admin/settings/site'
+      preLoaderRoute: typeof AdminSettingsSiteRouteImport
+      parentRoute: typeof AdminSettingsRouteRoute
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/guitar-tabs/': {
-      id: '/admin/guitar-tabs/'
-      path: '/guitar-tabs'
-      fullPath: '/admin/guitar-tabs'
-      preLoaderRoute: typeof AdminGuitarTabsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/friend-links/': {
-      id: '/admin/friend-links/'
-      path: '/friend-links'
-      fullPath: '/admin/friend-links'
-      preLoaderRoute: typeof AdminFriendLinksIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/comments/': {
-      id: '/admin/comments/'
-      path: '/comments'
-      fullPath: '/admin/comments'
-      preLoaderRoute: typeof AdminCommentsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/_public/post/$slug': {
-      id: '/_public/post/$slug'
-      path: '/post/$slug'
-      fullPath: '/post/$slug'
-      preLoaderRoute: typeof PublicPostSlugRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/guitar-tab/$slug': {
-      id: '/_public/guitar-tab/$slug'
-      path: '/guitar-tab/$slug'
-      fullPath: '/guitar-tab/$slug'
-      preLoaderRoute: typeof PublicGuitarTabSlugRouteImport
-      parentRoute: typeof PublicRouteRoute
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof ApiAuthRoute
     }
     '/admin/posts/edit/$id': {
       id: '/admin/posts/edit/$id'
       path: '/edit/$id'
       fullPath: '/admin/posts/edit/$id'
-      preLoaderRoute: typeof AdminPostsEditIdRouteImport
+      preLoaderRoute: typeof AdminPostsEditIdRouteRouteImport
       parentRoute: typeof AdminPostsRouteRoute
+    }
+    '/admin/posts/edit/$id/': {
+      id: '/admin/posts/edit/$id/'
+      path: '/'
+      fullPath: '/admin/posts/edit/$id/'
+      preLoaderRoute: typeof AdminPostsEditIdIndexRouteImport
+      parentRoute: typeof AdminPostsEditIdRouteRoute
+    }
+    '/admin/posts/edit/$id/history': {
+      id: '/admin/posts/edit/$id/history'
+      path: '/history'
+      fullPath: '/admin/posts/edit/$id/history'
+      preLoaderRoute: typeof AdminPostsEditIdHistoryRouteImport
+      parentRoute: typeof AdminPostsEditIdRouteRoute
+    }
+    '/admin/posts/edit/$id/history_/$revisionId': {
+      id: '/admin/posts/edit/$id/history_/$revisionId'
+      path: '/history/$revisionId'
+      fullPath: '/admin/posts/edit/$id/history/$revisionId'
+      preLoaderRoute: typeof AdminPostsEditIdHistoryRevisionIdRouteImport
+      parentRoute: typeof AdminPostsEditIdRouteRoute
     }
   }
 }
 
-interface AuthRouteRouteChildren {
-  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
-  AuthLoginRoute: typeof AuthLoginRoute
-  AuthRegisterRoute: typeof AuthRegisterRoute
-  AuthResetLinkRoute: typeof AuthResetLinkRoute
-  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
+interface PublicAuthRouteRouteChildren {
+  PublicAuthForgotPasswordRoute: typeof PublicAuthForgotPasswordRoute
+  PublicAuthLoginRoute: typeof PublicAuthLoginRoute
+  PublicAuthRegisterRoute: typeof PublicAuthRegisterRoute
+  PublicAuthResetLinkRoute: typeof PublicAuthResetLinkRoute
+  PublicAuthVerifyEmailRoute: typeof PublicAuthVerifyEmailRoute
 }
 
-const AuthRouteRouteChildren: AuthRouteRouteChildren = {
-  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
-  AuthLoginRoute: AuthLoginRoute,
-  AuthRegisterRoute: AuthRegisterRoute,
-  AuthResetLinkRoute: AuthResetLinkRoute,
-  AuthVerifyEmailRoute: AuthVerifyEmailRoute,
+const PublicAuthRouteRouteChildren: PublicAuthRouteRouteChildren = {
+  PublicAuthForgotPasswordRoute: PublicAuthForgotPasswordRoute,
+  PublicAuthLoginRoute: PublicAuthLoginRoute,
+  PublicAuthRegisterRoute: PublicAuthRegisterRoute,
+  PublicAuthResetLinkRoute: PublicAuthResetLinkRoute,
+  PublicAuthVerifyEmailRoute: PublicAuthVerifyEmailRoute,
 }
 
-const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
-  AuthRouteRouteChildren,
+const PublicAuthRouteRouteWithChildren = PublicAuthRouteRoute._addFileChildren(
+  PublicAuthRouteRouteChildren,
+)
+
+interface PublicUserRouteRouteChildren {
+  PublicUserProfileRoute: typeof PublicUserProfileRoute
+  PublicUserSubmitFriendLinkRoute: typeof PublicUserSubmitFriendLinkRoute
+  PublicUserSubmitGuitarTabRoute: typeof PublicUserSubmitGuitarTabRoute
+}
+
+const PublicUserRouteRouteChildren: PublicUserRouteRouteChildren = {
+  PublicUserProfileRoute: PublicUserProfileRoute,
+  PublicUserSubmitFriendLinkRoute: PublicUserSubmitFriendLinkRoute,
+  PublicUserSubmitGuitarTabRoute: PublicUserSubmitGuitarTabRoute,
+}
+
+const PublicUserRouteRouteWithChildren = PublicUserRouteRoute._addFileChildren(
+  PublicUserRouteRouteChildren,
 )
 
 interface PublicRouteRouteChildren {
+  PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
+  PublicUserRouteRoute: typeof PublicUserRouteRouteWithChildren
+  PublicSplatRoute: typeof PublicSplatRoute
   PublicFriendLinksRoute: typeof PublicFriendLinksRoute
   PublicGuitarTabsRoute: typeof PublicGuitarTabsRoute
   PublicPostsRoute: typeof PublicPostsRoute
@@ -701,6 +1089,9 @@ interface PublicRouteRouteChildren {
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
+  PublicUserRouteRoute: PublicUserRouteRouteWithChildren,
+  PublicSplatRoute: PublicSplatRoute,
   PublicFriendLinksRoute: PublicFriendLinksRoute,
   PublicGuitarTabsRoute: PublicGuitarTabsRoute,
   PublicPostsRoute: PublicPostsRoute,
@@ -715,57 +1106,80 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
   PublicRouteRouteChildren,
 )
 
-interface UserRouteRouteChildren {
-  UserProfileRoute: typeof UserProfileRoute
-  UserSubmitFriendLinkRoute: typeof UserSubmitFriendLinkRoute
-  UserSubmitGuitarTabRoute: typeof UserSubmitGuitarTabRoute
+interface AdminPostsEditIdRouteRouteChildren {
+  AdminPostsEditIdHistoryRoute: typeof AdminPostsEditIdHistoryRoute
+  AdminPostsEditIdIndexRoute: typeof AdminPostsEditIdIndexRoute
+  AdminPostsEditIdHistoryRevisionIdRoute: typeof AdminPostsEditIdHistoryRevisionIdRoute
 }
 
-const UserRouteRouteChildren: UserRouteRouteChildren = {
-  UserProfileRoute: UserProfileRoute,
-  UserSubmitFriendLinkRoute: UserSubmitFriendLinkRoute,
-  UserSubmitGuitarTabRoute: UserSubmitGuitarTabRoute,
+const AdminPostsEditIdRouteRouteChildren: AdminPostsEditIdRouteRouteChildren = {
+  AdminPostsEditIdHistoryRoute: AdminPostsEditIdHistoryRoute,
+  AdminPostsEditIdIndexRoute: AdminPostsEditIdIndexRoute,
+  AdminPostsEditIdHistoryRevisionIdRoute:
+    AdminPostsEditIdHistoryRevisionIdRoute,
 }
 
-const UserRouteRouteWithChildren = UserRouteRoute._addFileChildren(
-  UserRouteRouteChildren,
-)
+const AdminPostsEditIdRouteRouteWithChildren =
+  AdminPostsEditIdRouteRoute._addFileChildren(
+    AdminPostsEditIdRouteRouteChildren,
+  )
 
 interface AdminPostsRouteRouteChildren {
   AdminPostsIndexRoute: typeof AdminPostsIndexRoute
-  AdminPostsEditIdRoute: typeof AdminPostsEditIdRoute
+  AdminPostsEditIdRouteRoute: typeof AdminPostsEditIdRouteRouteWithChildren
 }
 
 const AdminPostsRouteRouteChildren: AdminPostsRouteRouteChildren = {
   AdminPostsIndexRoute: AdminPostsIndexRoute,
-  AdminPostsEditIdRoute: AdminPostsEditIdRoute,
+  AdminPostsEditIdRouteRoute: AdminPostsEditIdRouteRouteWithChildren,
 }
 
 const AdminPostsRouteRouteWithChildren = AdminPostsRouteRoute._addFileChildren(
   AdminPostsRouteRouteChildren,
 )
 
+interface AdminSettingsRouteRouteChildren {
+  AdminSettingsApiKeysRoute: typeof AdminSettingsApiKeysRoute
+  AdminSettingsMaintenanceRoute: typeof AdminSettingsMaintenanceRoute
+  AdminSettingsMutedUsersRoute: typeof AdminSettingsMutedUsersRoute
+  AdminSettingsNotificationsRoute: typeof AdminSettingsNotificationsRoute
+  AdminSettingsSiteRoute: typeof AdminSettingsSiteRoute
+  AdminSettingsIndexRoute: typeof AdminSettingsIndexRoute
+}
+
+const AdminSettingsRouteRouteChildren: AdminSettingsRouteRouteChildren = {
+  AdminSettingsApiKeysRoute: AdminSettingsApiKeysRoute,
+  AdminSettingsMaintenanceRoute: AdminSettingsMaintenanceRoute,
+  AdminSettingsMutedUsersRoute: AdminSettingsMutedUsersRoute,
+  AdminSettingsNotificationsRoute: AdminSettingsNotificationsRoute,
+  AdminSettingsSiteRoute: AdminSettingsSiteRoute,
+  AdminSettingsIndexRoute: AdminSettingsIndexRoute,
+}
+
+const AdminSettingsRouteRouteWithChildren =
+  AdminSettingsRouteRoute._addFileChildren(AdminSettingsRouteRouteChildren)
+
 interface AdminRouteRouteChildren {
   AdminPostsRouteRoute: typeof AdminPostsRouteRouteWithChildren
+  AdminSettingsRouteRoute: typeof AdminSettingsRouteRouteWithChildren
+  AdminSplatRoute: typeof AdminSplatRoute
+  AdminSeoRoute: typeof AdminSeoRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminCommentsIndexRoute: typeof AdminCommentsIndexRoute
   AdminFriendLinksIndexRoute: typeof AdminFriendLinksIndexRoute
   AdminGuitarTabsIndexRoute: typeof AdminGuitarTabsIndexRoute
   AdminMediaIndexRoute: typeof AdminMediaIndexRoute
-  AdminSettingsIndexRoute: typeof AdminSettingsIndexRoute
-  AdminTagsIndexRoute: typeof AdminTagsIndexRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminPostsRouteRoute: AdminPostsRouteRouteWithChildren,
+  AdminSettingsRouteRoute: AdminSettingsRouteRouteWithChildren,
+  AdminSplatRoute: AdminSplatRoute,
+  AdminSeoRoute: AdminSeoRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminCommentsIndexRoute: AdminCommentsIndexRoute,
   AdminFriendLinksIndexRoute: AdminFriendLinksIndexRoute,
   AdminGuitarTabsIndexRoute: AdminGuitarTabsIndexRoute,
   AdminMediaIndexRoute: AdminMediaIndexRoute,
-  AdminSettingsIndexRoute: AdminSettingsIndexRoute,
-  AdminTagsIndexRoute: AdminTagsIndexRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
 }
 
@@ -773,24 +1187,42 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface ApiAuthRouteChildren {
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+}
+
+const ApiAuthRouteChildren: ApiAuthRouteChildren = {
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+}
+
+const ApiAuthRouteWithChildren =
+  ApiAuthRoute._addFileChildren(ApiAuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  AuthRouteRoute: AuthRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
-  UserRouteRoute: UserRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  AtomDotxmlRoute: AtomDotxmlRoute,
+  FeedDotjsonRoute: FeedDotjsonRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   RssDotxmlRoute: RssDotxmlRoute,
+  SiteDotwebmanifestRoute: SiteDotwebmanifestRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StatsDotjsRoute: StatsDotjsRoute,
+  ApiSplatRoute: ApiSplatRoute,
+  ApiAuthRoute: ApiAuthRouteWithChildren,
+  ApiSendRoute: ApiSendRoute,
+  ImagesSplatRoute: ImagesSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
