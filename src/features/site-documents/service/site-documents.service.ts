@@ -146,7 +146,8 @@ export async function buildSitemapXml(env: Env) {
 }
 
 export function buildRobotsTxt(env: Env) {
-  const { DOMAIN } = serverEnv(env);
+  const { DOMAIN, ENVIRONMENT } = serverEnv(env);
+  if (ENVIRONMENT === "dev") return "User-agent: *\nDisallow: /";
   return `User-agent: *
 Allow: /
 Disallow: /admin

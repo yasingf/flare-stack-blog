@@ -26,7 +26,7 @@
 ## 不影响现有博客的上线顺序
 
 1. 登录 Cloudflare，先核对当前 Worker、域名/Routes、D1、R2、KV、Queue、OAuth、Turnstile 及所有构建变量/运行时机密。把 `blog.yasing.top` 当前 Worker 的版本、资源绑定和现有配置保存下来。
-2. 导出 D1、备份 R2，并确认备份能恢复到独立数据库。创建独立的预览 Worker、D1、R2、KV、Queue；复制生产数据和 R2 文件。预览阶段禁止复用生产 D1、Queue、KV 和可写 R2，避免发信、缓存清理或媒体删除影响线上。
+2. 保存 D1 Time Travel bookmark、通过只读批量查询复制数据并备份 R2，确认副本可恢复。D1 的整库 export 会暂时阻塞查询，不能直接在要求持续可读的生产环境运行。创建独立的预览 Worker、D1、R2、KV、Queue；复制生产数据和 R2 文件。预览阶段禁止复用生产 D1、Queue、KV 和可写 R2，避免发信、缓存清理或媒体删除影响线上。
 3. 预览 Worker 的构建环境设置独立的 `WORKER_NAME`、`D1_DATABASE_ID`、`BUCKET_NAME`、`KV_NAMESPACE_ID`、`QUEUE_NAME` 和预览 `DOMAIN`，并使用预览 OAuth/Turnstile 配置。运行时变量统一设为机密。预览禁用真实邮件、Webhook 和分析数据上报。
 4. 用 Node 24 和锁定依赖执行 `bun ci`、`bun run check`、翻译检查、两套测试、`bun run build`。核实 D1 ID 确实是副本后，才在预览环境执行 `bun run deploy`。完整环境变量说明见 [deployment.md](deployment.md)。旧 `wrangler:prepare`、`db:push` 和手工 slug 脚本不适用于此次生产升级。
 5. 在预览域名逐项验证：文章、搜索、图片、旧链接、吉他谱播放/音轨/投稿/审核、两类评论、登录/头像、Markdown 与富文本保存、站点设置、邮件及站点地图。核对各表行数、关键内容和 `PRAGMA foreign_key_check`，并保留迁移日志。
@@ -45,4 +45,14 @@
 - 生产构建及 SSR chunk graph 检查通过；本地 30 个数据库迁移全部执行成功。
 - 浏览器完成媒体上传、吉他谱解析/播放、Markdown 与富文本切换、吉他谱嵌入、文章保存/发布及重新读取验证；前台和后台在 390px 手机宽度及深色模式下无横向溢出。
 
-Cloudflare CLI 在本次工作开始时未登录，因此生产资源盘点、真实数据副本验证和域名切换需在具备账号访问后完成。本地测试不能替代这三步。
+## 已建立的独立预览
+
+预览地址：https://my-blog-v361-preview.yasingfls.workers.dev 。Worker、D1、R2、KV、Queue 分别使用 `my-blog-v361-preview`、`blog-d1-v361-preview`、`blog-r2-v361-preview`、`blog-kv-v361-preview` 和 `blog-queue-v361-preview`。未绑定生产域名。
+
+2026-10-25 已通过 Cloudflare 授权完成生产资源盘点、原 Worker 版本备份、D1 只读数据副本和 R2 备份。副本含 3 篇文章、5 首吉他谱、48 个媒体文件（15,733,158 字节）；全部媒体的 ETag 和大小一致，真实 D1 副本执行到第 30 个迁移后行数及外键检查通过。原评论为 2 条已发布和 1 条已删除，无待审核内容被公开。
+
+预览禁用邮件、Webhook 和分析上报，清除了复制的会话/验证记录，并使用 `ENVIRONMENT=dev` 返回禁止收录的 robots.txt 和 X-Robots-Tag。生产数据库、Worker 和域名仍保持原版本。敏感备份仅保存在本地被 Git 忽略的 `.secrets/upgrade-2026-10-25/` 中，不提交仓库。
+
+仓库原部署所用 Secrets 仍在 GitHub。CI 的手动运行新增 `upgrade_runtime` 选项，默认 `none` 仍执行完整检查；`preview` 或 `production` 仅通过 `scripts/sync-upgrade-runtime.ts` 为固定的独立升级 Worker 配置现有密钥，不迁移数据库、不修改域名，也不修改原 `my-blog` Worker。密钥只在 GitHub runner 与 Cloudflare 之间传递，不输出值、不上传 artifact。`production` 选项仅在最终同步和切换准备完成后使用。
+
+正式切换仍需完成最终数据同步、生产运行时配置和域名切换；预览验收不能替代这些步骤。

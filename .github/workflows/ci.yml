@@ -9,9 +9,19 @@ on:
       - ".vscode/**"
       - ".gitignore"
   workflow_dispatch:
+    inputs:
+      upgrade_runtime:
+        description: "给独立升级 Worker 配置现有密钥（不会切换域名或迁移数据）"
+        type: choice
+        default: none
+        options:
+          - none
+          - preview
+          - production
 
 jobs:
   quality:
+    if: github.event_name != 'workflow_dispatch' || inputs.upgrade_runtime == 'none'
     name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
     steps:
@@ -60,3 +70,35 @@ jobs:
 
       - name: Run Integration Tests
         run: bun run test
+
+  upgrade-runtime:
+    name: Configure isolated upgrade Worker
+    if: github.event_name == 'workflow_dispatch' && inputs.upgrade_runtime != 'none' && github.repository == 'yasingf/flare-stack-blog'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - run: bun ci
+      - name: Configure runtime without exposing secret values
+        run: bun scripts/sync-upgrade-runtime.ts
+        env:
+          UPGRADE_RUNTIME_MODE: ${{ inputs.upgrade_runtime }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          DOMAIN: ${{ secrets.DOMAIN }}
+          GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          UMAMI_WEBSITE_ID: ${{ vars.VITE_UMAMI_WEBSITE_ID }}
+          UMAMI_SRC: ${{ secrets.UMAMI_SRC }}
+          UMAMI_API_KEY: ${{ secrets.UMAMI_API_KEY }}
+          UMAMI_USERNAME: ${{ secrets.UMAMI_USERNAME }}
+          UMAMI_PASSWORD: ${{ secrets.UMAMI_PASSWORD }}

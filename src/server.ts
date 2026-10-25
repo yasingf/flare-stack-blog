@@ -8,6 +8,7 @@ import {
 } from "@/features/cache/workers-cache-policy";
 import { postPopularityService } from "@/features/post-popularity/service/post-popularity.service";
 import { getDb } from "@/lib/db";
+import { serverEnv } from "@/lib/env/server.env";
 import { handleQueueBatch } from "@/lib/queue/queue.handler";
 import { extractLocaleFromRequest } from "@/paraglide/runtime";
 import { paraglideMiddleware } from "@/paraglide/server";
@@ -50,15 +51,23 @@ export class App extends WorkerEntrypoint<Env, AppProps> {
 }
 
 export default {
-  async fetch(request, _env, ctx) {
+  async fetch(request, env, ctx) {
     const locale = extractLocaleFromRequest(request);
-    return ctx.exports.App({ props: { locale } }).fetch(request, {
-      // Cached pages name the hashed assets of the build that rendered them,
-      // and a deploy removes those assets, so each build gets its own keys.
-      cf: {
-        cacheKey: `/_build/${__BUILD_ID__}${workersCacheKey(request.url)}`,
-      },
-    });
+    const response = await ctx.exports
+      .App({ props: { locale } })
+      .fetch(request, {
+        // Cached pages name the hashed assets of the build that rendered them,
+        // and a deploy removes those assets, so each build gets its own keys.
+        cf: {
+          cacheKey: `/_build/${__BUILD_ID__}${workersCacheKey(request.url)}`,
+        },
+      });
+    if (serverEnv(env).ENVIRONMENT === "dev") {
+      const previewResponse = new Response(response.body, response);
+      previewResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return previewResponse;
+    }
+    return response;
   },
   async queue(batch, env, ctx) {
     await handleQueueBatch(batch, env, ctx);
