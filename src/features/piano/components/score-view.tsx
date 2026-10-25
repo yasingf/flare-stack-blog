@@ -142,12 +142,13 @@ export function ScoreView({
                       noteId: match?.id,
                     };
                     positions.current.push(position);
-                    svg.dataset.pianoNote = match?.id || "rest";
+                    svg.dataset.pianoNote =
+                      match?.id || (pitch === undefined ? "rest" : "notation");
                     svg.setAttribute("tabindex", "0");
                     svg.setAttribute("role", "button");
                     svg.setAttribute(
                       "aria-label",
-                      `第 ${firstPerformance.number} 小节，${match ? `${match.hand === "right" ? "右手" : "左手"}音符${match.finger ? `，指法 ${match.finger}` : ""}` : "休止符"}`,
+                      `第 ${firstPerformance.number} 小节，${match ? `${match.hand === "right" ? "右手" : "左手"}音符${match.finger ? `，指法 ${match.finger}` : ""}` : pitch === undefined ? "休止符" : "延续或装饰音符"}`,
                     );
                     const activate = (event: Event) => {
                       if (
@@ -165,7 +166,10 @@ export function ScoreView({
                           ?.getAttribute("data-piano-symbol");
                         if (cls) actions.current.onSymbol(cls);
                         else if (match) actions.current.onNote(match.id);
-                        else actions.current.onSymbol("rest");
+                        else
+                          actions.current.onSymbol(
+                            pitch === undefined ? "rest" : "note",
+                          );
                       } else {
                         actions.current.onSeek(position.beat);
                         if (match) actions.current.onNote(match.id);
