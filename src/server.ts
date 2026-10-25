@@ -62,7 +62,11 @@ export default {
           cacheKey: `/_build/${__BUILD_ID__}${workersCacheKey(request.url)}`,
         },
       });
-    if (serverEnv(env).ENVIRONMENT === "dev") {
+    const runtime = serverEnv(env);
+    if (
+      runtime.ENVIRONMENT === "dev" ||
+      new URL(request.url).hostname !== runtime.DOMAIN
+    ) {
       const previewResponse = new Response(response.body, response);
       previewResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
       return previewResponse;

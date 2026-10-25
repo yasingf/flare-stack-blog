@@ -1,0 +1,83 @@
+name: Deploy blog to Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".agent/**"
+      - ".vscode/**"
+      - ".gitignore"
+  workflow_dispatch:
+
+concurrency:
+  group: blog-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.repository == 'yasingf/flare-stack-blog' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      # The original my-blog resources remain available for rollback.
+      WORKER_NAME: my-blog-v361-preview
+      D1_DATABASE_ID: eb1a1370-c8cd-4180-a6a2-0eeb9b03e8c7
+      BUCKET_NAME: blog-r2-v361-preview
+      KV_NAMESPACE_ID: c9782cd037204c78884af8c189877ae0
+      QUEUE_NAME: blog-queue-v361-preview
+      DOMAIN: blog.yasing.top
+      VITE_BLOG_NAME: ${{ vars.VITE_BLOG_NAME }}
+      VITE_BLOG_TITLE: ${{ vars.VITE_BLOG_TITLE }}
+      VITE_BLOG_AUTHOR: ${{ vars.VITE_BLOG_AUTHOR }}
+      VITE_BLOG_DESCRIPTION: ${{ vars.VITE_BLOG_DESCRIPTION }}
+      VITE_BLOG_GITHUB: ${{ vars.VITE_BLOG_GITHUB }}
+      VITE_BLOG_EMAIL: ${{ vars.VITE_BLOG_EMAIL }}
+      VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+      VITE_UMAMI_WEBSITE_ID: ${{ vars.VITE_UMAMI_WEBSITE_ID }}
+      VITE_DEFAULT_HOME_IMAGE: ${{ vars.VITE_DEFAULT_HOME_IMAGE }}
+      VITE_DEFAULT_GLOBAL_IMAGE: ${{ vars.VITE_DEFAULT_GLOBAL_IMAGE }}
+      VITE_DEFAULT_LIGHT_OPACITY: ${{ vars.VITE_DEFAULT_LIGHT_OPACITY || '0.15' }}
+      VITE_DEFAULT_DARK_OPACITY: ${{ vars.VITE_DEFAULT_DARK_OPACITY || '0.1' }}
+      VITE_DEFAULT_BACKDROP_BLUR: ${{ vars.VITE_DEFAULT_BACKDROP_BLUR || '8' }}
+      VITE_DEFAULT_TRANSITION_DURATION: ${{ vars.VITE_DEFAULT_TRANSITION_DURATION || '600' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - run: bun ci
+      - run: bun run check
+      - run: bun run test:node
+      - run: bun run test
+      - run: bun run build
+      - name: Migrate the upgraded database
+        run: bunx cf d1 migrations apply "$D1_DATABASE_ID"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Preserve existing authentication and runtime secrets
+        run: bun scripts/sync-upgrade-runtime.ts
+        env:
+          UPGRADE_RUNTIME_MODE: production
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          UMAMI_WEBSITE_ID: ${{ vars.VITE_UMAMI_WEBSITE_ID }}
+          UMAMI_SRC: ${{ secrets.UMAMI_SRC }}
+          UMAMI_API_KEY: ${{ secrets.UMAMI_API_KEY }}
+          UMAMI_USERNAME: ${{ secrets.UMAMI_USERNAME }}
+          UMAMI_PASSWORD: ${{ secrets.UMAMI_PASSWORD }}
+      - name: Deploy the upgraded Worker
+        run: bunx cf deploy --prebuilt
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
