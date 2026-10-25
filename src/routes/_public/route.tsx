@@ -51,6 +51,9 @@ function PublicLayout() {
       href: link.href,
       external: isExternalNavHref(link.href),
     })),
+    ...(!siteConfig.navLinks.some((link) => link.href === "/piano")
+      ? [{ id: "piano", label: "钢琴练习", href: "/piano", external: false }]
+      : []),
     {
       id: "friend-links",
       label: m.nav_friend_links(),

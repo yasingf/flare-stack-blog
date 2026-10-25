@@ -24,6 +24,7 @@ import { Route as PublicAuthRouteRouteImport } from './routes/_public/_auth/rout
 import { Route as PublicUserRouteRouteImport } from './routes/_public/_user/route'
 import { Route as PublicFriendLinksRouteImport } from './routes/_public/friend-links'
 import { Route as PublicGuitarTabsRouteImport } from './routes/_public/guitar-tabs'
+import { Route as PublicPianoRouteImport } from './routes/_public/piano'
 import { Route as PublicPostsRouteImport } from './routes/_public/posts'
 import { Route as PublicSearchRouteImport } from './routes/_public/search'
 import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
@@ -133,6 +134,11 @@ const PublicFriendLinksRoute = PublicFriendLinksRouteImport.update({
 const PublicGuitarTabsRoute = PublicGuitarTabsRouteImport.update({
   id: '/guitar-tabs',
   path: '/guitar-tabs',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicPianoRoute = PublicPianoRouteImport.update({
+  id: '/piano',
+  path: '/piano',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicPostsRoute = PublicPostsRouteImport.update({
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof PublicSplatRoute
   '/friend-links': typeof PublicFriendLinksRoute
   '/guitar-tabs': typeof PublicGuitarTabsRoute
+  '/piano': typeof PublicPianoRoute
   '/posts': typeof PublicPostsRoute
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/$': typeof PublicSplatRoute
   '/friend-links': typeof PublicFriendLinksRoute
   '/guitar-tabs': typeof PublicGuitarTabsRoute
+  '/piano': typeof PublicPianoRoute
   '/posts': typeof PublicPostsRoute
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/_public/$': typeof PublicSplatRoute
   '/_public/friend-links': typeof PublicFriendLinksRoute
   '/_public/guitar-tabs': typeof PublicGuitarTabsRoute
+  '/_public/piano': typeof PublicPianoRoute
   '/_public/posts': typeof PublicPostsRoute
   '/_public/search': typeof PublicSearchRoute
   '/_public/unsubscribe': typeof PublicUnsubscribeRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/friend-links'
     | '/guitar-tabs'
+    | '/piano'
     | '/posts'
     | '/search'
     | '/unsubscribe'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/friend-links'
     | '/guitar-tabs'
+    | '/piano'
     | '/posts'
     | '/search'
     | '/unsubscribe'
@@ -607,6 +618,7 @@ export interface FileRouteTypes {
     | '/_public/$'
     | '/_public/friend-links'
     | '/_public/guitar-tabs'
+    | '/_public/piano'
     | '/_public/posts'
     | '/_public/search'
     | '/_public/unsubscribe'
@@ -767,6 +779,13 @@ declare module '@tanstack/react-router' {
       path: '/guitar-tabs'
       fullPath: '/guitar-tabs'
       preLoaderRoute: typeof PublicGuitarTabsRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/piano': {
+      id: '/_public/piano'
+      path: '/piano'
+      fullPath: '/piano'
+      preLoaderRoute: typeof PublicPianoRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/posts': {
@@ -1080,6 +1099,7 @@ interface PublicRouteRouteChildren {
   PublicSplatRoute: typeof PublicSplatRoute
   PublicFriendLinksRoute: typeof PublicFriendLinksRoute
   PublicGuitarTabsRoute: typeof PublicGuitarTabsRoute
+  PublicPianoRoute: typeof PublicPianoRoute
   PublicPostsRoute: typeof PublicPostsRoute
   PublicSearchRoute: typeof PublicSearchRoute
   PublicUnsubscribeRoute: typeof PublicUnsubscribeRoute
@@ -1094,6 +1114,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicSplatRoute: PublicSplatRoute,
   PublicFriendLinksRoute: PublicFriendLinksRoute,
   PublicGuitarTabsRoute: PublicGuitarTabsRoute,
+  PublicPianoRoute: PublicPianoRoute,
   PublicPostsRoute: PublicPostsRoute,
   PublicSearchRoute: PublicSearchRoute,
   PublicUnsubscribeRoute: PublicUnsubscribeRoute,

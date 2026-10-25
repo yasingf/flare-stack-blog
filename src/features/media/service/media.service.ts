@@ -319,6 +319,10 @@ export async function handleImageRequest(
   key: string,
   request: Request,
 ) {
+  // Piano account files must only be served by the authenticated owner API.
+  if (key.startsWith("piano-private/")) {
+    return new Response("Not found", { status: 404 });
+  }
   const url = new URL(request.url);
   const searchParams = url.searchParams;
 

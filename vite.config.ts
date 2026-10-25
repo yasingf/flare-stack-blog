@@ -32,6 +32,8 @@ const config = defineConfig({
       cookieName: "LOCALE",
     }),
     cloudflare({
+      // Development uses local data and never consumes Workers AI allowance.
+      remoteBindings: false,
       viteEnvironment: {
         name: "ssr",
       },

@@ -1,0 +1,15 @@
+University of Iowa Musical Instrument Samples — Steinway & Sons Model B
+Recordings by the University of Iowa Electronic Music Studios, Lawrence Fritts.
+https://theremin.music.uiowa.edu/MISpiano.html
+https://theremin.music.uiowa.edu/MIS.html
+
+The source's permission statement, checked 2026-10-26:
+"may be downloaded and used for any projects, without restrictions."
+
+These MP3 derivatives remove leading silence, retain up to twelve seconds of
+decay and add an ending fade. Three original dynamic layers (pp, mf, ff), sampled
+at minor-third intervals from C1 through C8, plus B0, preserve the recorded dynamics.
+Other pitches use the nearest recorded key. Sources and derivative SHA256 hashes
+are recorded in sources.json. Rebuild with scripts/prepare-piano-samples.py.
+
+This is an independently recorded sample library, not an official Steinway product.
