@@ -15,6 +15,7 @@ import { paraglideMiddleware } from "@/paraglide/server";
 
 export { PostPublisher } from "@/lib/do/post-publisher";
 export { RateLimiter } from "@/lib/do/rate-limiter";
+export { PianoCoach } from "@/features/piano/server/coach";
 
 declare module "@tanstack/react-start" {
   interface Register {

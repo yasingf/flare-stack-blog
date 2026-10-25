@@ -2,6 +2,7 @@ import { publicStats } from "@/features/dashboard/server/public-stats";
 import seoRouter from "@/features/config/seo/router";
 import { uploadAvatar } from "@/features/auth/avatar";
 import guitarComments from "@/features/guitar-tabs/comments";
+import pianoRouter from "@/features/piano/server/router";
 import guitarTabsRouter, {
   adminUsers,
 } from "@/features/guitar-tabs/server/router";
@@ -27,6 +28,7 @@ import versionRouter from "@/features/version/server/router";
 import webhookRouter from "@/features/webhook/server/router";
 
 export const router = {
+  piano: pianoRouter,
   publicStats,
   guitarTabs: guitarTabsRouter,
   guitarComments,

@@ -10,3 +10,4 @@ export * from "./search.table";
 export * from "./guitar-tab-metadata.table";
 
 export * from "./guitar-tab-comments.table";
+export * from "./piano-scores.table";

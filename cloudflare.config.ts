@@ -60,6 +60,14 @@ export default defineConfig((ctx) => {
         KV: bindings.kv({ id: kvNamespaceId }),
         R2: bindings.r2({ name: bucketName }),
         QUEUE: bindings.queue({ name: queueName }),
+        ...(env.PIANO_AI_ENABLED === "true" && !isTest
+          ? { AI: bindings.ai() }
+          : {}),
+        // Explicitly enabled only after verifying the account uses Workers Free.
+        // Local development and CI never make AI calls.
+        PIANO_AI_ENABLED: bindings.text(
+          env.PIANO_AI_ENABLED === "true" && !isTest ? "true" : "false",
+        ),
       },
       // Durable Objects are reached through `exports` from `cloudflare:workers`,
       // so they need no binding. Once deployed this way, rolling back to a
@@ -69,6 +77,7 @@ export default defineConfig((ctx) => {
         App: exports.worker({ cache: { enabled: true } }),
         RateLimiter: exports.durableObject({ storage: "sqlite" }),
         PostPublisher: exports.durableObject({ storage: "sqlite" }),
+        PianoCoach: exports.durableObject({ storage: "sqlite" }),
       },
     },
   };
