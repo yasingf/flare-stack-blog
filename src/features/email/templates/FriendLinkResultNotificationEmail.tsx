@@ -1,88 +1,65 @@
-import { EmailLayout } from "./EmailLayout";
+import type { Locale } from "@/lib/i18n";
+import { m } from "@/paraglide/messages";
+import {
+  EmailButton,
+  EmailHeading,
+  EmailLayout,
+  EmailNote,
+  EmailPanel,
+  EmailText,
+} from "./EmailLayout";
+import type { EmailSite } from "./email-theme";
 
 interface FriendLinkResultNotificationEmailProps {
-  siteName: string;
   approved: boolean;
-  rejectionReason?: string;
   blogUrl?: string;
+  locale: Locale;
+  rejectionReason?: string;
+  site: EmailSite;
+  siteName: string;
 }
 
 export const FriendLinkResultNotificationEmail = ({
-  siteName,
   approved,
-  rejectionReason,
   blogUrl,
+  locale,
+  rejectionReason,
+  site,
+  siteName,
 }: FriendLinkResultNotificationEmailProps) => {
   return (
     <EmailLayout
-      previewText={`您的友链申请（${siteName}）${approved ? "已通过" : "未通过"}`}
+      locale={locale}
+      site={site}
+      previewText={
+        approved
+          ? m.email_friend_link_approved_preview({ siteName }, { locale })
+          : m.email_friend_link_rejected_preview({ siteName }, { locale })
+      }
     >
-      <h1
-        style={{
-          fontFamily: '"Playfair Display", "Georgia", serif',
-          fontSize: "20px",
-          fontWeight: "500",
-          color: "#1a1a1a",
-          marginBottom: "24px",
-          lineHeight: "1.4",
-        }}
-      >
-        友链审核结果
-      </h1>
+      <EmailHeading>
+        {m.email_friend_link_result_title({}, { locale })}
+      </EmailHeading>
       {approved ? (
         <>
-          <p style={{ fontSize: "14px", color: "#444", lineHeight: "1.6" }}>
-            恭喜！您的站点 <strong>{siteName}</strong> 的友链申请已通过审核。
-          </p>
+          <EmailText>
+            {m.email_friend_link_approved_body({ siteName }, { locale })}
+          </EmailText>
           {blogUrl && (
-            <div style={{ marginTop: "32px" }}>
-              <a
-                href={blogUrl}
-                style={{
-                  backgroundColor: "#1a1a1a",
-                  color: "#ffffff",
-                  padding: "12px 24px",
-                  textDecoration: "none",
-                  fontSize: "13px",
-                  display: "inline-block",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                访问博客
-              </a>
-            </div>
+            <EmailButton href={blogUrl}>
+              {m.email_friend_link_approved_action({}, { locale })}
+            </EmailButton>
           )}
         </>
       ) : (
         <>
-          <p style={{ fontSize: "14px", color: "#444", lineHeight: "1.6" }}>
-            很抱歉，您的站点 <strong>{siteName}</strong> 的友链申请未通过审核。
-          </p>
-          {rejectionReason && (
-            <blockquote
-              style={{
-                borderLeft: "2px solid #e5e5e5",
-                margin: "24px 0",
-                paddingLeft: "16px",
-                fontStyle: "italic",
-                color: "#666",
-                fontSize: "14px",
-                lineHeight: "1.6",
-              }}
-            >
-              {rejectionReason}
-            </blockquote>
-          )}
-          <p
-            style={{
-              fontSize: "13px",
-              color: "#999",
-              lineHeight: "1.6",
-              marginTop: "24px",
-            }}
-          >
-            如有疑问，欢迎重新提交申请。
-          </p>
+          <EmailText>
+            {m.email_friend_link_rejected_body({ siteName }, { locale })}
+          </EmailText>
+          {rejectionReason && <EmailPanel>{rejectionReason}</EmailPanel>}
+          <EmailNote>
+            {m.email_friend_link_rejected_followup({}, { locale })}
+          </EmailNote>
         </>
       )}
     </EmailLayout>

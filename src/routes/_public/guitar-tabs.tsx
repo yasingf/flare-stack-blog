@@ -25,7 +25,7 @@ import {
 } from "@/features/media/components/guitar-tab-card";
 import { GuitarProViewer } from "@/features/media/components/guitar-pro-viewer";
 import { guitarTabsQueryOptions } from "@/features/media/queries";
-import { blogConfig } from "@/blog.config";
+import { clientEnv } from "@/lib/env/client.env";
 
 type ViewMode = "list" | "small-grid" | "large-grid";
 
@@ -65,7 +65,7 @@ export const Route = createFileRoute("/_public/guitar-tabs")({
     pageSize,
   }),
   beforeLoad: () => {
-    if (!blogConfig.features.guitarTabs) {
+    if (!clientEnv().VITE_ENABLE_GUITAR_TABS) {
       throw redirect({ to: "/" });
     }
   },
@@ -108,7 +108,7 @@ function GuitarTabsPage() {
   const handlePageSizeChange = useCallback(
     (size: number) => {
       localStorage.setItem(PAGE_SIZE_KEY, String(size));
-      navigate({
+      void navigate({
         search: (prev) => ({ ...prev, page: 1, pageSize: size }),
         replace: true,
       });
@@ -129,7 +129,7 @@ function GuitarTabsPage() {
     const timer = setTimeout(() => {
       const trimmed = searchInput.trim();
       if (trimmed !== (search || "")) {
-        navigate({
+        void navigate({
           search: { search: trimmed || undefined, page: 1, pageSize },
           replace: true,
         });
@@ -140,7 +140,7 @@ function GuitarTabsPage() {
 
   const handlePageChange = useCallback(
     (newPage: number) => {
-      navigate({
+      void navigate({
         search: (prev) => ({ ...prev, page: newPage }),
         replace: true,
       });
@@ -211,11 +211,17 @@ function GuitarTabsPage() {
             <div className="flex items-center gap-3">
               <div
                 className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center"
-                style={{ animation: "jelly 800ms var(--ease-spring) 100ms both" }}
+                style={{
+                  animation: "jelly 800ms var(--ease-spring) 100ms both",
+                }}
               >
                 <Guitar size={22} className="text-accent" />
               </div>
-              <div style={{ animation: "elastic-in 700ms var(--ease-spring) 200ms both" }}>
+              <div
+                style={{
+                  animation: "elastic-in 700ms var(--ease-spring) 200ms both",
+                }}
+              >
                 <h1 className="text-2xl font-serif font-medium tracking-tight leading-tight">
                   吉他谱
                 </h1>
@@ -269,7 +275,9 @@ function GuitarTabsPage() {
           {/* 搜索框 */}
           <div
             className="relative group"
-            style={{ animation: "float-up 700ms var(--ease-spring-soft) 300ms both" }}
+            style={{
+              animation: "float-up 700ms var(--ease-spring-soft) 300ms both",
+            }}
           >
             <Search
               size={15}
@@ -286,7 +294,10 @@ function GuitarTabsPage() {
               <button
                 onClick={() => {
                   setSearchInput("");
-                  navigate({ search: { page: 1, pageSize }, replace: true });
+                  void navigate({
+                    search: { page: 1, pageSize },
+                    replace: true,
+                  });
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
               >
@@ -311,7 +322,10 @@ function GuitarTabsPage() {
               <button
                 onClick={() => {
                   setSearchInput("");
-                  navigate({ search: { page: 1, pageSize }, replace: true });
+                  void navigate({
+                    search: { page: 1, pageSize },
+                    replace: true,
+                  });
                 }}
                 className="mt-4 text-xs text-accent hover:text-accent/80 transition-colors cursor-pointer font-medium"
               >
@@ -402,7 +416,9 @@ function GuitarTabsPage() {
             ════════════════════════════════════════════════ */}
         <div
           className="mt-16 mb-6 text-center"
-          style={{ animation: "bounce-drop 800ms var(--ease-spring) 500ms both" }}
+          style={{
+            animation: "bounce-drop 800ms var(--ease-spring) 500ms both",
+          }}
         >
           <div className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-muted/20 border border-border/20">
             <Upload size={14} className="text-muted-foreground/50" />

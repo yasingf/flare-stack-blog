@@ -1,7 +1,9 @@
+import type { EmailSite } from "./email-theme";
 import { EmailLayout } from "./EmailLayout";
 
 interface GuitarTabReviewEmailProps {
   tabTitle: string;
+  site: EmailSite;
   artist?: string;
   approved: boolean;
   rejectionReason?: string;
@@ -10,6 +12,7 @@ interface GuitarTabReviewEmailProps {
 
 export const GuitarTabReviewEmail = ({
   tabTitle,
+  site,
   artist,
   approved,
   rejectionReason,
@@ -19,6 +22,7 @@ export const GuitarTabReviewEmail = ({
 
   return (
     <EmailLayout
+      site={site}
       previewText={`您投稿的吉他谱「${displayName}」${approved ? "已通过审核" : "未通过审核"}`}
     >
       <h1

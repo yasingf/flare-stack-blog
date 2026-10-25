@@ -22,8 +22,8 @@ import { useCallback, useState } from "react";
 import { z } from "zod";
 import { GuitarProViewer } from "@/features/media/components/guitar-pro-viewer";
 import { guitarTabDetailQuery } from "@/features/media/queries";
-import { CommentSection } from "@/features/theme/themes/default/components/comments/view/comment-section";
-import { blogConfig } from "@/blog.config";
+import { CommentSection } from "@/features/guitar-tabs/comment-section";
+import { clientEnv } from "@/lib/env/client.env";
 
 const searchSchema = z.object({
   highlightCommentId: z.coerce.number().optional(),
@@ -34,13 +34,19 @@ export const Route = createFileRoute("/_public/guitar-tab/$slug")({
   validateSearch: searchSchema,
   component: GuitarTabDetailPage,
   beforeLoad: () => {
-    if (!blogConfig.features.guitarTabs) throw redirect({ to: "/" });
+    if (!clientEnv().VITE_ENABLE_GUITAR_TABS) throw redirect({ to: "/" });
   },
   loader: async ({ context, params }) => {
     const result = await context.queryClient.ensureQueryData(
       guitarTabDetailQuery(params.slug),
     );
     if (!result) throw notFound();
+    if (result.tab.slug && result.tab.slug !== params.slug)
+      throw redirect({
+        to: "/guitar-tab/$slug",
+        params: { slug: result.tab.slug },
+        statusCode: 301,
+      });
     return result;
   },
   head: ({ loaderData }) => {
@@ -126,8 +132,7 @@ function GuitarTabDetailPage() {
         <div
           className="relative rounded-3xl bg-gradient-to-br from-card via-card to-muted/30 border border-border/30 overflow-hidden mb-8"
           style={{
-            animation:
-              "apple-fade-up 900ms var(--ease-spring-soft) 100ms both",
+            animation: "apple-fade-up 900ms var(--ease-spring-soft) 100ms both",
           }}
         >
           {/* 装饰背景 */}
@@ -231,8 +236,7 @@ function GuitarTabDetailPage() {
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
           style={{
-            animation:
-              "apple-fade-up 800ms var(--ease-spring-soft) 300ms both",
+            animation: "apple-fade-up 800ms var(--ease-spring-soft) 300ms both",
           }}
         >
           {/* 左栏：轨道列表 */}
@@ -248,16 +252,12 @@ function GuitarTabDetailPage() {
                     <div
                       key={i}
                       className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-muted/30 transition-colors duration-200 group stagger-item"
-                      style={
-                        { "--stagger-index": i } as React.CSSProperties
-                      }
+                      style={{ "--stagger-index": i } as React.CSSProperties}
                     >
                       <span className="text-[10px] font-mono text-muted-foreground/30 w-6 text-right tabular-nums group-hover:text-accent/50 transition-colors">
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <span className="text-sm">
-                        {name || `轨道 ${i + 1}`}
-                      </span>
+                      <span className="text-sm">{name || `轨道 ${i + 1}`}</span>
                     </div>
                   ))}
                 </div>
@@ -267,10 +267,7 @@ function GuitarTabDetailPage() {
             {/* 如果没有轨道列表，显示一段简要描述 */}
             {trackNames.length === 0 && (
               <div className="rounded-2xl border border-border/30 bg-card/50 p-5 sm:p-6 flex flex-col items-center justify-center py-12 text-center">
-                <Guitar
-                  size={36}
-                  className="text-muted-foreground/15 mb-3"
-                />
+                <Guitar size={36} className="text-muted-foreground/15 mb-3" />
                 <p className="text-sm text-muted-foreground/50">
                   点击「在线试听」即可在浏览器中直接播放此吉他谱
                 </p>
@@ -387,9 +384,7 @@ function GuitarTabDetailPage() {
                   to="/guitar-tab/$slug"
                   params={{ slug: related.slug || String(related.mediaId) }}
                   className="flex items-center gap-4 px-4 py-3 rounded-xl border border-border/30 bg-card/60 hover:border-accent/40 hover:bg-card hover:shadow-sm transition-all duration-300 group stagger-item"
-                  style={
-                    { "--stagger-index": i } as React.CSSProperties
-                  }
+                  style={{ "--stagger-index": i } as React.CSSProperties}
                 >
                   {/* 封面小图 */}
                   <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-muted/20 border border-border/20">

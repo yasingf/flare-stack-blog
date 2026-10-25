@@ -202,7 +202,9 @@ export async function compressGpFile(
   // 重新打包 ZIP
   try {
     const result = zipSync(outputEntries);
-    const compressedFile = new File([result.buffer as ArrayBuffer], file.name, { type: file.type });
+    const compressedFile = new File([result.buffer as ArrayBuffer], file.name, {
+      type: file.type,
+    });
 
     onProgress?.(1);
 
@@ -326,7 +328,12 @@ async function compressAudio(
     onProgress?.(0.9);
 
     // 封装为 OGG Opus 容器
-    const oggData = buildOggOpus(opusPackets, sampleRate, channels, totalSamples);
+    const oggData = buildOggOpus(
+      opusPackets,
+      sampleRate,
+      channels,
+      totalSamples,
+    );
 
     onProgress?.(1);
     return oggData;
@@ -425,9 +432,7 @@ function buildOggOpus(
     const pktSegs = packetSegmentCount(pkt.data.byteLength);
     // 计算 granule（以 48kHz 为单位，OGG Opus 规范）
     const pktSamples =
-      pkt.duration > 0
-        ? Math.round((pkt.duration / 1_000_000) * 48000)
-        : 960; // 默认 20ms
+      pkt.duration > 0 ? Math.round((pkt.duration / 1_000_000) * 48000) : 960; // 默认 20ms
 
     // 如果加入此包会超出 segment 限制，先刷出当前页
     if (pageSegments + pktSegs > MAX_SEGMENTS_PER_PAGE && pageBuf.length > 0) {
@@ -555,8 +560,7 @@ function oggCrc32(data: Uint8Array): number {
 
   let crc = 0;
   for (let i = 0; i < data.length; i++) {
-    crc =
-      ((crc << 8) ^ oggCrcTable[((crc >>> 24) ^ data[i]!) & 0xff]!) >>> 0;
+    crc = ((crc << 8) ^ oggCrcTable[((crc >>> 24) ^ data[i]!) & 0xff]!) >>> 0;
   }
   return crc;
 }

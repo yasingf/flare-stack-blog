@@ -1,46 +1,34 @@
-# ===========================================
-# 服务端环境变量（Wrangler 注入 Worker env）
-# ===========================================
+# 运行时变量，由 Cloudflare 注入 Worker，校验规则见 src/lib/env/server.env.ts。
+# 本地复制为 .dev.vars；生产在 Worker「设置 → 变量和机密」中填写，且一律选择「机密」类型
+# （部署时 `cf deploy` 会保留机密，但会丢弃未写入配置的普通文本变量）。
 
-# --- 环境标识 ---
-ENVIRONMENT=dev
-
-# --- 认证配置（Better Auth） ---
+# --- 必填 ---
 BETTER_AUTH_SECRET=your-secret-key-run-openssl-rand-hex-32
 BETTER_AUTH_URL=http://localhost:3000
-ADMIN_EMAIL=your-email@example.com
-
-# --- GitHub OAuth ---
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
-
-# --- CDN 缓存清理 ---
-CLOUDFLARE_ZONE_ID=your-zone-id
-CLOUDFLARE_PURGE_API_TOKEN=your-purge-api-token
 DOMAIN=blog.example.com
-# 可选：若使用独立 CDN 域名，设置后 purge 时优先使用此域名
-# CDN_DOMAIN=cdn.example.com
 
-# --- Umami 统计（可选） ---
-# Umami Cloud: 设置 UMAMI_SRC=https://cloud.umami.is 并提供 UMAMI_API_KEY
-# 自部署: 设置 UMAMI_SRC 为你的实例 URL 并提供 USERNAME/PASSWORD
+# 仅本地开发使用。设为 dev 时不会真正发信，验证链接打在控制台。
+# 生产环境不要设置，或设为 prod。
+ENVIRONMENT=dev
 
-VITE_UMAMI_WEBSITE_ID=your-umami-website-id
+# --- 可选：Umami ---
+# 客户端埋点还需要构建时变量 VITE_UMAMI_WEBSITE_ID，website id 两边填同一个。
+# UMAMI_WEBSITE_ID=your-umami-website-id
+# UMAMI_SRC=https://cloud.umami.is
+# UMAMI_API_URL=https://api.umami.is/v1
+# Cloud 用 API Key；自托管用用户名密码，不要和 API Key 同时配。
+# UMAMI_API_KEY=your-umami-cloud-api-key
+# UMAMI_USERNAME=your-umami-username
+# UMAMI_PASSWORD=your-umami-password
 
-# Umami Cloud 配置:
-UMAMI_SRC=https://cloud.umami.is
-UMAMI_API_KEY=your-cloud-api-key
-
-# 自部署 Umami 配置（如果使用自部署，请取消注释并注释掉上面的 Cloud 配置）:
-# UMAMI_SRC=https://umami.example.com
-# UMAMI_USERNAME=your-username
-# UMAMI_PASSWORD=your-password
-
-# --- Turnstile 人机验证 ---
-# 测试key见：https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+# --- 可选：Turnstile ---
+# 还需要构建时变量 VITE_TURNSTILE_SITE_KEY。
+# 测试 key：https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 # TURNSTILE_SECRET_KEY=your-turnstile-secret-key
 
-# --- GitHub API（可选，用于版本更新检查） ---
-# 未认证请求限流 60 次/小时/IP，Cloudflare Workers 共享 IP 容易触发限流
+# --- 可选：GitHub API（版本更新检查） ---
+# 不配也能检查更新（读取发布页跳转）。配了会优先走 API，API 失败时退回发布页。
 # 创建无权限的 Fine-grained token: https://github.com/settings/personal-access-tokens
 # GITHUB_TOKEN=your-github-token

@@ -1,82 +1,81 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { PostManager } from "@/features/posts/components/post-manager";
+import { adminPostsListParams } from "@/features/posts/components/post-manager/hooks";
+import { PostManagerPageSkeleton } from "@/features/posts/components/post-manager/post-manager-skeleton";
+import { adminPostsQuery } from "@/features/posts/queries";
 import type {
-  SortDirection,
+  CategoryFilter,
   SortField,
   StatusFilter,
 } from "@/features/posts/components/post-manager/types";
-import { PostManager } from "@/features/posts/components/post-manager";
 import {
-  SORT_DIRECTIONS,
   SORT_FIELDS,
   STATUS_FILTERS,
 } from "@/features/posts/components/post-manager/types";
+import { m } from "@/paraglide/messages";
 
 const searchSchema = z.object({
   page: z.number().int().positive().optional().default(1).catch(1),
   status: z.enum(STATUS_FILTERS).optional().default("ALL").catch("ALL"),
-  sortDir: z.enum(SORT_DIRECTIONS).optional().default("DESC").catch("DESC"),
   sortBy: z
     .enum(SORT_FIELDS)
     .optional()
     .default("updatedAt")
     .catch("updatedAt"),
   search: z.string().optional().default("").catch(""),
+  category: z
+    .union([z.number().int().positive(), z.literal("none")])
+    .optional()
+    .catch(undefined),
+  tag: z.number().int().positive().optional().catch(undefined),
 });
 
-export type PostsSearchParams = z.infer<typeof searchSchema>;
+type PostsSearchParams = z.infer<typeof searchSchema>;
 
 export const Route = createFileRoute("/admin/posts/")({
+  ssr: false,
   validateSearch: searchSchema,
+  pendingComponent: PostManagerPageSkeleton,
+  pendingMs: 0,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(
+      adminPostsQuery(
+        adminPostsListParams({
+          page: 1,
+          status: "ALL",
+          sortBy: "updatedAt",
+          search: "",
+        }),
+      ),
+    );
+    return { title: m.admin_posts_title() };
+  },
   component: PostManagerPage,
 });
 
 function PostManagerPage() {
   const navigate = useNavigate();
-  const { page, status, sortDir, sortBy, search } = Route.useSearch();
+  const current = Route.useSearch();
+  const { page, status, sortBy, search, category, tag } = current;
 
-  const updateSearch = (updates: Partial<PostsSearchParams>) => {
-    navigate({
+  const updateSearch = (
+    updates: Partial<PostsSearchParams>,
+    replace = false,
+  ) => {
+    void navigate({
       to: "/admin/posts",
-      search: {
-        page: updates.page ?? 1,
-        status: updates.status ?? status,
-        sortDir: updates.sortDir ?? sortDir,
-        sortBy: updates.sortBy ?? sortBy,
-        search: updates.search ?? search,
-      },
+      search: { ...current, page: 1, ...updates },
+      replace,
     });
-  };
-
-  const handlePageChange = (newPage: number) => {
-    updateSearch({ page: newPage });
-  };
-
-  const handleStatusChange = (newStatus: StatusFilter) => {
-    updateSearch({ status: newStatus });
-  };
-
-  const handleSortUpdate = (update: {
-    dir?: SortDirection;
-    sortBy?: SortField;
-  }) => {
-    updateSearch({
-      sortDir: update.dir ?? sortDir,
-      sortBy: update.sortBy ?? sortBy,
-    });
-  };
-
-  const handleSearchChange = (newSearch: string) => {
-    updateSearch({ search: newSearch });
   };
 
   const handleResetFilters = () => {
-    navigate({
+    void navigate({
       to: "/admin/posts",
       search: {
         page: 1,
         status: "ALL",
-        sortDir: "DESC",
         sortBy: "updatedAt",
         search: "",
       },
@@ -87,13 +86,27 @@ function PostManagerPage() {
     <PostManager
       page={page}
       status={status}
-      sortDir={sortDir}
       sortBy={sortBy}
       search={search}
-      onPageChange={handlePageChange}
-      onStatusChange={handleStatusChange}
-      onSortUpdate={handleSortUpdate}
-      onSearchChange={handleSearchChange}
+      category={category}
+      tag={tag}
+      onPageChange={(newPage) => updateSearch({ page: newPage })}
+      onStatusChange={(newStatus: StatusFilter) =>
+        updateSearch({ status: newStatus })
+      }
+      onSortByChange={(nextSortBy: SortField) =>
+        updateSearch({ sortBy: nextSortBy })
+      }
+      onSearchChange={(newSearch) => updateSearch({ search: newSearch })}
+      onCategoryChange={(nextCategory?: CategoryFilter, replace?: boolean) =>
+        updateSearch({ category: nextCategory }, replace)
+      }
+      onTagChange={(nextTag?: number, replace?: boolean) =>
+        updateSearch({ tag: nextTag }, replace)
+      }
+      onTaxonomyFilter={(filter) =>
+        updateSearch({ category: undefined, tag: undefined, ...filter })
+      }
       onResetFilters={handleResetFilters}
     />
   );

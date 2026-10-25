@@ -49,9 +49,9 @@
 }
 
 /* Global Lucide Icon Overrides for tiny sizes */
-.admin-layout [size="10"],
-.admin-layout [size="12"],
-.admin-layout [size="14"] {
+.admin-layout svg[size="10"],
+.admin-layout svg[size="12"],
+.admin-layout svg[size="14"] {
   width: 16px !important;
   height: 16px !important;
 }
@@ -92,14 +92,30 @@
 .admin-layout .stat-card {
   animation: admin-card-enter 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-.admin-layout .stat-card:nth-child(1) { animation-delay: 0ms; }
-.admin-layout .stat-card:nth-child(2) { animation-delay: 60ms; }
-.admin-layout .stat-card:nth-child(3) { animation-delay: 120ms; }
-.admin-layout .stat-card:nth-child(4) { animation-delay: 180ms; }
-.admin-layout .stat-card:nth-child(5) { animation-delay: 240ms; }
-.admin-layout .stat-card:nth-child(6) { animation-delay: 300ms; }
-.admin-layout .stat-card:nth-child(7) { animation-delay: 360ms; }
-.admin-layout .stat-card:nth-child(8) { animation-delay: 420ms; }
+.admin-layout .stat-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.admin-layout .stat-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+.admin-layout .stat-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+.admin-layout .stat-card:nth-child(4) {
+  animation-delay: 180ms;
+}
+.admin-layout .stat-card:nth-child(5) {
+  animation-delay: 240ms;
+}
+.admin-layout .stat-card:nth-child(6) {
+  animation-delay: 300ms;
+}
+.admin-layout .stat-card:nth-child(7) {
+  animation-delay: 360ms;
+}
+.admin-layout .stat-card:nth-child(8) {
+  animation-delay: 420ms;
+}
 
 @keyframes admin-card-enter {
   from {
@@ -166,4 +182,30 @@
     transform: translateY(0) scale(1);
     filter: blur(0);
   }
+}
+
+/* Keep the original fixed sidebar/header scale with the new workspace internals. */
+html:has(.admin-layout) {
+  font-size: 16px;
+}
+.admin-layout {
+  --fuwari-primary: hsl(var(--primary));
+  --fuwari-btn-content: hsl(var(--foreground));
+  --fuwari-radius-large: 0.5rem;
+}
+.admin-layout > aside {
+  flex-shrink: 0;
+}
+.admin-layout .fuwari-card-base {
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: none;
+}
+.admin-layout .fuwari-button-primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.admin-layout {
+  --fuwari-primary-hover: hsl(var(--primary) / 0.85);
+  --fuwari-primary-active: hsl(var(--primary) / 0.7);
 }

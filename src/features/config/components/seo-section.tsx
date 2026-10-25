@@ -68,7 +68,7 @@ export function SeoSection() {
   });
 
   const handleLoadUrls = useCallback(() => {
-    refetch();
+    void refetch();
   }, [refetch]);
 
   const toggleSelectAll = useCallback((selected: boolean) => {
@@ -243,7 +243,7 @@ export function SeoSection() {
             type="button"
             onClick={handleLoadUrls}
             disabled={isLoadingUrls}
-            variant="outline"
+            variant="regular"
             size="sm"
             className="rounded-none font-mono text-[10px] uppercase tracking-widest h-8 px-3"
           >
@@ -461,7 +461,7 @@ function VerificationField({
       const content = extractMetaContent(val);
       setValue(fieldPath, content, { shouldDirty: true });
     } else {
-      registration.onChange(e);
+      void registration.onChange(e);
     }
   };
 

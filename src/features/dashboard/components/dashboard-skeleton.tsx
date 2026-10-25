@@ -1,94 +1,78 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import "@/components/ui/page-heading.css";
+import "./dashboard.css";
+import "./ranked-bar-list.css";
 
+/** The hero is tinted, so its placeholders take the card's colour. */
+const ON_HERO = "bg-(--fuwari-card-bg) opacity-70";
+
+function SectionTitle({ width }: { width: string }) {
+  return <Skeleton className={`h-5 ${width}`} />;
+}
+
+/** The dashboard's layout in placeholders: hero, figures, then sections. */
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Header */}
-      <header className="flex justify-between items-end">
-        <div className="space-y-1">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-3 w-48" />
-        </div>
-      </header>
-
-      {/* Stats Grid */}
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <Skeleton className="h-3 w-16" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="p-6 border border-border/30 rounded-sm space-y-4"
-              >
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-5 w-5 rounded-sm" />
-                </div>
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-2 w-24" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <Skeleton className="h-3 w-12" />
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="p-6 border border-border/30 rounded-sm space-y-4"
-                >
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-3">
-            <Skeleton className="h-3 w-12" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 border border-border/30 rounded-sm space-y-4">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-8 w-16" />
-              </div>
-            </div>
-          </div>
+    <div
+      className="dashboard-workspace admin-workspace fuwari-card-base"
+      aria-hidden="true"
+    >
+      <div className="dashboard-hero">
+        <div className="dashboard-hero-content w-full gap-3">
+          <Skeleton className={`h-3.5 w-28 ${ON_HERO}`} />
+          <Skeleton className={`h-9 w-72 max-w-full ${ON_HERO}`} />
+          <Skeleton className={`h-4 w-96 max-w-full ${ON_HERO}`} />
+          <Skeleton className={`mt-3 h-10 w-52 ${ON_HERO}`} />
         </div>
       </div>
-
-      {/* Visuals Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Main Graph Skeleton */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex flex-row justify-between items-baseline border-b border-border/50 pb-4">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-2 w-32" />
+      <ul className="dashboard-stats">
+        {[0, 1, 2, 3].map((figure) => (
+          <li key={figure}>
+            <div className="dashboard-stat gap-2.5">
+              <Skeleton className="h-3.5 w-16" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="dashboard-grid">
+        <div className="dashboard-column dashboard-column-main">
+          <div className="dashboard-section dashboard-slot-popular">
+            <SectionTitle width="w-32" />
+            <ol className="ranked-bar-list">
+              {[100, 80, 62, 45, 30].map((share) => (
+                <li key={share} className="ranked-bar-row">
+                  <Skeleton className="ranked-bar-rank h-6 w-8" />
+                  <Skeleton className="h-4 w-3/5" />
+                  <Skeleton className="h-4 w-16" />
+                  <span />
+                  <span className="ranked-bar-track">
+                    <Skeleton
+                      className="h-full rounded-none"
+                      style={{ width: `${share}%` }}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
-          <div className="h-72 w-full flex items-end gap-1.5 md:gap-3">
-            {Array.from({ length: 24 }).map((_, i) => (
-              <Skeleton
-                key={i}
-                className="flex-1 rounded-t-[1px]"
-                style={{ height: `${Math.random() * 70 + 10}%` }}
-              />
-            ))}
+          <div className="dashboard-section dashboard-slot-activity">
+            <SectionTitle width="w-24" />
+            <Skeleton className="h-3.5 w-48" />
+            <Skeleton className="mt-2 aspect-[4/1] w-full rounded-md" />
           </div>
         </div>
-
-        {/* Activity Log Skeleton */}
-        <div className="space-y-6">
-          <div className="flex flex-row justify-between items-baseline border-b border-border/50 pb-4">
-            <Skeleton className="h-4 w-20" />
-          </div>
-          <div className="space-y-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <Skeleton className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-2 w-16" />
+        <div className="dashboard-column dashboard-column-side">
+          <div className="dashboard-section dashboard-slot-comments">
+            <SectionTitle width="w-28" />
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex gap-3 py-3">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
               </div>
             ))}

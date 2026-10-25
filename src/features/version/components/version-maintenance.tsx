@@ -1,79 +1,87 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { forceCheckUpdateFn } from "@/features/version/version.api";
-import { VERSION_KEYS } from "@/features/version/queries";
 import { Button } from "@/components/ui/button";
+import { updateCheckQuery } from "@/features/version/queries";
+import { recordUpdateNoticeShown } from "@/features/version/update-notice";
+import { orpcClient } from "@/lib/orpc";
+import { StatusText } from "@/components/ui/status-text";
+import { m } from "@/paraglide/messages";
 
 export function VersionMaintenance() {
   const queryClient = useQueryClient();
 
   const checkUpdateMutation = useMutation({
-    mutationFn: forceCheckUpdateFn,
+    mutationFn: () => orpcClient.version.forceCheck(),
     onSuccess: (result) => {
-      queryClient.setQueryData(VERSION_KEYS.updateCheck, result);
-      if (result.error) {
-        toast.error("检查失败", {
-          description: "无法连接到 GitHub API，请稍后重试。",
+      queryClient.setQueryData(updateCheckQuery.queryKey, result);
+      if (result.hasUpdate) {
+        recordUpdateNoticeShown(localStorage, result.latestVersion);
+        toast.info(m.settings_maintenance_version_toast_new(), {
+          description: m.settings_maintenance_version_toast_new_desc({
+            version: result.latestVersion,
+          }),
+          action: {
+            label: m.settings_maintenance_version_action_view(),
+            onClick: () => window.open(result.releaseUrl, "_blank"),
+          },
         });
         return;
       }
-      if (result.data.hasUpdate) {
-        toast.info("发现新版本", {
-          description: `${result.data.latestVersion} 已发布! 点击查看详情。`,
-          action: {
-            label: "查看",
-            onClick: () => window.open(result.data.releaseUrl, "_blank"),
-          },
-        });
-      } else {
-        toast.success("系统已是最新", {
-          description: `当前版本 v${__APP_VERSION__} 为最新版本。`,
-        });
-      }
+      toast.success(m.settings_maintenance_version_toast_latest(), {
+        description: m.settings_maintenance_version_toast_latest_desc({
+          version: result.currentVersion,
+        }),
+      });
+    },
+    onError: () => {
+      toast.error(m.settings_maintenance_version_toast_fail(), {
+        description: m.settings_maintenance_version_toast_fail_desc(),
+      });
     },
   });
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/10 rounded-full">
-            <CheckCircle2 size={18} className="text-emerald-500" />
-          </div>
-          <h3 className="text-lg font-serif font-medium text-foreground tracking-tight">
-            系统状态良好
-          </h3>
-        </div>
-        <div className="flex flex-col gap-1 ml-11">
-          <p className="text-xs text-muted-foreground flex items-center gap-2">
-            当前运行版本:{" "}
-            <span className="font-mono text-foreground font-bold tracking-tight">
-              v{__APP_VERSION__}
-            </span>
-          </p>
-          <p className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-widest">
-            Build: Production_Ready
-          </p>
-        </div>
+    <div className="flex items-center gap-3 py-4 border-b border-(--fuwari-input-border)">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium fuwari-text-90">
+          {m.settings_maintenance_version_title()}
+        </p>
+        <p className="text-xs fuwari-text-50">
+          {m.settings_maintenance_version_desc({ version: __APP_VERSION__ })}
+        </p>
+        {checkUpdateMutation.isSuccess && checkUpdateMutation.data && (
+          <StatusText className="mt-2">
+            {checkUpdateMutation.data.hasUpdate ? (
+              <a
+                href={checkUpdateMutation.data.releaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-(--fuwari-primary)"
+              >
+                {m.settings_maintenance_version_toast_new_desc({
+                  version: checkUpdateMutation.data.latestVersion,
+                })}
+              </a>
+            ) : (
+              m.settings_maintenance_version_toast_latest_desc({
+                version: checkUpdateMutation.data.currentVersion,
+              })
+            )}
+          </StatusText>
+        )}
+        {checkUpdateMutation.isError && (
+          <StatusText error className="mt-2">
+            {m.settings_maintenance_version_toast_fail()}
+          </StatusText>
+        )}
       </div>
-
       <Button
-        type="button"
-        variant="outline"
-        onClick={() => checkUpdateMutation.mutate({})}
-        disabled={checkUpdateMutation.isPending}
-        className="h-10 px-6 font-mono text-[10px] uppercase tracking-[0.2em] rounded-none border-border/50 hover:bg-background transition-all group shrink-0"
+        onClick={() => checkUpdateMutation.mutate()}
+        loading={checkUpdateMutation.isPending}
       >
-        <RefreshCw
-          size={12}
-          className={
-            checkUpdateMutation.isPending
-              ? "animate-spin mr-3"
-              : "mr-3 group-hover:rotate-180 transition-transform duration-500"
-          }
-        />
-        {checkUpdateMutation.isPending ? "检查中..." : "检查更新"}
+        {checkUpdateMutation.isPending
+          ? m.settings_maintenance_version_checking()
+          : m.settings_maintenance_version_check_btn()}
       </Button>
     </div>
   );

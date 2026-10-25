@@ -1,7 +1,12 @@
 export * from "./auth.table";
-export * from "./posts.table";
-export * from "./media.table";
 export * from "./comments.table";
-export * from "./friend-links.table";
 export * from "./config.table";
+export * from "./friend-links.table";
+export * from "./media.table";
+export * from "./post-revisions.table";
+export * from "./posts.table";
+export * from "./search.table";
+
 export * from "./guitar-tab-metadata.table";
+
+export * from "./guitar-tab-comments.table";

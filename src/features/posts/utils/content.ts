@@ -1,6 +1,10 @@
 import type { JSONContent } from "@tiptap/react";
-import { extractImageKey } from "@/features/media/media.utils";
-import { highlight } from "@/lib/shiki";
+import { extractImageKey } from "@/features/media/utils/media.utils";
+import {
+  videoMetaOf,
+  videoPageUrl,
+  videoSourceOf,
+} from "@/features/posts/utils/video-source";
 
 export function slugify(text: string | null | undefined) {
   if (!text) return "untitled-log";
@@ -29,11 +33,33 @@ export function slugify(text: string | null | undefined) {
   return cleaned || "untitled-log";
 }
 
+export function jsonContentHasType(
+  doc: JSONContent | null | undefined,
+  types: string | ReadonlyArray<string>,
+): boolean {
+  if (!doc) return false;
+  const wanted = typeof types === "string" ? new Set([types]) : new Set(types);
+
+  function walk(node: JSONContent): boolean {
+    if (node.type && wanted.has(node.type)) return true;
+    if (!node.content) return false;
+    for (const child of node.content) {
+      if (walk(child)) return true;
+    }
+    return false;
+  }
+
+  return walk(doc);
+}
+
 export function extractAllImageKeys(doc: JSONContent | null): Array<string> {
   const keys: Array<string> = [];
 
   function traverse(node: JSONContent) {
-    if (node.type === "image" && node.attrs?.src) {
+    if (
+      (node.type === "image" || node.type === "guitarPro") &&
+      node.attrs?.src
+    ) {
       const key = extractImageKey(node.attrs.src);
       if (key) keys.push(key);
     }
@@ -44,35 +70,35 @@ export function extractAllImageKeys(doc: JSONContent | null): Array<string> {
   return Array.from(new Set(keys)); // 去重
 }
 
-export async function highlightCodeBlocks(
-  doc: JSONContent,
-): Promise<JSONContent> {
-  const cloned = structuredClone(doc);
+/**
+ * Points every image of `key` at `src`. Returns null when the document has no
+ * image of that key, so callers can skip the write.
+ */
+export function replaceImageSrc(
+  doc: JSONContent | null,
+  key: string,
+  src: string,
+): JSONContent | null {
+  let changed = false;
 
-  async function traverse(node: JSONContent) {
-    if (node.type === "codeBlock") {
-      const code = node.content?.map((n) => n.text || "").join("") || "";
-      const lang = node.attrs?.language || "text";
-      try {
-        const html = await highlight(code.trim(), lang);
-        node.attrs = { ...node.attrs, highlightedHtml: html };
-      } catch (e) {
-        console.warn(
-          JSON.stringify({
-            event: "code_highlight_failed",
-            lang,
-            error: e instanceof Error ? e.message : String(e),
-          }),
-        );
-      }
+  function traverse(node: JSONContent): JSONContent {
+    let next = node;
+    if (
+      node.type === "image" &&
+      typeof node.attrs?.src === "string" &&
+      extractImageKey(node.attrs.src) === key &&
+      node.attrs.src !== src
+    ) {
+      changed = true;
+      next = { ...node, attrs: { ...node.attrs, src } };
     }
-    if (node.content) {
-      await Promise.all(node.content.map(traverse));
-    }
+    if (next.content) next = { ...next, content: next.content.map(traverse) };
+    return next;
   }
 
-  await traverse(cloned);
-  return cloned;
+  if (!doc) return null;
+  const next = traverse(doc);
+  return changed ? next : null;
 }
 
 export function convertToPlainText(doc: JSONContent | null): string {
@@ -88,6 +114,16 @@ export function convertToPlainText(doc: JSONContent | null): string {
     else if (node.type === "image" && node.attrs?.alt) {
       // 给图片文本加个空格，防止和前后文粘连
       textParts.push(` ${node.attrs.alt} `);
+    }
+    // 视频没有文字，输出原视频链接，RSS 阅读器里也能找到
+    else if (node.type === "video") {
+      const source = videoSourceOf(node.attrs);
+      const { title } = videoMetaOf(node.attrs);
+      if (source) {
+        textParts.push(
+          `\n${title ? `${title} ` : ""}${videoPageUrl(source)}\n`,
+        );
+      }
     }
 
     // 3. 递归遍历子节点 (处理 Heading, Blockquote, List 等容器)
@@ -117,4 +153,20 @@ export function convertToPlainText(doc: JSONContent | null): string {
   // 5. 清理多余空行，整洁输出
   // 将连续的换行符替换为单个空格或单个换行
   return textParts.join("").replace(/\n+/g, "\n").trim();
+}
+
+/** ~400 CJK chars/min, ~200 English words/min. Minimum 1. */
+export function estimateReadTimeMinutes(doc: JSONContent | null): number {
+  const text = convertToPlainText(doc);
+  const cjkChars = (
+    text.match(
+      /[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/g,
+    ) || []
+  ).length;
+  const textWithoutCjk = text.replace(
+    /[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/g,
+    " ",
+  );
+  const englishWords = textWithoutCjk.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(cjkChars / 400 + englishWords / 200));
 }

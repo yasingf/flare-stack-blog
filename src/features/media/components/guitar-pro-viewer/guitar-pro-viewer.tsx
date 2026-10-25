@@ -1,4 +1,9 @@
-import { AlphaTabApi, Environment, PlayerMode, midi } from "@coderline/alphatab";
+import {
+  AlphaTabApi,
+  Environment,
+  PlayerMode,
+  midi,
+} from "@coderline/alphatab";
 import {
   Activity,
   ChevronDown,
@@ -60,7 +65,10 @@ function synthTimeToAudioTime(
           : 1;
       return Math.max(0, s0.syncTime + (synthTimeMs - s0.synthTime) * ratio);
     }
-    return Math.max(0, syncPoints[0].syncTime + (synthTimeMs - syncPoints[0].synthTime));
+    return Math.max(
+      0,
+      syncPoints[0].syncTime + (synthTimeMs - syncPoints[0].synthTime),
+    );
   }
   // 在最后一个同步点之后
   const last = syncPoints[syncPoints.length - 1];
@@ -155,7 +163,11 @@ try {
 
       // 识别 NumberedBarRendererFactory（staffId === 'numbered'）
       let staffId: unknown;
-      try { staffId = f.staffId; } catch { /* */ }
+      try {
+        staffId = f.staffId;
+      } catch {
+        /* */
+      }
       if (staffId === "numbered") {
         numberedFactory = f;
       }
@@ -169,7 +181,11 @@ try {
         const effect = band.effect as Record<string, unknown> | undefined;
         if (!effect) continue;
         let ne: unknown;
-        try { ne = effect.notationElement; } catch { continue; }
+        try {
+          ne = effect.notationElement;
+        } catch {
+          continue;
+        }
         if (ne === NOTATION_ELEMENT_EFFECT_LYRICS) {
           lyricsEffect = effect;
           if (staffId === "numbered") {
@@ -185,14 +201,25 @@ try {
 
     // 若简谱渲染器原本没有歌词效果，则注入
     if (numberedFactory && lyricsEffect) {
-      const bands = numberedFactory.effectBands as Array<Record<string, unknown>> | undefined;
+      const bands = numberedFactory.effectBands as
+        | Array<Record<string, unknown>>
+        | undefined;
       if (Array.isArray(bands)) {
         const hasLyrics = bands.some((b) => {
-          try { return (b.effect as Record<string, unknown>)?.notationElement === NOTATION_ELEMENT_EFFECT_LYRICS; }
-          catch { return false; }
+          try {
+            return (
+              (b.effect as Record<string, unknown>)?.notationElement ===
+              NOTATION_ELEMENT_EFFECT_LYRICS
+            );
+          } catch {
+            return false;
+          }
         });
         if (!hasLyrics) {
-          bands.push({ effect: lyricsEffect, mode: EFFECT_BAND_MODE_SHARED_BOTTOM });
+          bands.push({
+            effect: lyricsEffect,
+            mode: EFFECT_BAND_MODE_SHARED_BOTTOM,
+          });
         }
       }
     }
@@ -517,7 +544,9 @@ function setupAudioEffects(api: AlphaTabApi): void {
     dryGain.connect(ctx.destination);
     wetGain.connect(ctx.destination);
 
-    console.log(JSON.stringify({ message: "audio effects chain initialized (enhanced)" }));
+    console.log(
+      JSON.stringify({ message: "audio effects chain initialized (enhanced)" }),
+    );
   } catch (e) {
     // 如果 hack 失败，静默降级（无效果但仍可播放）
     console.warn(
@@ -775,12 +804,21 @@ export default function GuitarProViewer({
   const [audioMuted, setAudioMuted] = useState(false);
 
   // ── 段落进度（rehearsal marks）──
-  const [sections, setSections] = useState<Array<{ name: string; barIndex: number; startTick: number; endTick: number }>>([]); 
+  const [sections, setSections] = useState<
+    Array<{
+      name: string;
+      barIndex: number;
+      startTick: number;
+      endTick: number;
+    }>
+  >([]);
   const [currentTick, setCurrentTick] = useState(0);
   const [endTick, setEndTick] = useState(0);
 
   // ── 内嵌伴奏同步点（synthTime → syncTime 映射）──
-  const syncPointsRef = useRef<Array<{ synthTime: number; syncTime: number }>>([]);
+  const syncPointsRef = useRef<Array<{ synthTime: number; syncTime: number }>>(
+    [],
+  );
 
   const prevVolumeRef = useRef(DEFAULT_MASTER_VOLUME);
 
@@ -844,7 +882,10 @@ export default function GuitarProViewer({
         (score: {
           title?: string;
           artist?: string;
-          tracks: Array<{ name: string; playbackInfo?: { primaryChannel: number; program: number } }>;
+          tracks: Array<{
+            name: string;
+            playbackInfo?: { primaryChannel: number; program: number };
+          }>;
           backingTrack?: { rawAudioFile?: Uint8Array };
           masterBars: Array<{
             index: number;
@@ -876,12 +917,14 @@ export default function GuitarProViewer({
 
           // 检测内嵌伴奏音轨（GP7/8 文件可能嵌入录音伴奏）
           const rawAudio = score.backingTrack?.rawAudioFile;
-          const hasBacking = !!(rawAudio?.length);
+          const hasBacking = !!rawAudio?.length;
           setHasBackingTrack(hasBacking);
 
           // 提取嵌入音频 → 独立 Audio 元素播放
           if (hasBacking && rawAudio) {
-            const blob = new Blob([rawAudio], { type: "audio/ogg" });
+            const blob = new Blob([new Uint8Array(rawAudio)], {
+              type: "audio/ogg",
+            });
             const url = URL.createObjectURL(blob);
             if (backingTrackUrl) URL.revokeObjectURL(backingTrackUrl);
             setBackingTrackUrl(url);
@@ -898,19 +941,26 @@ export default function GuitarProViewer({
             // 提取同步点（synthTime ↔ syncTime 映射）
             try {
               const pts = midi.MidiFileGenerator.generateSyncPoints(
-                score as unknown as Parameters<typeof midi.MidiFileGenerator.generateSyncPoints>[0],
+                score as unknown as Parameters<
+                  typeof midi.MidiFileGenerator.generateSyncPoints
+                >[0],
               );
               if (pts && pts.length > 0) {
                 syncPointsRef.current = pts
                   .filter((p) => p.synthTime >= 0 && p.syncTime >= 0)
                   .sort((a, b) => a.synthTime - b.synthTime)
-                  .map((p) => ({ synthTime: p.synthTime, syncTime: p.syncTime }));
+                  .map((p) => ({
+                    synthTime: p.synthTime,
+                    syncTime: p.syncTime,
+                  }));
                 console.log(
                   JSON.stringify({
                     message: "sync points loaded",
                     count: syncPointsRef.current.length,
                     first: syncPointsRef.current[0],
-                    last: syncPointsRef.current[syncPointsRef.current.length - 1],
+                    last: syncPointsRef.current[
+                      syncPointsRef.current.length - 1
+                    ],
                   }),
                 );
               } else {
@@ -919,7 +969,8 @@ export default function GuitarProViewer({
             } catch (e) {
               console.warn(
                 JSON.stringify({
-                  message: "sync points generation failed, falling back to linear sync",
+                  message:
+                    "sync points generation failed, falling back to linear sync",
                   error: String(e),
                 }),
               );
@@ -952,7 +1003,12 @@ export default function GuitarProViewer({
           // 不需要手动设置 core.tracks — 通过 api.load(data, [-1]) 已指定渲染全部轨道。
 
           // 解析段落标记（Intro / Verse / Chorus 等）
-          const sectionList: Array<{ name: string; barIndex: number; startTick: number; endTick: number }> = [];
+          const sectionList: Array<{
+            name: string;
+            barIndex: number;
+            startTick: number;
+            endTick: number;
+          }> = [];
           for (const mb of score.masterBars) {
             if (mb.isSectionStart && mb.section) {
               sectionList.push({
@@ -1035,7 +1091,12 @@ export default function GuitarProViewer({
     );
     unsubs.push(
       api.playerPositionChanged.on(
-        (args: { currentTime: number; endTime: number; currentTick: number; endTick: number }) => {
+        (args: {
+          currentTime: number;
+          endTime: number;
+          currentTick: number;
+          endTick: number;
+        }) => {
           setCurrentTime(args.currentTime);
           setTotalTime(args.endTime);
           setCurrentTick(args.currentTick);
@@ -1075,7 +1136,10 @@ export default function GuitarProViewer({
           // 部分渲染成功，仅 loading 状态取消
           setIsLoading(false);
           console.warn(
-            JSON.stringify({ message: "alphaTab layout warning (non-fatal)", error: msg }),
+            JSON.stringify({
+              message: "alphaTab layout warning (non-fatal)",
+              error: msg,
+            }),
           );
         } else {
           setLoadError("无法加载乐谱文件");
@@ -1181,14 +1245,17 @@ export default function GuitarProViewer({
   }, []);
 
   // 主音量
-  const handleVolumeChange = useCallback((v: number) => {
-    if (!apiRef.current) return;
-    // 只有 MIDI 启用时才设置给 alphaTab
-    if (midiEnabled) apiRef.current.masterVolume = v;
-    setVolume(v);
-    setIsMuted(v === 0);
-    if (v > 0) prevVolumeRef.current = v;
-  }, [midiEnabled]);
+  const handleVolumeChange = useCallback(
+    (v: number) => {
+      if (!apiRef.current) return;
+      // 只有 MIDI 启用时才设置给 alphaTab
+      if (midiEnabled) apiRef.current.masterVolume = v;
+      setVolume(v);
+      setIsMuted(v === 0);
+      if (v > 0) prevVolumeRef.current = v;
+    },
+    [midiEnabled],
+  );
 
   const handleToggleMute = useCallback(() => {
     if (!apiRef.current) return;
@@ -1243,31 +1310,41 @@ export default function GuitarProViewer({
   );
 
   // 显示模式
-  const handleDisplayModeChange = useCallback((mode: DisplayMode) => {
-    if (!apiRef.current?.score) return;
-    const cfg = DISPLAY_MODES.find((d) => d.value === mode);
-    if (!cfg) return;
-    apiRef.current.settings.display.staveProfile = cfg.profile;
-    apiRef.current.updateSettings();
-    // 使用 renderTracks 而非 render()，确保保持当前选中的轨道
-    const selected = tracks
-      .filter((t) => t.isSelected)
-      .map((t) => apiRef.current!.score!.tracks[t.index]);
-    try {
-      if (selected.length > 0) {
-        apiRef.current.renderTracks(selected);
-      } else {
-        apiRef.current.render();
+  const handleDisplayModeChange = useCallback(
+    (mode: DisplayMode) => {
+      if (!apiRef.current?.score) return;
+      const cfg = DISPLAY_MODES.find((d) => d.value === mode);
+      if (!cfg) return;
+      apiRef.current.settings.display.staveProfile = cfg.profile;
+      apiRef.current.updateSettings();
+      // 使用 renderTracks 而非 render()，确保保持当前选中的轨道
+      const selected = tracks
+        .filter((t) => t.isSelected)
+        .map((t) => apiRef.current!.score!.tracks[t.index]);
+      try {
+        if (selected.length > 0) {
+          apiRef.current.renderTracks(selected);
+        } else {
+          apiRef.current.render();
+        }
+      } catch (renderErr) {
+        console.warn(
+          JSON.stringify({
+            message: "renderTracks failed in display mode change",
+            error: String(renderErr),
+          }),
+        );
+        try {
+          apiRef.current.render();
+        } catch {
+          /* 兜底 */
+        }
       }
-    } catch (renderErr) {
-      console.warn(
-        JSON.stringify({ message: "renderTracks failed in display mode change", error: String(renderErr) }),
-      );
-      try { apiRef.current.render(); } catch { /* 兜底 */ }
-    }
-    setDisplayMode(mode);
-    setShowDisplayMenu(false);
-  }, [tracks]);
+      setDisplayMode(mode);
+      setShowDisplayMenu(false);
+    },
+    [tracks],
+  );
 
   // 缩放
   const handleZoomIn = useCallback(() => {
@@ -1326,9 +1403,16 @@ export default function GuitarProViewer({
           apiRef.current?.renderTracks(selected);
         } catch (renderErr) {
           console.warn(
-            JSON.stringify({ message: "renderTracks failed in track toggle", error: String(renderErr) }),
+            JSON.stringify({
+              message: "renderTracks failed in track toggle",
+              error: String(renderErr),
+            }),
           );
-          try { apiRef.current?.render(); } catch { /* 兜底 */ }
+          try {
+            apiRef.current?.render();
+          } catch {
+            /* 兜底 */
+          }
         }
       }, 0);
 
@@ -1585,7 +1669,7 @@ export default function GuitarProViewer({
             {/* 谱面模式 */}
             <div className="relative">
               <Button
-                variant="ghost"
+                variant="plain"
                 size="sm"
                 onClick={() => setShowDisplayMenu((v) => !v)}
                 className="rounded-lg h-8 gap-1 text-xs uppercase tracking-wider font-mono px-2.5"
@@ -1622,8 +1706,8 @@ export default function GuitarProViewer({
             {/* 缩放 */}
             <div className="hidden sm:flex items-center border-l border-border/20 ml-1 pl-1">
               <Button
-                variant="ghost"
-                size="icon"
+                variant="plain"
+                size="sm"
                 onClick={handleZoomOut}
                 disabled={scale <= ZOOM_STEPS[0]}
                 className="rounded-lg h-7 w-7"
@@ -1647,8 +1731,8 @@ export default function GuitarProViewer({
                 {Math.round(scale * 100)}%
               </button>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="plain"
+                size="sm"
                 onClick={handleZoomIn}
                 disabled={scale >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
                 className="rounded-lg h-7 w-7"
@@ -1661,8 +1745,8 @@ export default function GuitarProViewer({
             {/* 全屏切换 + 打印 + 关闭 */}
             <div className="border-l border-border/20 ml-1 pl-1 flex items-center gap-0.5">
               <Button
-                variant="ghost"
-                size="icon"
+                variant="plain"
+                size="sm"
                 onClick={handlePrint}
                 disabled={isLoading}
                 className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
@@ -1671,8 +1755,8 @@ export default function GuitarProViewer({
                 <Printer size={14} />
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="plain"
+                size="sm"
                 onClick={handleToggleFullscreen}
                 className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
                 title={isFullscreen ? "退出全屏" : "全屏"}
@@ -1684,8 +1768,8 @@ export default function GuitarProViewer({
                 )}
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="plain"
+                size="sm"
                 onClick={handleClose}
                 className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 title="关闭 (Esc)"
@@ -1716,12 +1800,18 @@ export default function GuitarProViewer({
                   />
                   <div
                     className="absolute inset-0 rounded-full border-2 border-accent/15"
-                    style={{ animation: "pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite" }}
+                    style={{
+                      animation:
+                        "pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite",
+                    }}
                   />
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <div className="loading-bars">
-                    <span /><span /><span /><span />
+                    <span />
+                    <span />
+                    <span />
+                    <span />
                   </div>
                   <span className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">
                     解析乐谱中...
@@ -1744,7 +1834,7 @@ export default function GuitarProViewer({
                   {loadError}
                 </p>
                 <Button
-                  variant="outline"
+                  variant="regular"
                   size="sm"
                   onClick={handleClose}
                   className="rounded-lg font-mono text-xs"
@@ -1772,7 +1862,9 @@ export default function GuitarProViewer({
               className="absolute inset-0 z-[201]"
               onClick={() => setShowTrackPanel(false)}
             />
-            <div className={`absolute ${sections.length > 0 ? 'bottom-[5.25rem]' : 'bottom-14'} right-3 z-[202] w-[340px] max-h-80 overflow-y-auto bg-background border border-border rounded-xl shadow-xl`}>
+            <div
+              className={`absolute ${sections.length > 0 ? "bottom-[5.25rem]" : "bottom-14"} right-3 z-[202] w-[340px] max-h-80 overflow-y-auto bg-background border border-border rounded-xl shadow-xl`}
+            >
               <div className="px-3 py-2.5 border-b border-border/30">
                 <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
                   轨道管理
@@ -1784,7 +1876,9 @@ export default function GuitarProViewer({
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
                     <Activity size={12} className="text-accent" />
-                    <span className="text-xs font-mono font-medium">MIDI 合成</span>
+                    <span className="text-xs font-mono font-medium">
+                      MIDI 合成
+                    </span>
                   </div>
                   <button
                     className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded transition-colors ${
@@ -1813,7 +1907,9 @@ export default function GuitarProViewer({
                         title="显示 / 隐藏"
                       >
                         {track.isSelected && (
-                          <span className="text-background text-[9px] leading-none">✓</span>
+                          <span className="text-background text-[9px] leading-none">
+                            ✓
+                          </span>
                         )}
                       </button>
                       <span className="flex-1 text-[13px] font-mono truncate min-w-0">
@@ -1859,8 +1955,12 @@ export default function GuitarProViewer({
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <Mic size={12} className="text-purple-500" />
-                      <span className="text-xs font-mono font-medium">内嵌音轨</span>
-                      <span className="text-[11px] text-muted-foreground/60">（人声/伴奏）</span>
+                      <span className="text-xs font-mono font-medium">
+                        内嵌音轨
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/60">
+                        （人声/伴奏）
+                      </span>
                     </div>
                     <button
                       className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded transition-colors ${
@@ -1874,7 +1974,10 @@ export default function GuitarProViewer({
                     </button>
                   </div>
                   <div className="flex items-center gap-2 px-2">
-                    <Volume2 size={12} className="shrink-0 text-muted-foreground/60" />
+                    <Volume2
+                      size={12}
+                      className="shrink-0 text-muted-foreground/60"
+                    />
                     <div className="flex-1">
                       <SliderTrack
                         value={backingTrackVolume}
@@ -1968,7 +2071,10 @@ export default function GuitarProViewer({
               if (isCurrent && secEnd > secStart) {
                 innerProgress = Math.min(
                   100,
-                  Math.max(0, ((currentTick - secStart) / (secEnd - secStart)) * 100),
+                  Math.max(
+                    0,
+                    ((currentTick - secStart) / (secEnd - secStart)) * 100,
+                  ),
                 );
               }
               const isDone = currentTick >= secEnd;
@@ -1977,7 +2083,11 @@ export default function GuitarProViewer({
                 <button
                   key={i}
                   className={`relative flex items-center justify-center px-1 min-w-0 border-r border-border/10 last:border-r-0 transition-colors cursor-pointer hover:bg-accent/5 ${
-                    isCurrent ? "text-accent" : isDone ? "text-muted-foreground/70" : "text-muted-foreground/40"
+                    isCurrent
+                      ? "text-accent"
+                      : isDone
+                        ? "text-muted-foreground/70"
+                        : "text-muted-foreground/40"
                   }`}
                   style={{ width: `${Math.max(secWidth, 3)}%` }}
                   onClick={() => handleSectionClick(i)}
@@ -2011,8 +2121,8 @@ export default function GuitarProViewer({
         <div className="h-14 border-t border-border/20 flex items-center gap-1.5 px-3 shrink-0 bg-background/95 backdrop-blur-sm relative gp-viewer-content">
           {/* ── 播放 / 停止 ── */}
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
+            size="sm"
             onClick={handlePlayPause}
             disabled={!isPlayerReady}
             className="rounded-full h-9 w-9 bg-accent/10 hover:bg-accent/20 text-accent disabled:opacity-30 transition-all"
@@ -2025,8 +2135,8 @@ export default function GuitarProViewer({
             )}
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
+            size="sm"
             onClick={handleStop}
             disabled={!isPlayerReady}
             className="rounded-lg h-8 w-8"
@@ -2039,8 +2149,8 @@ export default function GuitarProViewer({
 
           {/* ── 循环 / 预备 / 节拍器 ── */}
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
+            size="sm"
             onClick={handleToggleLoop}
             className={`rounded-lg h-8 w-8 transition-colors ${
               isLooping ? "text-accent bg-accent/10" : "text-muted-foreground"
@@ -2050,8 +2160,8 @@ export default function GuitarProViewer({
             <Repeat size={13} />
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
+            size="sm"
             onClick={handleToggleCountIn}
             className={`rounded-lg h-8 w-8 transition-colors ${
               countInEnabled
@@ -2063,8 +2173,8 @@ export default function GuitarProViewer({
             <Timer size={13} />
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="plain"
+            size="sm"
             onClick={handleToggleMetronome}
             className={`rounded-lg h-8 w-8 transition-colors ${
               metronomeEnabled
@@ -2101,8 +2211,8 @@ export default function GuitarProViewer({
           {/* ── 速度 ── */}
           <div className="flex items-center gap-0.5 shrink-0">
             <Button
-              variant="ghost"
-              size="icon"
+              variant="plain"
+              size="sm"
               onClick={() => {
                 const idx = SPEED_OPTIONS.indexOf(speed);
                 if (idx > 0) handleSpeedChange(SPEED_OPTIONS[idx - 1]);
@@ -2117,8 +2227,8 @@ export default function GuitarProViewer({
               {speed}x
             </span>
             <Button
-              variant="ghost"
-              size="icon"
+              variant="plain"
+              size="sm"
               onClick={() => {
                 const idx = SPEED_OPTIONS.indexOf(speed);
                 if (idx < SPEED_OPTIONS.length - 1)
@@ -2137,8 +2247,8 @@ export default function GuitarProViewer({
           {/* ── 主音量 ── */}
           <div className="flex items-center gap-1 shrink-0">
             <Button
-              variant="ghost"
-              size="icon"
+              variant="plain"
+              size="sm"
               onClick={handleToggleMute}
               className="rounded-lg h-8 w-8"
               title={isMuted ? "取消静音" : "静音"}
@@ -2157,7 +2267,7 @@ export default function GuitarProViewer({
           {/* ── 轨道按钮 ── */}
           <div className="w-px h-5 bg-border/20 mx-0.5" />
           <Button
-            variant="ghost"
+            variant="plain"
             size="sm"
             onClick={() => setShowTrackPanel((v) => !v)}
             className={`rounded-lg h-8 gap-1 text-xs uppercase tracking-wider font-mono px-2 ${

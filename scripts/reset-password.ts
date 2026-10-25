@@ -51,7 +51,9 @@ async function main() {
 
   const db = new Database(dbPath);
 
-  const users = db.prepare("SELECT id, email, name, role FROM user").all() as Array<{
+  const users = db
+    .prepare("SELECT id, email, name, role FROM user")
+    .all() as Array<{
     id: string;
     email: string;
     name: string;

@@ -1,5 +1,5 @@
 import type { JSONContent } from "@tiptap/react";
-import { jsonContentToMarkdown } from "@/features/import-export/utils/markdown-serializer";
+import { jsonContentToMarkdown } from "./markdown-serializer";
 
 export type EditorMode = "wysiwyg" | "markdown";
 
@@ -80,14 +80,14 @@ export async function markdownToHtml(markdown: string): Promise<string> {
 
   // 配置 marked 保留 guitar-pro 自定义标签
   const renderer = new marked.Renderer();
-  const originalHtml = renderer.html;
+  const originalHtml = renderer.html.bind(renderer);
   renderer.html = function (token) {
     // guitar-pro 标签直接保留
     if (typeof token === "object" && "raw" in token) {
       const raw = (token as { raw: string }).raw;
       if (raw.includes("<guitar-pro")) return raw;
     }
-    return originalHtml.call(this, token);
+    return originalHtml(token);
   };
 
   const rawHtml = await marked(preprocessed, { renderer });

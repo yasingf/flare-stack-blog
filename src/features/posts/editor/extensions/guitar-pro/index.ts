@@ -27,7 +27,9 @@ export const GuitarProExtension = Node.create({
         parseHTML: (element) =>
           element.getAttribute("title") ||
           element.getAttribute("data-filename") ||
+          element.getAttribute("filename") ||
           "",
+        renderHTML: (attributes) => ({ title: attributes.fileName }),
       },
     };
   },

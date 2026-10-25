@@ -1,5 +1,38 @@
 import { z } from "zod";
 
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
+
+export const MediaKeyInputSchema = z.object({
+  key: z.string(),
+});
+
+export const UpdateMediaNameInputSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const GetMediaListInputSchema = z.object({
+  cursor: z.number().optional(),
+  limit: z.number().optional(),
+  search: z.string().optional(),
+  unusedOnly: z.boolean().optional(),
+});
+
+export const ImportMediaUrlInputSchema = z.object({
+  url: z.string().min(1),
+});
+
+export type UpdateMediaNameInput = z.infer<typeof UpdateMediaNameInputSchema>;
+export type GetMediaListInput = z.infer<typeof GetMediaListInputSchema>;
+
 // ─── 文件类别 ─────────────────────────────────────────
 
 export type MediaCategory =
@@ -13,7 +46,6 @@ export type MediaCategory =
 // ─── 按类型的大小限制 ─────────────────────────────────
 
 /** @deprecated 兼容旧代码 — 请使用 getMaxFileSize */
-export const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
 export const MAX_FILE_SIZE_BY_CATEGORY: Record<MediaCategory, number> = {
   image: 30 * 1024 * 1024, // 30 MB
@@ -35,14 +67,6 @@ export function formatMaxSize(category: MediaCategory): string {
 }
 
 // ─── MIME 类型 ─────────────────────────────────────────
-
-export const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-];
 
 /** Guitar Pro 吉他谱文件 MIME 类型 */
 export const ACCEPTED_GUITAR_PRO_TYPES = [
@@ -137,101 +161,3 @@ export function isSupportedFile(file: File): boolean {
 export function getSupportedFormatsText(): string {
   return "图片 (JPG/PNG/WebP/GIF ≤30MB) · 吉他谱 (GP3/4/5/GPX/GP ≤50MB) · 视频 (MP4/WebM/MOV ≤512MB) · 音频 (MP3/WAV/OGG/FLAC ≤50MB)";
 }
-
-// ─── Zod Schemas ──────────────────────────────────────
-
-export const UploadMediaInputSchema = z
-  .instanceof(FormData)
-  .transform((formData) => {
-    const file = formData.get("image");
-    if (!(file instanceof File)) throw new Error("文件不能为空");
-
-    if (!isSupportedFile(file)) {
-      throw new Error("不支持的文件类型。" + getSupportedFormatsText());
-    }
-
-    const category = detectMediaCategory(file);
-    const maxSize = getMaxFileSize(category);
-    if (file.size > maxSize) {
-      throw new Error(`文件大小超过限制 (${formatMaxSize(category)})`);
-    }
-
-    const rawWidth = formData.get("width");
-    const rawHeight = formData.get("height");
-    const parsedWidth = rawWidth ? parseInt(rawWidth.toString()) : NaN;
-    const parsedHeight = rawHeight ? parseInt(rawHeight.toString()) : NaN;
-
-    return {
-      file,
-      width: Number.isNaN(parsedWidth) ? undefined : parsedWidth,
-      height: Number.isNaN(parsedHeight) ? undefined : parsedHeight,
-    };
-  });
-
-export const UpdateMediaNameInputSchema = z.object({
-  key: z.string().min(1),
-  name: z.string().min(1),
-});
-
-export const GetMediaListInputSchema = z.object({
-  cursor: z.number().optional(),
-  limit: z.number().optional(),
-  search: z.string().optional(),
-  unusedOnly: z.boolean().optional(),
-  category: z
-    .enum(["image", "guitar-pro", "video", "audio", "album-cover", "avatar"])
-    .optional(),
-});
-
-export type UpdateMediaNameInput = z.infer<typeof UpdateMediaNameInputSchema>;
-export type GetMediaListInput = z.infer<typeof GetMediaListInputSchema>;
-
-// ─── 用户提交吉他谱 ──────────────────────────────────
-
-export const SubmitGuitarTabInputSchema = z
-  .instanceof(FormData)
-  .transform((formData) => {
-    const file = formData.get("file");
-    if (!(file instanceof File)) throw new Error("文件不能为空");
-
-    // 检查是否为 Guitar Pro 文件
-    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
-    if (!GUITAR_PRO_EXTENSIONS.includes(ext)) {
-      throw new Error("只支持 Guitar Pro 文件格式 (GP3/GP4/GP5/GPX/GP)");
-    }
-
-    const maxSize = MAX_FILE_SIZE_BY_CATEGORY["guitar-pro"];
-    if (file.size > maxSize) {
-      throw new Error(`文件大小超过限制 (${formatMaxSize("guitar-pro")})`);
-    }
-
-    return { file };
-  });
-
-// ─── 用户头像上传 ─────────────────────────────────────
-
-const MAX_AVATAR_SIZE = 3 * 1024 * 1024; // 3 MB
-
-const ACCEPTED_AVATAR_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-];
-
-export const UploadAvatarInputSchema = z
-  .instanceof(FormData)
-  .transform((formData) => {
-    const file = formData.get("avatar");
-    if (!(file instanceof File)) throw new Error("请选择头像文件");
-
-    if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
-      throw new Error("头像仅支持 JPG / PNG / WebP 格式");
-    }
-
-    if (file.size > MAX_AVATAR_SIZE) {
-      throw new Error("头像文件不得超过 3MB");
-    }
-
-    return { file };
-  });

@@ -1,244 +1,396 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ListFilter, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PostRow, PostsToolbar } from "./components";
-import { useDeletePost, usePosts, useUnpublishPost } from "./hooks";
+import { useAdminChrome } from "@/components/admin/admin-chrome";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { orpc, orpcClient } from "@/lib/orpc";
+import { ADMIN_ITEMS_PER_PAGE } from "@/lib/constants";
+import { useContentMotion } from "@/hooks/use-motion";
+import { EmptyState } from "@/components/ui/empty-state";
+import { m } from "@/paraglide/messages";
+import { PostRow, PostsToolbar, TaxonomySheet } from "./components";
+import { Button } from "@/components/ui/button";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
+import { PageHeader } from "@/components/ui/page-heading";
+import { Spinner } from "@/components/ui/spinner";
+import { useListScroll } from "./hooks/use-list-scroll";
+import {
+  useDeletePost,
+  usePosts,
+  useTogglePostPin,
+  useUnpublishPost,
+} from "./hooks";
 import { PostManagerSkeleton } from "./post-manager-skeleton";
 import type {
-  PostListItem,
-  SortDirection,
+  AdminPostListItem,
+  CategoryFilter,
   SortField,
   StatusFilter,
 } from "./types";
-import { ErrorPage } from "@/components/common/error-page";
-import { Button } from "@/components/ui/button";
-import { AdminPagination } from "@/components/admin/admin-pagination";
-import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { createEmptyPostFn } from "@/features/posts/api/posts.admin.api";
-import { useDebounce } from "@/hooks/use-debounce";
-
-import { ADMIN_ITEMS_PER_PAGE } from "@/lib/constants";
-import { POSTS_KEYS } from "@/features/posts/queries";
-
-// Re-export types for external use
-export {
-  SORT_DIRECTIONS,
-  type SortDirection,
-  SORT_FIELDS,
-  type SortField,
-  STATUS_FILTERS,
-  type StatusFilter,
-} from "./types";
+import "./post-manager.css";
 
 interface PostManagerProps {
   page: number;
   status: StatusFilter;
-  sortDir: SortDirection;
   sortBy: SortField;
   search: string;
+  category?: CategoryFilter;
+  tag?: number;
   onPageChange: (page: number) => void;
   onStatusChange: (status: StatusFilter) => void;
-  onSortUpdate: (update: { dir?: SortDirection; sortBy?: SortField }) => void;
+  onSortByChange: (sortBy: SortField) => void;
   onSearchChange: (search: string) => void;
+  onCategoryChange: (category?: CategoryFilter, replace?: boolean) => void;
+  onTagChange: (tag?: number, replace?: boolean) => void;
+  /** Filters by one category or tag, dropping the other taxonomy filter. */
+  onTaxonomyFilter: (filter: {
+    category?: CategoryFilter;
+    tag?: number;
+  }) => void;
   onResetFilters: () => void;
 }
 
 export function PostManager({
   page,
   status,
-  sortDir,
   sortBy,
   search,
+  category,
+  tag,
   onPageChange,
   onStatusChange,
-  onSortUpdate,
+  onSortByChange,
   onSearchChange,
+  onCategoryChange,
+  onTagChange,
+  onTaxonomyFilter,
   onResetFilters,
 }: PostManagerProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [postToDelete, setPostToDelete] = useState<PostListItem | null>(null);
-
-  // Local search input state for debouncing
+  const { setPrimaryAction } = useAdminChrome();
+  const [postToDelete, setPostToDelete] = useState<AdminPostListItem | null>(
+    null,
+  );
+  const [postToUnpublish, setPostToUnpublish] =
+    useState<AdminPostListItem | null>(null);
+  const [taxonomyOpen, setTaxonomyOpen] = useState(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchCallbackRef = useRef(onSearchChange);
+  searchCallbackRef.current = onSearchChange;
   const [searchInput, setSearchInput] = useState(search);
-  const debouncedSearch = useDebounce(searchInput, 300);
-
-  // Sync URL when debounced search changes
+  const clearPendingSearch = useCallback(() => {
+    if (searchTimerRef.current !== null) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = null;
+  }, []);
+  // URL changes (including browser Back) supersede any pending text submission.
   useEffect(() => {
-    if (debouncedSearch !== search) {
-      onSearchChange(debouncedSearch);
-    }
-  }, [debouncedSearch, search, onSearchChange]);
+    clearPendingSearch();
+    setSearchInput(search);
+  }, [search, clearPendingSearch]);
+  useEffect(() => clearPendingSearch, [clearPendingSearch]);
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    clearPendingSearch();
+    searchTimerRef.current = setTimeout(() => {
+      searchTimerRef.current = null;
+      searchCallbackRef.current(value);
+    }, 300);
+  };
+  const resetFilters = () => {
+    clearPendingSearch();
+    setSearchInput("");
+    onResetFilters();
+  };
+  const {
+    posts,
+    totalCount,
+    totalPages,
+    statusCounts,
+    isPending,
+    isFetching,
+    isPlaceholderData,
+    error,
+    refetch,
+  } = usePosts({ page, status, sortBy, search, category, tag });
+  const contentRef = useRef<HTMLTableSectionElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useListScroll(
+    scrollRef,
+    { page, status, sortBy, search, category, tag },
+    !isPending && !isPlaceholderData && !error,
+  );
+  const motionKey = useRef("");
+  if (!isPlaceholderData)
+    motionKey.current = `${page}:${status}:${sortBy}:${search}:${category}:${tag}:${isPending}:${posts.map((post) => post.id).join(",")}`;
+  useContentMotion(contentRef, motionKey.current);
 
-  // Sync local state when URL search changes (e.g., browser back/forward, reset)
   useEffect(() => {
-    if (search !== searchInput && search !== debouncedSearch) {
-      setSearchInput(search);
-    }
-  }, [search]);
+    if (
+      !isPending &&
+      !isPlaceholderData &&
+      !error &&
+      page > Math.max(1, totalPages)
+    )
+      onPageChange(Math.max(1, totalPages));
+  }, [page, totalPages, isPending, isPlaceholderData, error, onPageChange]);
 
-  // Fetch posts data using debounced search
-  const { posts, totalCount, totalPages, isPending, error } = usePosts({
-    page,
-    status,
-    sortDir,
-    sortBy,
-    search: debouncedSearch,
-  });
-
-  // Create empty post mutation
   const createMutation = useMutation({
-    mutationFn: () => createEmptyPostFn(),
-    onSuccess: (result) => {
-      // Precise invalidation for new post creation
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.adminLists });
-      queryClient.invalidateQueries({ queryKey: POSTS_KEYS.counts });
-      navigate({
+    mutationFn: () => orpcClient.posts.admin.create(),
+    onSuccess: (post) => {
+      void queryClient.invalidateQueries({
+        queryKey: orpc.posts.admin.list.key(),
+      });
+      void navigate({
         to: "/admin/posts/edit/$id",
-        params: { id: String(result.id) },
+        params: { id: String(post.id) },
       });
     },
-    onError: (e) => {
-      toast.error("新建条目失败", {
-        description: e.message,
-      });
-    },
+    onError: () => toast.error(m.admin_posts_create_failed()),
   });
-
-  // Delete mutation
+  const createPost = createMutation.mutate;
+  const isCreating = createMutation.isPending;
+  const createLabel = isCreating
+    ? m.admin_posts_creating()
+    : m.admin_posts_create();
+  useEffect(() => {
+    setPrimaryAction({
+      label: createLabel,
+      onClick: () => createPost(),
+      disabled: isCreating,
+    });
+    return () => setPrimaryAction(null);
+  }, [createLabel, createPost, isCreating, setPrimaryAction]);
   const deleteMutation = useDeletePost({
     onSuccess: () => setPostToDelete(null),
   });
-
-  // Unpublish mutation
-  const unpublishMutation = useUnpublishPost();
-
-  const handleDelete = (post: PostListItem) => {
-    setPostToDelete(post);
-  };
-
-  const handleUnpublish = (post: PostListItem) => {
-    unpublishMutation.mutate(post);
-  };
-
-  const confirmDelete = () => {
-    if (postToDelete) {
-      deleteMutation.mutate(postToDelete);
-    }
-  };
+  const hasTaxonomyFilter = category !== undefined || tag !== undefined;
+  const unpublishMutation = useUnpublishPost({
+    onSuccess: () => setPostToUnpublish(null),
+  });
+  const pinMutation = useTogglePostPin();
+  const hasActiveFilters =
+    status !== "ALL" ||
+    sortBy !== "updatedAt" ||
+    Boolean(searchInput) ||
+    hasTaxonomyFilter;
+  const hasContentFilter =
+    status !== "ALL" || Boolean(search.trim()) || hasTaxonomyFilter;
+  const isEmptyLibrary = !hasContentFilter && totalCount === 0;
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header */}
-      <div className="flex justify-between items-end animate-in fade-in slide-in-from-bottom-4 duration-1000 fill-mode-both border-b border-border/30 pb-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-medium tracking-tight">
-            文章管理
-          </h1>
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-              POSTS_MANAGEMENT_SYSTEM
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+    <section className="post-manager admin-workspace fuwari-card-base">
+      <PageHeader
+        className="post-list-heading"
+        title={m.admin_posts_title()}
+        description={
+          <>
+            {statusCounts
+              ? m.admin_posts_total({
+                  count: statusCounts.draft + statusCounts.published,
+                })
+              : "—"}
+            {isFetching && <Spinner size={14} className="ml-2 inline" />}
+          </>
+        }
+        actions={
           <Button
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending}
-            className="h-10 px-6 text-[11px] uppercase tracking-[0.2em] font-medium rounded-none gap-2 bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
+            variant="primary"
+            className="post-list-create"
+            onClick={() => createPost()}
+            loading={isCreating}
+            icon={<Plus size={19} />}
           >
-            <Plus size={14} />
-            {createMutation.isPending ? "创建中..." : "新建文章"}
+            {createLabel}
           </Button>
-        </div>
-      </div>
-
-      <div className="animate-in fade-in duration-1000 delay-100 fill-mode-both space-y-8">
-        {/* Toolbar */}
-        <PostsToolbar
-          searchTerm={searchInput}
-          onSearchChange={setSearchInput}
-          status={status}
-          onStatusChange={onStatusChange}
-          sortDir={sortDir}
-          sortBy={sortBy}
-          onSortUpdate={onSortUpdate}
-          onResetFilters={() => {
-            setSearchInput("");
-            onResetFilters();
-          }}
-        />
-
-        {/* List Content */}
+        }
+      />
+      <PostsToolbar
+        searchTerm={searchInput}
+        onSearchChange={handleSearchChange}
+        searchRef={searchRef}
+        status={status}
+        statusCounts={statusCounts}
+        onStatusChange={onStatusChange}
+        category={category}
+        onCategoryChange={onCategoryChange}
+        tag={tag}
+        onTagChange={onTagChange}
+        sortBy={sortBy}
+        onSortByChange={onSortByChange}
+        onManageTaxonomy={() => setTaxonomyOpen(true)}
+      />
+      <div
+        ref={scrollRef}
+        className="post-list-scroll custom-scrollbar"
+        data-scroll-restoration-id="admin-post-list"
+        role="region"
+        aria-label={m.admin_posts_title()}
+        tabIndex={0}
+      >
         {error ? (
-          <ErrorPage />
-        ) : isPending ? (
-          <PostManagerSkeleton />
+          <EmptyState
+            className="post-list-empty"
+            description={m.error_desc()}
+            action={
+              <Button variant="text" onClick={() => void refetch()}>
+                {m.error_retry()}
+              </Button>
+            }
+          />
         ) : (
-          <div className="space-y-0">
-            {posts.length === 0 ? (
-              <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-4 border border-dashed border-border/30">
-                <ListFilter size={32} strokeWidth={1} className="opacity-20" />
-                <div className="text-center font-mono text-xs">
-                  未找到匹配的文章
-                  <button
-                    className="mt-4 block mx-auto text-[10px] uppercase tracking-widest font-bold hover:underline"
-                    onClick={onResetFilters}
+          <>
+            <div className="post-list-table-wrap" aria-busy={isFetching}>
+              <table className="post-list-table">
+                <colgroup>
+                  <col className="post-list-title-col" />
+                  <col className="post-list-status-col" />
+                  <col className="post-list-date-col" />
+                  <col className="post-list-actions-col" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col">{m.admin_posts_col_title()}</th>
+                    <th scope="col">{m.admin_posts_filter_status()}</th>
+                    <th scope="col">
+                      {sortBy === "updatedAt"
+                        ? m.admin_posts_sort_recent_upd()
+                        : m.admin_posts_sort_recent_pub()}
+                    </th>
+                    <th scope="col">{m.admin_posts_col_actions()}</th>
+                  </tr>
+                </thead>
+                <tbody ref={contentRef}>
+                  {isPending ? (
+                    <PostManagerSkeleton />
+                  ) : (
+                    posts.map((post) => (
+                      <PostRow
+                        key={post.id}
+                        post={post}
+                        sortBy={sortBy}
+                        onDelete={(target, trigger) => {
+                          deleteTriggerRef.current = trigger;
+                          setPostToDelete(target);
+                        }}
+                        onTogglePin={(target) => pinMutation.mutate(target)}
+                        pinPending={
+                          pinMutation.isPending &&
+                          pinMutation.variables.id === post.id
+                        }
+                        onUnpublish={(target, trigger) => {
+                          deleteTriggerRef.current = trigger;
+                          setPostToUnpublish(target);
+                        }}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {!isPending && posts.length === 0 && (
+              <EmptyState
+                className="post-list-empty"
+                icon={Search}
+                description={
+                  isEmptyLibrary
+                    ? m.admin_posts_empty_library()
+                    : m.admin_posts_no_match()
+                }
+                action={
+                  <Button
+                    variant="text"
+                    disabled={isCreating}
+                    onClick={() =>
+                      isEmptyLibrary ? createPost() : resetFilters()
+                    }
                   >
-                    [ 清除所有筛选 ]
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Desktop Header */}
-                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-mono border-b border-border/30 bg-muted/10">
-                  <div className="col-span-6">文章信息</div>
-                  <div className="col-span-3">当前状态</div>
-                  <div className="col-span-2">时间节点</div>
-                  <div className="col-span-1"></div>
-                </div>
-
-                <div className="divide-y divide-border/30 border-b border-border/30">
-                  {posts.map((post) => (
-                    <PostRow
-                      key={post.id}
-                      post={post}
-                      onDelete={handleDelete}
-                      onUnpublish={handleUnpublish}
-                      isUnpublishing={unpublishMutation.isPending}
-                    />
-                  ))}
-                </div>
-              </>
+                    {isEmptyLibrary
+                      ? createLabel
+                      : m.admin_posts_clear_filters()}
+                  </Button>
+                }
+              />
             )}
-          </div>
+          </>
         )}
-
-        {/* Pagination */}
-        <AdminPagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={totalCount}
-          itemsPerPage={ADMIN_ITEMS_PER_PAGE}
-          currentPageItemCount={posts.length}
-          onPageChange={onPageChange}
-        />
       </div>
+      {!isPending && !error && (
+        <footer className="post-list-footer">
+          {totalPages <= 1 ? (
+            <p>
+              {hasContentFilter
+                ? m.admin_posts_results({ count: totalCount })
+                : m.admin_posts_total({ count: totalCount })}
+            </p>
+          ) : (
+            <AdminPagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              itemsPerPage={ADMIN_ITEMS_PER_PAGE}
+              currentPageItemCount={posts.length}
+              onPageChange={onPageChange}
+            />
+          )}
+          {hasActiveFilters && (
+            <Button variant="text" size="sm" onClick={resetFilters}>
+              {m.admin_posts_clear_filters()}
+            </Button>
+          )}
+        </footer>
+      )}
 
-      {/* --- Confirmation Modal --- */}
+      <TaxonomySheet
+        open={taxonomyOpen}
+        onClose={() => setTaxonomyOpen(false)}
+        onPick={(kind, id) => {
+          setTaxonomyOpen(false);
+          onTaxonomyFilter(
+            kind === "category" ? { category: id } : { tag: id },
+          );
+        }}
+      />
       <ConfirmationModal
         isOpen={!!postToDelete}
-        onClose={() => !deleteMutation.isPending && setPostToDelete(null)}
-        onConfirm={confirmDelete}
-        title="确认删除"
-        message={`您确定要永久删除文章 "${postToDelete?.title}" 吗？此操作无法撤销。`}
-        confirmLabel="确认删除"
-        isDanger={true}
+        title={m.admin_posts_delete_confirm_title()}
+        message={m.admin_posts_delete_confirm_desc({
+          title: postToDelete?.title.trim() || m.common_untitled(),
+        })}
+        confirmLabel={m.admin_posts_delete_confirm_btn()}
+        isDanger
         isLoading={deleteMutation.isPending}
+        onClose={() => setPostToDelete(null)}
+        onConfirm={() => {
+          if (postToDelete) deleteMutation.mutate(postToDelete);
+        }}
+        returnFocus={() =>
+          deleteTriggerRef.current?.isConnected
+            ? deleteTriggerRef.current
+            : searchRef.current
+        }
       />
-    </div>
+      <ConfirmationModal
+        isOpen={!!postToUnpublish}
+        title={m.editor_unpublish_confirm_title()}
+        message={m.editor_unpublish_confirm_desc()}
+        confirmLabel={m.editor_header_unpublish()}
+        isDanger
+        isLoading={unpublishMutation.isPending}
+        onClose={() => setPostToUnpublish(null)}
+        onConfirm={() => {
+          if (postToUnpublish) unpublishMutation.mutate(postToUnpublish.id);
+        }}
+        returnFocus={() =>
+          deleteTriggerRef.current?.isConnected
+            ? deleteTriggerRef.current
+            : searchRef.current
+        }
+      />
+    </section>
   );
 }

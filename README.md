@@ -1,322 +1,131 @@
+<div align="center">
+
+<img src="docs/assets/flare-stack-blog-logo.png" alt="Flare Stack Blog Logo" width="144">
+
 # Flare Stack Blog
 
-> **注意**：本项目专为 Cloudflare Workers 生态设计，深度集成 D1、R2、KV、Workflows 等服务，**仅支持部署在 Cloudflare Workers**。
+基于 **Cloudflare 边缘生态**打造的高性能全栈博客与 CMS 系统<br>
+利用 Workers、D1、R2、KV 与 Queues 实现真正的全 Serverless 架构
 
-[部署指南](#部署指南) | [本地开发](#本地开发)
+[![License](https://img.shields.io/github/license/du2333/flare-stack-blog?style=flat-square)](https://github.com/du2333/flare-stack-blog/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/du2333/flare-stack-blog?style=flat-square)](https://github.com/du2333/flare-stack-blog/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/du2333/flare-stack-blog?style=flat-square)](https://github.com/du2333/flare-stack-blog/network/members)
+[![React](https://img.shields.io/badge/React-19-blue?logo=react&style=flat-square)](https://react.dev)
+[![TanStack Start](https://img.shields.io/badge/TanStack%20Start-black?logo=tanstack&style=flat-square)](https://tanstack.com/start)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com)
 
-> 建了个tg群，欢迎来技术交流👏 [Telegram 群](https://t.me/+vWuQYybv1kgxMDkx)
+[在线演示](https://blog.dukda.com) · [部署指南](./docs/deployment.md) · [视频教程](https://www.bilibili.com/video/BV1iQHr6NEcC/) · [本地开发](#本地开发) · [贡献指南](./CONTRIBUTING.md) · [交流群组](https://t.me/+vWuQYybv1kgxMDkx)
 
-基于 Cloudflare Workers 的现代化全栈博客 CMS。
+</div>
 
-![首页](docs/assets/home.png)
+---
 
-![管理后台](docs/assets/admin.png)
+Flare Stack Blog 是一个深度拥抱 Cloudflare 生态的开源独立博客系统。前端基于 React 19 和 TanStack 现代全栈框架构建，界面承袭清新简约的 [Fuwari](https://github.com/saicaca/fuwari) 视觉风格；后端完全运行于 Cloudflare Workers 边缘网络，搭配 D1、R2、KV 与异步队列，无需传统服务器即可享受极速的全球访问体验与近乎零成本的运维。
 
-## 核心功能
+> [!NOTE]
+> 本项目专为 Cloudflare Workers 边缘运行时设计。
 
-- **文章管理** — 富文本编辑器，支持代码高亮、图片上传、草稿/发布流程
-- **标签系统** — 灵活的文章分类
-- **评论系统** — 支持嵌套回复、邮件通知、审核机制
-- **友情链接** — 用户申请、管理员审核、邮件通知
-- **全文搜索** — 基于 Orama 的高性能搜索
-- **媒体库** — R2 对象存储，图片管理与优化
-- **用户认证** — GitHub OAuth 登录，权限控制
-- **数据统计** — Umami 集成，访问分析与热门文章
-- **AI 辅助** — Cloudflare Workers AI 集成
-- **主题系统** — 可扩展的主题模板，支持完整替换所有页面和布局
-- **吉他谱系统** — Guitar Pro 文件上传、解析、在线播放、投稿审核
-- **导入导出** — 支持Markdown导入导出，保留图片以及Frontmatter
+## 界面预览
+
+<div align="center">
+  <img src="docs/assets/home.png" alt="首页预览" width="49%">
+  <img src="docs/assets/admin.png" alt="管理后台预览" width="49%">
+</div>
+
+## 功能特性
+
+- 📝 **创作与内容管理**
+  - **现代化富文本编辑器**：基于 TipTap 与 Shiki，原生支持代码语法高亮、数学公式排版、多尺寸媒体插入与文章封面。
+  - **版本快照与历史回滚**：发布文章时自动归档快照，可随时按发布时间比对差异并一键恢复至任意历史版本。
+  - **分类与标签体系**：支持文章单分类与多标签灵活组合筛选。
+  - **站内实时全文检索**：用 Cloudflare D1 FTS 索引已发布文章的标题、摘要、分类、标签与正文。
+
+- 💬 **互动与读者体验**
+  - **评论与社区互动**：支持嵌套层级回复、访客防刷保护、评论软删除与违规用户禁言管理。
+  - **友情链接流转**：前台提供规范的申请表单，后台支持一键审核通过、驳回反馈与邮件即时联动。
+  - **国际化多语言**：公开阅读界面与管理后台均完整支持中英文无缝切换。
+
+- ⚡ **边缘基础设施**
+  - **全 Serverless 存储栈**：以 Cloudflare D1 作为主关系型数据库，KV 承担高频缓存，Durable Objects 负责精准访问限流。
+  - **全球静态资产加速**：媒体文件直存 R2 存储桶，配合 Cloudflare Image Resizing 实现实时图片缩放与格式优化。
+  - **异步队列事件解耦**：通知邮件发送与 Webhook 派发经由 Cloudflare Queues 异步队列处理，接口响应零阻塞。
+
+- 🛠️ **系统与扩展能力**
+  - **安全身份认证**：集成 Better Auth，原生支持邮箱密码账号体系与 GitHub OAuth 快捷登录。
+  - **通知推送**：新评论、回复和友链申请可推送到 Telegram、Discord、飞书、钉钉、企业微信、Bark、ntfy，或带签名的通用 JSON 与自定义模板，详见 [Webhook 推送](docs/webhook.md)。
+  - **开放 API 接口**：支持在后台签发 API Key，通过规范化 OpenAPI / oRPC 接口无缝对接第三方自动化工具或发布脚本。
+  - **访问分析与 SEO**：内建 Umami 统计与文章热度自动同步，开箱支持 Canonical、Schema.org、RSS / Atom / JSON Feed、Sitemap 与 Robots 标准。
 
 ## 技术栈
 
-### Cloudflare 生态
-
-| 服务            | 用途                           |
-| :-------------- | :----------------------------- |
-| Workers         | 边缘计算与托管                 |
-| D1              | SQLite 数据库                  |
-| R2              | 对象存储（媒体文件）           |
-| KV              | 缓存层                         |
-| Durable Objects | 分布式限流                     |
-| Workflows       | 异步任务（内容审核、定时发布） |
-| Queues          | 消息队列（邮件通知）           |
-| Workers AI      | AI 能力                        |
-| Images          | 图片优化                       |
-
-### 前端
-
-- **框架**：React 19 + TanStack Router/Query
-- **样式**：TailwindCSS 4
-- **表单**：React Hook Form + Zod
-- **图表**：Recharts
-
-### 后端
-
-- **网关层**：Hono（认证路由、媒体服务、缓存控制）
-- **业务层**：TanStack Start（SSR、Server Functions）
-- **数据库**：Drizzle ORM + drizzle-zod
-- **认证**：Better Auth（GitHub OAuth）
-
-### 编辑器
-
-TipTap 富文本 + Shiki 代码高亮
-
-### 目录结构
-
-```
-src/
-├── features/
-│   ├── posts/                  # 文章管理（其他模块结构类似）
-│   │   ├── api/                # Server Functions（对外接口）
-│   │   ├── data/               # 数据访问层（Drizzle 查询）
-│   │   ├── posts.service.ts    # 业务逻辑
-│   │   ├── posts.schema.ts     # Zod Schema + 缓存 Key 工厂
-│   │   ├── components/         # 功能专属组件
-│   │   ├── queries/            # TanStack Query Hooks
-│   │   └── workflows/          # Cloudflare Workflows
-│   ├── comments/    # 评论、嵌套回复、审核
-│   ├── tags/        # 标签管理
-│   ├── media/       # 媒体上传、R2 存储
-│   ├── search/      # Orama 全文搜索
-│   ├── auth/        # 认证、权限控制
-│   ├── dashboard/   # 管理后台数据统计
-│   ├── email/       # 邮件通知（Resend）
-│   ├── cache/       # KV 缓存服务
-│   ├── config/      # 博客配置
-│   ├── friend-links/# 友情链接（申请、审核）
-│   └── ai/          # Workers AI 集成
-├── routes/
-│   ├── _public/     # 公开页面（首页、文章列表/详情、搜索）
-│   ├── _auth/       # 登录/注册相关页面
-│   ├── _user/       # 用户相关页面
-│   ├── admin/       # 管理后台（文章、评论、媒体、标签、设置）
-│   ├── rss[.]xml.ts     # RSS Feed
-│   ├── sitemap[.]xml.ts # Sitemap
-│   └── robots[.]txt.ts  # Robots.txt
-├── components/      # UI 组件（ui/, common/, layout/, tiptap-editor/）
-├── lib/             # 基础设施（db/, auth/, hono/, middlewares）
-└── hooks/           # 自定义 Hooks
-```
-
-### 主题系统
-
-Flare Stack Blog 的所有面向用户的页面与布局均通过 **主题契约（Theme Contract）** 与业务逻辑解耦。你可以在不修改任何路由或数据逻辑的前提下，完整替换博客的视觉表现层。
-
-→ **[主题开发教程](./docs/theme-guide.md)** — 了解如何从零创建你的第一个自定义主题。
-
-#### 可用主题
-
-各个主题的配置项，请前往`src/blog.config.ts`里查看
-
-<table>
-  <tr>
-    <th>主题</th>
-    <th>预览</th>
-  </tr>
-  <tr>
-    <td><code>default</code>（默认）</td>
-    <td><img src="docs/assets/home.png" alt="Default theme preview" /></td>
-  </tr>
-  <tr>
-    <td><code>fuwari</code></td>
-    <td><img src="docs/assets/fuwari.png" alt="Fuwari theme preview" /></td>
-  </tr>
-</table>
-
-> 欢迎提交你的自定义主题！参考 [主题开发教程](./docs/theme-guide.md) 完成开发后，可以通过 PR 将你的主题添加到这里。
-
-### 请求流程
-
-```
-请求 → Cloudflare CDN（边缘缓存）
-         ↓ 未命中
-      server.ts（Hono 入口）
-         ├── /api/auth/* → Better Auth
-         ├── /images/*   → R2 媒体服务
-         └── 其他        → TanStack Start
-                              ↓
-                         中间件注入（db, auth, session）
-                              ↓
-                         路由匹配 + Loader 执行
-                              ↓
-                  KV 缓存 ←→ Service 层 ←→ D1 数据库
-                              ↓
-                         SSR 渲染（带缓存头）
-```
-
-## 吉他谱系统
-
-完整的 Guitar Pro 吉他谱管理系统，支持用户投稿 → 管理员审核 → 公开展示 → 在线播放的全流程。
-
-### 支持格式
-
-| 格式   | 说明                          |
-| :----- | :---------------------------- |
-| `.gp3` | Guitar Pro 3                  |
-| `.gp4` | Guitar Pro 4                  |
-| `.gp5` | Guitar Pro 5                  |
-| `.gpx` | Guitar Pro 6（BCFZ 压缩容器） |
-| `.gp`  | Guitar Pro 7/8（ZIP 容器）    |
-
-文件大小限制：50 MB
-
-### 功能特性
-
-- **元数据自动解析** — 纯 TypeScript 二进制解析器，自动提取曲名、艺术家、专辑、BPM、轨道信息，支持 UTF-8/GBK/Latin-1 编码
-- **专辑封面获取** — 通过第三方 API 自动获取封面并存储至 R2，相同曲目复用已有封面
-- **在线播放器** — 基于 [alphaTab](https://www.alphatab.net/) 引擎，支持播放控制、速度调节、轨道选择、多种谱面模式（标准+TAB / 五线谱 / TAB 谱）
-- **文件去重** — SHA-256 哈希校验，防止重复上传
-- **SEO 优化** — 自动生成 URL slug，每个谱子有独立详情页和 meta 标签
-- **同曲多版本** — 基于艺术家+曲名自动关联同首歌的不同版本
-
-### 投稿流程
-
-1. 登录用户访问 `/submit-guitar-tab` 上传 GP 文件
-2. Cloudflare Workflow 自动解析元数据 + 获取封面（后台异步）
-3. 管理员在 `/admin/guitar-tabs` 审核（预览播放、批量操作）
-4. 审核结果通过邮件异步通知上传者（Queues）
-5. 通过的谱子自动在列表和搜索中展示
-
-### 配置
-
-通过环境变量 `VITE_ENABLE_GUITAR_TABS` 控制功能开关（默认 `true`）。关闭后所有吉他谱页面会重定向到首页。具体配置见 `src/blog.config.ts` 中的 `features.guitarTabs`。
-
----
+| 模块 | 选型 | 说明 |
+| :--- | :--- | :--- |
+| **边缘运行时** | Cloudflare Workers | 全球边缘免运维托管与服务端流式渲染（SSR） |
+| **数据与存储** | Cloudflare D1 + R2 + KV | 关系型数据库（含全文检索）、对象存储与边缘键值缓存 |
+| **异步与限流** | Cloudflare Queues + DO | 异步任务解耦队列与 Durable Objects 请求限流 |
+| **全栈框架** | TanStack Start + Router + Query | 现代全栈路由系统、服务端数据预取与水合 |
+| **前端技术** | React 19 + Tailwind CSS 4 | 现代化组件开发与主题样式系统 |
+| **API 与 ORM** | oRPC + Drizzle ORM | 端到端类型安全的 OpenAPI 接口与 SQL ORM |
+| **身份认证** | Better Auth | 边缘兼容的现代化身份验证服务 |
+| **富文本** | TipTap + Shiki | 可扩展的所见即所得编辑器与代码高亮引擎 |
 
 ## 部署指南
 
-请参考 **[Flare Stack Blog 部署教程](https://blog.dukda.com/post/flare-stack-blog%E9%83%A8%E7%BD%B2%E6%95%99%E7%A8%8B)**，包含 Cloudflare 资源创建、凭证获取、GitHub OAuth 配置、两种部署方式的详细图文步骤及常见问题排查。
-
-**[视频教程](https://www.bilibili.com/video/BV1R4fnBhEs4?p=2)** 已上线
-
----
-
-## 环境变量参考
-
-| 文件        | 用途                                   |
-| :---------- | :------------------------------------- |
-| `.env`      | 客户端变量（`VITE_*`），Vite 读取      |
-| `.dev.vars` | 服务端变量，Wrangler 注入 Worker `env` |
-
-### 必填
-
-| 变量名                       | 用途   | 说明                                              |
-| :--------------------------- | :----- | :------------------------------------------------ |
-| `CLOUDFLARE_API_TOKEN`       | CI/CD  | Cloudflare API Token（Worker 部署 + D1 读写权限） |
-| `CLOUDFLARE_ACCOUNT_ID`      | CI/CD  | Cloudflare Account ID                             |
-| `D1_DATABASE_ID`             | CI/CD  | D1 数据库 ID                                      |
-| `KV_NAMESPACE_ID`            | CI/CD  | KV 命名空间 ID                                    |
-| `BUCKET_NAME`                | CI/CD  | R2 存储桶名称                                     |
-| `BETTER_AUTH_SECRET`         | 运行时 | 会话加密密钥，运行 `openssl rand -hex 32` 生成    |
-| `BETTER_AUTH_URL`            | 运行时 | 应用 URL（如 `https://blog.example.com`）         |
-| `ADMIN_EMAIL`                | 运行时 | 管理员邮箱                                        |
-| `GITHUB_CLIENT_ID`           | 运行时 | GitHub OAuth Client ID                            |
-| `GITHUB_CLIENT_SECRET`       | 运行时 | GitHub OAuth Client Secret                        |
-| `CLOUDFLARE_ZONE_ID`         | 运行时 | Cloudflare Zone ID                                |
-| `CLOUDFLARE_PURGE_API_TOKEN` | 运行时 | 具有 Purge CDN 权限的 API Token                   |
-| `DOMAIN`                     | 运行时 | 博客域名（如 `blog.example.com`）                 |
-
-### 可选
-
-| 变量名                    | 用途   | 说明                                                                                                      |
-| :------------------------ | :----- | :-------------------------------------------------------------------------------------------------------- |
-| `THEME`                   | 构建时 | 主题名称，默认 `default`，详见 [可用主题](#可用主题)                                                      |
-| `TURNSTILE_SECRET_KEY`    | 运行时 | Cloudflare Turnstile 人机验证 Secret Key                                                                  |
-| `VITE_TURNSTILE_SITE_KEY` | 构建时 | Cloudflare Turnstile Site Key                                                                             |
-| `GITHUB_TOKEN`            | 运行时 | GitHub API Token（版本更新检查，避免限流）                                                                |
-| `CDN_DOMAIN`              | 运行时 | 独立 CDN 域名（如 `cdn.example.com`），purge 时优先使用；须为当前 Zone 下通过 SaaS CNAME 接入的自定义域名 |
-| `UMAMI_SRC`               | 运行时 | Umami 基础 URL（Cloud: `https://cloud.umami.is`）                                                         |
-| `UMAMI_API_KEY`           | 运行时 | Umami Cloud API key（仅 Cloud 版本）                                                                      |
-| `UMAMI_USERNAME`          | 运行时 | Umami 用户名（仅自部署版本）                                                                              |
-| `UMAMI_PASSWORD`          | 运行时 | Umami 密码（仅自部署版本）                                                                                |
-| `VITE_UMAMI_WEBSITE_ID`   | 构建时 | Umami Website ID                                                                                          |
-| `VITE_BLOG_TITLE`         | 构建时 | 博客标题                                                                                                  |
-| `VITE_BLOG_NAME`          | 构建时 | 博客短名称                                                                                                |
-| `VITE_BLOG_AUTHOR`        | 构建时 | 作者名称                                                                                                  |
-| `VITE_BLOG_DESCRIPTION`   | 构建时 | 博客描述                                                                                                  |
-| `VITE_BLOG_GITHUB`        | 构建时 | GitHub 主页链接                                                                                           |
-| `VITE_BLOG_EMAIL`         | 构建时 | 联系邮箱                                                                                                  |
-| `VITE_FUWARI_HOME_BG`     | 构建时 | Fuwari 主题首页背景图路径，默认 `/images/home-bg.webp`                                                    |
-| `VITE_FUWARI_AVATAR`      | 构建时 | Fuwari 主题头像图片路径，默认 `/images/avatar.png`                                                        |
-| `VITE_ENABLE_GUITAR_TABS` | 构建时 | 吉他谱功能开关，默认 `true`，设为 `false` 关闭                                                            |
-
----
+使用 GitHub 与 Cloudflare Workers Builds 部署，请阅读独立的 [图文部署指南](./docs/deployment.md)，包含首次部署、可选配置和后续更新。
 
 ## 本地开发
 
-### 前置要求
+开发环境要求：[Bun](https://bun.sh) >= 1.3。
 
-- [Bun](https://bun.sh) >= 1.3
-- Cloudflare 账号（用于远程 D1/R2/KV 资源）
-
-### 快速开始
+### 1. 安装依赖与初始化配置
 
 ```bash
-# 安装依赖
+# 克隆仓库并安装依赖
+git clone https://github.com/du2333/flare-stack-blog.git
+cd flare-stack-blog
 bun install
 
-# 配置环境变量
-cp .env.example .env        # 客户端变量
-cp .dev.vars.example .dev.vars  # 服务端变量
+# 复制本地配置文件模板
+cp .env.example .env
+cp .dev.vars.example .dev.vars
+```
 
-# 配置 Wrangler
-cp wrangler.example.jsonc wrangler.jsonc
-# 编辑 wrangler.jsonc，填入你的资源 ID
+参考 `.env` 与 `.dev.vars` 中的注释完成基础项配置。本地开发通过 Miniflare 本地模拟 D1、KV 和 R2 存储服务，Worker 配置位于 `cloudflare.config.ts`，未设置部署变量时会使用占位符直接启动。该配置需要 Node ≥ 24（见 `.node-version`）。
 
-# 启动开发服务器
+### 2. 启动本地开发服务
+
+```bash
 bun dev
 ```
 
-### 登录管理后台
+在浏览器中打开 `http://localhost:3000` 即可开始预览。
 
-**方式一：邮箱密码注册（无需第三方服务）**
+> [!TIP]
+> - 本地开发模式下，注册账号不会真实投递外部邮件，验证链接会直接打印在终端控制台中，点击即可完成激活。
+> - 本地首个注册的账号同样会自动赋予管理员权限。
 
-1. 访问 `http://localhost:3000` 注册页面，使用 `.dev.vars` 中配置的 `ADMIN_EMAIL` 注册账号
-2. 开发环境下验证邮件不会真正发送，验证链接会打印到控制台，复制访问即可完成验证
-3. 验证后自动登录，系统根据 `ADMIN_EMAIL` 自动赋予管理员权限
+### 常用开发脚本
 
-**方式二：GitHub OAuth**
+| 命令 | 说明 |
+| :--- | :--- |
+| `bun dev` | 启动本地开发服务（默认监听端口 3000） |
+| `bun check` | 提交前综合检查（包含 OpenAPI 合约生成、代码格式校验、Lint 与 TypeScript 类型检查） |
+| `bun test` | 执行全量集成与单元测试套件 |
+| `bun db:migrate:local` | 对本地模拟数据库应用 D1 数据库迁移 |
+| `bun db:studio` | 启动本地 Drizzle Studio 可视化数据库管理界面 |
+| `bun i18n:verify` | 检查并校验多语言词条键值完整性（zh / en 一致性） |
+| `bun i18n:compile` | 重新编译并生成 Paraglide 多语言运行时产物 |
 
-1. 前往 [GitHub Developer Settings](https://github.com/settings/developers) 创建一个 OAuth App
-2. Homepage URL 填 `http://localhost:3000`，Authorization callback URL 填 `http://localhost:3000/api/auth/callback/github`
-3. 将 Client ID 和 Client Secret 填入 `.dev.vars`
+## 参与贡献
 
-### 常用命令
+非常欢迎任何形式的贡献！无论是新功能提议、代码重构还是文档润色，都可以先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解我们的协作流程。
 
-| 命令            | 说明                        |
-| :-------------- | :-------------------------- |
-| `bun dev`       | 启动开发服务器（端口 3000） |
-| `bun run build` | 构建生产版本                |
-| `bun run test`  | 运行测试                    |
-| `bun lint`      | ESLint 检查                 |
-| `bun check`     | 类型检查 + Lint + 格式化    |
+欢迎加入我们的 [Telegram 交流群](https://t.me/+vWuQYybv1kgxMDkx) 与其他开发者一起交流探讨。
 
-### 数据库命令
+## 致谢
 
-| 命令              | 说明                                |
-| :---------------- | :---------------------------------- |
-| `bun db:studio`   | 启动 Drizzle Studio（可视化数据库） |
-| `bun db:generate` | 生成迁移文件                        |
-| `bun db:migrate`  | 应用迁移到远程 D1                   |
+- **[Fuwari](https://github.com/saicaca/fuwari)**：本项目优雅清新的界面与动效设计灵感源自 [@saicaca](https://github.com/saicaca) 优秀的开源博客主题。
 
-### 本地模拟 Cloudflare 资源
+## 开源协议
 
-默认配置使用远程 D1/R2/KV 资源。如需完全本地开发，可在 `wrangler.jsonc` 中移除 `remote: true`，Miniflare 会自动模拟这些服务：
-
-```jsonc
-{
-  "d1_databases": [{ "binding": "DB", ... }],  // 移除 "remote": true
-  "r2_buckets": [{ "binding": "R2", ... }],    // 移除 "remote": true
-  "kv_namespaces": [{ "binding": "KV", ... }]  // 移除 "remote": true
-}
-```
-
-> **注意**：本地模拟的数据不会同步到远程，适合初期开发和测试。本地数据库迁移使用：
->
-> ```bash
-> wrangler d1 migrations apply DB
-> ```
-
-## 贡献
-
-欢迎贡献代码、报告问题或提出建议！请查看 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解开发指南和代码规范。
+本项目采用 [GPL-3.0](https://github.com/du2333/flare-stack-blog/blob/main/LICENSE) 协议开源。

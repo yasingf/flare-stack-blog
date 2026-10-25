@@ -3,15 +3,21 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { authClient } from "@/lib/auth/auth.client";
+import { authClient } from "@/lib/auth/auth-client";
+import { getForgotPasswordAuthErrorMessage } from "@/lib/auth/auth-errors";
+import type { Messages } from "@/lib/i18n";
+import { m } from "@/paraglide/messages";
 
-const forgotPasswordSchema = z.object({
-  email: z.email("无效的邮箱格式"),
-});
+const createForgotPasswordSchema = (messages: Messages) =>
+  z.object({
+    email: z.email(messages.register_validation_email_invalid()),
+  });
 
-type ForgotPasswordSchema = z.infer<typeof forgotPasswordSchema>;
+type ForgotPasswordSchema = z.infer<
+  ReturnType<typeof createForgotPasswordSchema>
+>;
 
-export interface UseForgotPasswordFormOptions {
+interface UseForgotPasswordFormOptions {
   turnstileToken: string | null;
   turnstilePending: boolean;
   resetTurnstile: () => void;
@@ -22,35 +28,42 @@ export function useForgotPasswordForm(options: UseForgotPasswordFormOptions) {
 
   const [isSent, setIsSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
+  const forgotPasswordSchema = createForgotPasswordSchema(m);
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<ForgotPasswordSchema>({
     resolver: standardSchemaResolver(forgotPasswordSchema),
   });
 
   const onSubmit = async (data: ForgotPasswordSchema) => {
-    const { error } = await authClient.requestPasswordReset({
-      email: data.email,
-      redirectTo: `${window.location.origin}/reset-link`,
-      fetchOptions: {
-        headers: { "X-Turnstile-Token": turnstileToken || "" },
-      },
-    });
+    setSubmitError(null);
+    try {
+      const { error } = await authClient.requestPasswordReset({
+        email: data.email,
+        redirectTo: `${window.location.origin}/reset-link`,
+        fetchOptions: {
+          headers: { "X-Turnstile-Token": turnstileToken || "" },
+        },
+      });
 
-    resetTurnstile();
-
-    if (error) {
-      if (error.message?.includes("Turnstile")) {
-        toast.error("人机验证失败", { description: "请等待验证完成后重试" });
-      } else {
-        toast.error("重置邮件发送失败", { description: error.message });
+      if (error) {
+        setSubmitError(
+          getForgotPasswordAuthErrorMessage(error, m) ??
+            m.auth_error_default_desc(),
+        );
+        return;
       }
+    } catch {
+      setSubmitError(m.auth_error_default_desc());
       return;
+    } finally {
+      resetTurnstile();
     }
 
     setSentEmail(data.email);
     setIsSent(true);
-    toast.success("重置邮件已发送", {
-      description: "请检查您的收件箱以获取重置链接。",
+    toast.success(m.forgot_password_toast_sent(), {
+      description: m.forgot_password_toast_sent_desc(),
     });
   };
 
@@ -59,12 +72,9 @@ export function useForgotPasswordForm(options: UseForgotPasswordFormOptions) {
     errors: form.formState.errors,
     handleSubmit: form.handleSubmit(onSubmit),
     isSubmitting: form.formState.isSubmitting,
+    submitError,
     isSent,
     sentEmail,
     turnstilePending,
   };
 }
-
-export type UseForgotPasswordFormReturn = ReturnType<
-  typeof useForgotPasswordForm
->;

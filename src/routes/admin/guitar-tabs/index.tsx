@@ -19,7 +19,7 @@ import {
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import type { GuitarTabWithMeta } from "@/features/media/data/media.data";
+import type { GuitarTabWithMeta } from "@/features/guitar-tabs/data";
 import {
   fetchMissingCoversFn,
   getGuitarTabsAdminFn,
@@ -88,7 +88,7 @@ function GuitarTabsAdminPage() {
       reviewGuitarTabFn({ data: { mediaId, status: "approved" } }),
     onSuccess: () => {
       toast.success("已通过审核");
-      queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
+      void queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "操作失败");
@@ -102,7 +102,7 @@ function GuitarTabsAdminPage() {
       }),
     onSuccess: () => {
       toast.success("已拒绝");
-      queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
+      void queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
       setRejectTarget(null);
       setRejectReason("");
     },
@@ -115,7 +115,7 @@ function GuitarTabsAdminPage() {
     mutationFn: () => fetchMissingCoversFn(),
     onSuccess: (result) => {
       toast.success(`封面获取完成：${result.fetched}/${result.total} 成功`);
-      queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
+      void queryClient.invalidateQueries({ queryKey: GUITAR_TABS_ADMIN_KEY });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "获取封面失败");
@@ -154,7 +154,7 @@ function GuitarTabsAdminPage() {
         <Button
           onClick={() => fetchCoverMutation.mutate()}
           disabled={fetchCoverMutation.isPending}
-          variant="outline"
+          variant="regular"
           size="sm"
           className="rounded-none font-mono text-[10px] uppercase tracking-widest h-8 px-3"
         >
@@ -248,7 +248,7 @@ function GuitarTabsAdminPage() {
 
             <div className="flex justify-end gap-3">
               <Button
-                variant="outline"
+                variant="regular"
                 size="sm"
                 className="rounded-none font-mono text-[10px] uppercase tracking-widest h-9 px-4"
                 onClick={() => {
@@ -360,7 +360,7 @@ function GuitarTabReviewCard({
           <Button
             onClick={() => setExpanded(!expanded)}
             size="sm"
-            variant="ghost"
+            variant="plain"
             className="rounded-none font-mono text-[10px] uppercase tracking-widest h-8 px-2"
           >
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -369,7 +369,7 @@ function GuitarTabReviewCard({
           <Button
             onClick={onPreview}
             size="sm"
-            variant="outline"
+            variant="regular"
             className="rounded-none font-mono text-[10px] uppercase tracking-widest h-8 px-3"
           >
             <Eye size={12} className="mr-1" />
@@ -395,7 +395,7 @@ function GuitarTabReviewCard({
                 onClick={onReject}
                 disabled={isApproving || isRejecting}
                 size="sm"
-                variant="outline"
+                variant="regular"
                 className="rounded-none border-red-500/30 text-red-500 hover:bg-red-500/10 font-mono text-[10px] uppercase tracking-widest h-8 px-3"
               >
                 {isRejecting ? (
@@ -413,7 +413,7 @@ function GuitarTabReviewCard({
               onClick={onApprove}
               disabled={isApproving}
               size="sm"
-              variant="outline"
+              variant="regular"
               className="rounded-none font-mono text-[10px] uppercase tracking-widest h-8 px-3"
             >
               {isApproving ? (
@@ -430,7 +430,7 @@ function GuitarTabReviewCard({
               onClick={onReject}
               disabled={isRejecting}
               size="sm"
-              variant="outline"
+              variant="regular"
               className="rounded-none border-red-500/30 text-red-500 hover:bg-red-500/10 font-mono text-[10px] uppercase tracking-widest h-8 px-3"
             >
               {isRejecting ? (

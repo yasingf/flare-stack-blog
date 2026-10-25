@@ -24,7 +24,7 @@ export function useGuitarProPicker() {
 
   const loadMore = useCallback(() => {
     if (!isFetchingNextPage && hasNextPage) {
-      fetchNextPage();
+      void fetchNextPage();
     }
   }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
 

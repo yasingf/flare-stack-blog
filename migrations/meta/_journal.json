@@ -71,6 +71,146 @@
       "when": 1772553600000,
       "tag": "0009_guitar_tab_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792939911532,
+      "tag": "0010_preserve_guitar_comments",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1792939911533,
+      "tag": "0011_upstream_slim_tinkerer",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1792939911534,
+      "tag": "0012_upstream_tricky_scarlet_spider",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792939911535,
+      "tag": "0013_upstream_grey_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1792939911536,
+      "tag": "0014_upstream_nervous_pepper_potts",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1792939911537,
+      "tag": "0015_upstream_strong_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1792939911538,
+      "tag": "0016_upstream_light_brood",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1792939911539,
+      "tag": "0017_upstream_romantic_roland_deschain",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792939911540,
+      "tag": "0018_upstream_publish_public_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792939911541,
+      "tag": "0019_upstream_drop_comment_moderation",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792939911542,
+      "tag": "0020_upstream_comment_body_plain_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1792939911543,
+      "tag": "0021_upstream_drop_page_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1792939911544,
+      "tag": "0022_upstream_muted_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1792939911545,
+      "tag": "0023_upstream_apikey",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1792939911546,
+      "tag": "0024_upstream_post_cover",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1792939911547,
+      "tag": "0025_upstream_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1792939911548,
+      "tag": "0026_upstream_search_fts",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1792939911549,
+      "tag": "0027_upstream_system_config_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1792939911550,
+      "tag": "0028_upstream_friend_link_account_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1792939911551,
+      "tag": "0029_upstream_comment_handled_at",
+      "breakpoints": true
     }
   ]
 }

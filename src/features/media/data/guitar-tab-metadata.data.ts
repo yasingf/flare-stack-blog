@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import type {
   GuitarTabMetadata,
   GuitarTabStatus,
@@ -410,7 +410,10 @@ export async function getBySlug(
             createdAt: GuitarTabMetadataTable.createdAt,
           })
           .from(GuitarTabMetadataTable)
-          .innerJoin(MediaTable, eq(GuitarTabMetadataTable.mediaId, MediaTable.id))
+          .innerJoin(
+            MediaTable,
+            eq(GuitarTabMetadataTable.mediaId, MediaTable.id),
+          )
           .leftJoin(
             coverMedia,
             eq(GuitarTabMetadataTable.coverMediaId, coverMedia.id),
@@ -426,7 +429,9 @@ export async function getBySlug(
       ).at(0);
 
       if (result) return result as GuitarTabDetail;
-    } catch { /* decode failed, fallback */ }
+    } catch {
+      /* decode failed, fallback */
+    }
   }
 
   // 回退：按文本 slug 查询（兼容旧数据）
@@ -461,7 +466,10 @@ export async function getBySlug(
       .leftJoin(user, eq(GuitarTabMetadataTable.uploaderId, user.id))
       .where(
         and(
-          eq(GuitarTabMetadataTable.slug, slug),
+          or(
+            eq(GuitarTabMetadataTable.slug, slug),
+            eq(GuitarTabMetadataTable.legacySlug, slug),
+          ),
           eq(GuitarTabMetadataTable.status, "approved"),
         ),
       )

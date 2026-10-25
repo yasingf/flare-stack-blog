@@ -1,68 +1,122 @@
 import { z } from "zod";
 
-export const DashboardStatsSchema = z.object({
-  pendingComments: z.number(),
-  publishedPosts: z.number(),
-  drafts: z.number(),
-  mediaSize: z.number(),
-  totalUsers: z.number(),
-  totalGuitarTabs: z.number(),
-  pendingGuitarTabs: z.number(),
+const coercedDate = z.union([z.date(), z.string().pipe(z.coerce.date())]);
+
+const DashboardRecentPostSchema = z.object({
+  id: z.number().int().positive(),
+  title: z.string(),
+  status: z.enum(["draft", "published"]),
+  pinnedAt: coercedDate.nullable(),
+  updatedAt: coercedDate,
 });
 
-export const ActivityLogItemSchema = z.object({
-  type: z.enum(["comment", "post", "user", "guitar-tab"]),
-  text: z.string(),
-  time: z.date().nullable(),
-  link: z.string().optional(),
-  rootId: z.number().optional(),
+const DashboardPendingFriendLinkSchema = z.object({
+  id: z.number().int().positive(),
+  siteName: z.string(),
+  siteUrl: z.string(),
+  logoUrl: z.string().nullable(),
+  createdAt: coercedDate,
 });
 
-export const TrafficDataSchema = z.object({
-  date: z.number(),
-  views: z.number(),
+const DashboardCommentSchema = z.object({
+  id: z.number().int().positive(),
+  postId: z.number().int().positive(),
+  rootId: z.number().int().positive().nullable(),
+  userId: z.string().nullable(),
+  userName: z.string().nullable(),
+  userImage: z.string().nullable(),
+  userMuted: z.boolean(),
+  postTitle: z.string(),
+  postSlug: z.string(),
+  snippet: z.string(),
+  createdAt: coercedDate,
 });
 
-const MetricSchema = z.object({
-  value: z.number(),
-  prev: z.number().optional(),
+const count = z.number().int().nonnegative();
+
+const DashboardStatsSchema = z.object({
+  publishedPosts: count,
+  draftPosts: count,
+  /** Published Comments on public Posts. */
+  comments: count,
+  /** Of those, created in the last DASHBOARD_RECENT_COMMENT_DAYS days. */
+  recentComments: count,
+  approvedFriendLinks: count,
+  pendingFriendLinks: count,
 });
 
-export const DashboardResponseSchema = z.object({
+const DashboardTopPostSchema = z.object({
+  id: z.number().int().positive(),
+  title: z.string(),
+  slug: z.string(),
+  views: count,
+});
+
+const DashboardPopularitySchema = z.object({
+  state: z.enum(["unconfigured", "missing", "expired", "ready"]),
+  /** The snapshot's UTC window, in milliseconds. */
+  windowStart: count.nullable(),
+  windowEnd: count.nullable(),
+  totalViews: count,
+  topPosts: z.array(DashboardTopPostSchema),
+});
+
+const DashboardWritingHourSchema = z.object({
+  /** Hours since the Unix epoch, in UTC. */
+  hour: count,
+  /** Revisions saved and Posts created in that hour. */
+  count: z.number().int().positive(),
+});
+
+const DashboardUpdateSchema = z.object({
+  latestVersion: z.string(),
+  releaseUrl: z.url(),
+});
+
+export const DashboardOverviewSchema = z.object({
+  popularityAlert: z.enum(["failed", "expired"]).nullable(),
+  adminEmailNeedsSetup: z.boolean(),
+  defaultSiteIdentity: z.boolean(),
+  /** A newer stable release, known only from the version check's cache. */
+  update: DashboardUpdateSchema.nullable(),
   stats: DashboardStatsSchema,
-  activities: z.array(ActivityLogItemSchema),
-  trafficByRange: z
-    .record(
-      z.enum(["24h", "7d", "30d", "90d"]),
-      z.object({
-        traffic: z.array(TrafficDataSchema),
-        overview: z
-          .object({
-            visitors: MetricSchema,
-            pageViews: MetricSchema,
-            visits: MetricSchema,
-            bounces: MetricSchema,
-            totalTime: MetricSchema,
-          })
-          .optional(),
-        topPages: z
-          .array(z.object({ x: z.string(), y: z.number() }))
-          .optional(),
-        lastUpdated: z.number(),
-      }),
-    )
-    .optional(),
-  umamiUrl: z.string().optional(),
+  popularity: DashboardPopularitySchema,
+  /**
+   * Writing events of the last DASHBOARD_WRITING_LOOKBACK_DAYS days per UTC
+   * hour, oldest first; the page groups them into local days.
+   */
+  writingActivity: z.array(DashboardWritingHourSchema),
+  latestDraft: DashboardRecentPostSchema.nullable(),
+  /** Most recently edited Posts, without `latestDraft`. */
+  recentPosts: z.array(DashboardRecentPostSchema),
+  pendingFriendLinks: z.object({
+    items: z.array(DashboardPendingFriendLinkSchema),
+    remainingCount: count,
+  }),
+  /** Visitor Comments no Admin has replied to, newest first. */
+  unrepliedComments: z.object({
+    items: z.array(DashboardCommentSchema),
+    total: count,
+  }),
 });
 
-export type DashboardStats = z.infer<typeof DashboardStatsSchema>;
-export type ActivityLogItem = z.infer<typeof ActivityLogItemSchema>;
-export type TrafficData = z.infer<typeof TrafficDataSchema>;
-export type DashboardResponse = z.infer<typeof DashboardResponseSchema>;
-export type DashboardRange = "24h" | "7d" | "30d" | "90d";
+export const UnrepliedCommentsInputSchema = z.object({
+  limit: z.number().int().min(1).max(50).default(20),
+  /** Continue after this Comment: the previous page's `nextBeforeId`. */
+  beforeId: z.number().int().positive().optional(),
+});
 
-export const ALL_RANGES: Array<DashboardRange> = ["24h", "7d", "30d", "90d"];
+export const UnrepliedCommentsPageSchema = z.object({
+  items: z.array(DashboardCommentSchema),
+  /** Every unreplied Comment, not only this page's. */
+  total: count,
+  /** Pass as `beforeId` for the next page; null on the last page. */
+  nextBeforeId: z.number().int().positive().nullable(),
+});
 
-export const DASHBOARD_CACHE_KEYS = {
-  umamiStats: ["dashboard", "umami"] as const,
-} as const;
+export type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;
+export type DashboardComment = z.infer<typeof DashboardCommentSchema>;
+export type UnrepliedCommentsPage = z.infer<typeof UnrepliedCommentsPageSchema>;
+export type UnrepliedCommentsInput = z.infer<
+  typeof UnrepliedCommentsInputSchema
+>;

@@ -1,56 +1,49 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { usePreviousLocation } from "@/hooks/use-previous-location";
-import { authClient } from "@/lib/auth/auth.client";
+import { authClient } from "@/lib/auth/auth-client";
+import { getSocialLoginAuthErrorMessage } from "@/lib/auth/auth-errors";
+import { m } from "@/paraglide/messages";
+import { normalizeRedirectUrl } from "./normalize-redirect-url";
 
-export interface UseSocialLoginOptions {
-  turnstileToken: string | null;
-  turnstilePending: boolean;
-  resetTurnstile: () => void;
+interface UseSocialLoginOptions {
   redirectTo?: string;
 }
 
 export function useSocialLogin(options: UseSocialLoginOptions) {
-  const { turnstileToken, turnstilePending, resetTurnstile, redirectTo } =
-    options;
+  const { redirectTo } = options;
 
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const previousLocation = usePreviousLocation();
+  const callbackURL = normalizeRedirectUrl(redirectTo, previousLocation);
 
   const handleGithubLogin = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
-
-    const { error } = await authClient.signIn.social({
-      provider: "github",
-      errorCallbackURL: `${window.location.origin}/login`,
-      callbackURL: `${window.location.origin}${redirectTo ?? previousLocation}`,
-      fetchOptions: {
-        headers: { "X-Turnstile-Token": turnstileToken || "" },
-      },
-    });
-
-    resetTurnstile();
-
-    if (error) {
-      if (error.message?.includes("Turnstile")) {
-        toast.error("人机验证失败", { description: "请等待验证完成后重试" });
-      } else {
-        toast.error("第三方登录失败", { description: error.message });
-      }
+    setErrorMessage(null);
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "github",
+        errorCallbackURL: `${window.location.origin}/login`,
+        callbackURL,
+      });
+      if (error)
+        setErrorMessage(
+          getSocialLoginAuthErrorMessage(error, m) ??
+            m.auth_error_default_desc(),
+        );
+    } catch {
+      setErrorMessage(m.auth_error_default_desc());
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    setIsLoading(false);
   };
 
   return {
     isLoading,
-    turnstilePending,
+    errorMessage,
+    turnstilePending: false,
     handleGithubLogin,
   };
 }
-
-export type UseSocialLoginReturn = ReturnType<typeof useSocialLogin>;

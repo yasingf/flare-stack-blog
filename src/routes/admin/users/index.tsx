@@ -45,7 +45,7 @@ function UsersAdminPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== search) {
-        navigate({
+        void navigate({
           search: (prev) => ({
             ...prev,
             search: searchInput || undefined,
@@ -58,7 +58,7 @@ function UsersAdminPage() {
   }, [searchInput, navigate, search]);
 
   const handlePageChange = (newPage: number) => {
-    navigate({
+    void navigate({
       search: (prev) => ({ ...prev, page: newPage }),
     });
   };

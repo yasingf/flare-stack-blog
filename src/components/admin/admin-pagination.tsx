@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { m } from "@/paraglide/messages";
 
 interface AdminPaginationProps {
   currentPage: number;
@@ -10,7 +11,8 @@ interface AdminPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-/** Generate smart page numbers with ellipsis */
+const PAGE_BUTTON_CLASS = "w-8 px-0";
+
 function getPageNumbers(
   currentPage: number,
   totalPages: number,
@@ -61,58 +63,49 @@ export function AdminPagination({
   const endItem = Math.min(startItem + currentPageItemCount - 1, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-border/30 mt-8">
-      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-        第 {startItem} - {endItem} 条 / 共 {totalItems} 条
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+      <div className="text-sm fuwari-text-50">
+        {m.admin_pagination_info({
+          startItem,
+          endItem,
+          totalItems,
+        })}
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Previous Button */}
+      <div className="flex items-center gap-1">
         <Button
-          variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="h-8 w-8 rounded-none border-border/30 hover:bg-foreground hover:text-background hover:border-foreground transition-all disabled:opacity-20"
+          className={PAGE_BUTTON_CLASS}
         >
-          <span className="font-mono text-xs font-bold">{"<"}</span>
+          {"<"}
         </Button>
 
-        {/* Page Numbers */}
-        <div className="flex items-center gap-1 px-2">
-          {pageNumbers.map((pageNumber, index) => (
-            <React.Fragment key={index}>
-              {pageNumber === "..." ? (
-                <div className="w-8 text-center text-[10px] text-muted-foreground font-mono">
-                  ...
-                </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onPageChange(pageNumber)}
-                  className={`h-8 w-8 p-0 rounded-none font-mono text-xs transition-colors ${
-                    currentPage === pageNumber
-                      ? "bg-foreground text-background font-bold hover:bg-foreground hover:text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-transparent underline decoration-border/30 hover:decoration-foreground underline-offset-4"
-                  }`}
-                >
-                  {pageNumber}
-                </Button>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+        {pageNumbers.map((pageNumber, index) => (
+          <React.Fragment key={index}>
+            {pageNumber === "..." ? (
+              <div className="w-8 text-center text-sm fuwari-text-50">...</div>
+            ) : (
+              <Button
+                size="sm"
+                variant={currentPage === pageNumber ? "primary" : "regular"}
+                onClick={() => onPageChange(pageNumber)}
+                className={PAGE_BUTTON_CLASS}
+              >
+                {pageNumber}
+              </Button>
+            )}
+          </React.Fragment>
+        ))}
 
-        {/* Next Button */}
         <Button
-          variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="h-8 w-8 rounded-none border-border/30 hover:bg-foreground hover:text-background hover:border-foreground transition-all disabled:opacity-20"
+          className={PAGE_BUTTON_CLASS}
         >
-          <span className="font-mono text-xs font-bold">{">"}</span>
+          {">"}
         </Button>
       </div>
     </div>

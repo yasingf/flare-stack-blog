@@ -1,12 +1,16 @@
-import { queryOptions } from "@tanstack/react-query";
-import { getDashboardStatsFn } from "../dashboard.api";
+import { orpc } from "@/lib/orpc";
 
-export const DASHBOARD_KEYS = {
-  all: ["dashboard"] as const,
-  stats: ["dashboard", "stats"] as const,
-};
+export const dashboardOverviewQuery = orpc.dashboard.overview.queryOptions();
 
-export const dashboardStatsQuery = queryOptions({
-  queryKey: DASHBOARD_KEYS.stats,
-  queryFn: getDashboardStatsFn,
-});
+export const UNREPLIED_COMMENTS_PAGE_SIZE = 20;
+
+/** Every unreplied Comment, a page at a time, for the sheet. */
+export const unrepliedCommentsInfiniteQuery =
+  orpc.dashboard.unrepliedComments.infiniteOptions({
+    input: (beforeId: number | undefined) => ({
+      limit: UNREPLIED_COMMENTS_PAGE_SIZE,
+      beforeId,
+    }),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextBeforeId ?? undefined,
+  });

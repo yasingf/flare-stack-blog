@@ -1,58 +1,72 @@
-import { cva } from "class-variance-authority";
-import * as React from "react";
-import type { VariantProps } from "class-variance-authority";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "./spinner";
+import "./button.css";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40",
-  {
-    variants: {
-      variant: {
-        default: "bg-foreground text-background hover:opacity-80",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:opacity-80",
-        outline:
-          "border border-border/40 bg-transparent hover:border-foreground",
-        secondary: "bg-muted text-muted-foreground hover:bg-muted/80",
-        ghost: "hover:bg-accent/50",
-        link: "text-foreground underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-8",
-        icon: "h-9 w-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+export type ButtonVariant =
+  | "primary"
+  | "regular"
+  | "plain"
+  | "danger"
+  | "text"
+  | "overlay";
+export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+export interface ButtonStyle {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** On `plain`, a muted button that turns red on hover; on `text`, red text. */
+  tone?: "danger";
+  className?: string;
 }
 
-function Button({
-  ref,
+/** The look of a `Button`, for links that look like one. */
+export function buttonClass({
+  variant = "regular",
+  size = "md",
+  tone,
   className,
-  variant,
-  size,
-  ...props
-}: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
-  return (
-    <button
-      className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref}
-      {...props}
-    />
+}: ButtonStyle = {}) {
+  return cn(
+    "fuwari-button",
+    `fuwari-button-${variant}`,
+    `fuwari-button-${size}`,
+    tone === "danger" && "fuwari-button-tone-danger",
+    className,
   );
 }
-Button.displayName = "Button";
 
-export { Button, buttonVariants };
+/**
+ * The Fuwari button. `loading` swaps the leading `icon` for a spinner and
+ * disables the button until the work is done.
+ */
+export function Button({
+  variant,
+  size = "md",
+  tone,
+  loading = false,
+  icon,
+  disabled,
+  className,
+  children,
+  type = "button",
+  ...props
+}: ComponentProps<"button"> &
+  ButtonStyle & {
+    loading?: boolean;
+    /** A leading icon, replaced by the spinner while `loading`. */
+    icon?: ReactNode;
+  }) {
+  return (
+    <button
+      type={type}
+      {...props}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={buttonClass({ variant, size, tone, className })}
+    >
+      {loading ? <Spinner size={size === "sm" ? 14 : 16} /> : icon}
+      {children}
+    </button>
+  );
+}

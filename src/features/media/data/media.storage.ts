@@ -1,28 +1,27 @@
 import {
-  generateHashKey,
-  hashFileContent,
-} from "@/features/media/media.utils";
+  generateKey,
+  getContentTypeFromKey,
+} from "@/features/media/utils/media.utils";
 
-export async function putToR2(env: Env, image: File, prefix?: string) {
-  // 读取文件内容计算 SHA-256 哈希，生成基于内容哈希的 key
-  const fileBuffer = await image.arrayBuffer();
-  const fileHash = await hashFileContent(fileBuffer);
-  const key = generateHashKey(fileHash, image.name, prefix);
-  const contentType = image.type;
+export async function putToR2(
+  env: Env,
+  image: File,
+  key = generateKey(image.name),
+) {
+  const contentType =
+    image.type ||
+    getContentTypeFromKey(image.name) ||
+    "application/octet-stream";
   const url = `/images/${key}`;
 
-  // 检查 R2 中是否已存在相同哈希的文件（内容去重）
-  const existing = await env.R2.head(key);
-  if (!existing) {
-    await env.R2.put(key, fileBuffer, {
-      httpMetadata: {
-        contentType,
-      },
-      customMetadata: {
-        originalName: image.name,
-      },
-    });
-  }
+  await env.R2.put(key, image.stream(), {
+    httpMetadata: {
+      contentType,
+    },
+    customMetadata: {
+      originalName: image.name,
+    },
+  });
 
   return {
     key,
@@ -39,4 +38,22 @@ export async function deleteFromR2(env: Env, key: string) {
 
 export async function getFromR2(env: Env, key: string) {
   return await env.R2.get(key);
+}
+
+/**
+ * Upload a site asset (favicon, theme images) to R2 with a fixed key.
+ * No DB record; overwrites in place on re-upload.
+ */
+export async function putSiteAsset(
+  env: Env,
+  file: File,
+  assetPath: string,
+): Promise<{ key: string; url: string }> {
+  const key = `asset/${assetPath}`;
+  await env.R2.put(key, file.stream(), {
+    httpMetadata: {
+      contentType: file.type,
+    },
+  });
+  return { key, url: `/images/${key}` };
 }
