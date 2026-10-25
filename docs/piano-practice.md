@@ -49,3 +49,11 @@ AI 仅生成一次性的简介、粗略难度和练习建议；不用于实时�
 使用仓库现有 Node 24/Bun 和 `cf` 部署流程。迁移 `0030_piano_scores.sql` 仅增加个人曲库表及索引，不改写文章、用户、吉他谱或既有数据；Drizzle snapshot/journal 同步更新。新增 `PianoCoach` 导出使用 SQLite Durable Object。不要删除既有 Durable Object 导出或改回旧 Wrangler migrations 部署配置。
 
 验证命令：`bun run check`、`bun run test:node`、`bun run test`、`bun run build`。专门测试覆盖 MIDI/MusicXML 解析、指法、延音线、反复跳房子、和弦按键、节奏容差、BLE running status、账号所有权、公开媒体隔离以及 AI 并发配额/缓存。浏览器验收包含导入、采样播放、错音/正确反馈、点谱解释、手机布局和深色模式。
+
+## 上线记录（2026-10-26）
+
+[PR #2](https://github.com/yasingf/flare-stack-blog/pull/2) 已合并为 `6f381e16`；[CI](https://github.com/yasingf/flare-stack-blog/actions/runs/40216994090) 和[自动部署](https://github.com/yasingf/flare-stack-blog/actions/runs/40217465771) 均通过，753 项 Node 测试、280 项 Cloudflare 集成测试通过。正式入口为 https://blog.yasing.top/piano 。0030 迁移已执行，发布前的 D1 恢复点和 Worker 版本记录保存在被 Git 忽略的 `.secrets/piano-2026-10-26/`。
+
+自动部署凭据未能读取订阅信息，因此首次发布按保护规则关闭 AI。随后使用用户已授权的 Cloudflare OAuth 再次确认没有 Workers 付费订阅，使用相同提交、相同公开构建变量和生产资源重新构建，启用 AI。最终 Worker 版本为 `df0b4ae6-bae7-4577-9a08-ec0cb44bf65c`，AI binding 和 `PIANO_AI_ENABLED=true` 已核对，原有 14 个运行时机密均保留。已有页面缓存已刷新，首页、文章、吉他谱、登录、后台入口、会话、RSS、站点地图、钢琴页面和采样资源均返回 200；正式站示范播放及“错音不前进、正确才推进”已在浏览器验证。
+
+后续 GitHub 自动部署若仍无法核验套餐，会再次关闭 AI；需要让部署凭据具备订阅读取能力，或沿用经 OAuth 核验免费套餐后启用的流程。不要绕过保护直接写死开关。真实 USB/BLE 钢琴尚未连接验收；用户提供的《富士山下》卷已卸载，整曲验收和导入待重新挂载后补做。
