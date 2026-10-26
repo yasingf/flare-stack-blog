@@ -652,6 +652,7 @@ function PracticeDesk({
       j: 71,
       k: 72,
     };
+    const pedalKeys = new Set<string>();
     const down = (e: KeyboardEvent) => {
       if (
         e.repeat ||
@@ -660,9 +661,8 @@ function PracticeDesk({
         e.ctrlKey ||
         e.altKey ||
         (e.target instanceof Element &&
-          e.target.closest(
-            "input,select,textarea,button,a,[role=button],[contenteditable]",
-          ))
+          (e.target.closest("input,select,textarea,[contenteditable]") ||
+            (e.key !== "Shift" && e.target.closest("button,a,[role=button]"))))
       )
         return;
       if (e.code === "Space") {
@@ -670,6 +670,7 @@ function PracticeDesk({
         void actions.current.start();
       } else if (e.key === "Shift") {
         e.preventDefault();
+        pedalKeys.add(e.code);
         input.current(
           { type: "pedal", pitch: 64, velocity: 1, channel: 0 },
           true,
@@ -688,7 +689,7 @@ function PracticeDesk({
       }
     };
     const up = (e: KeyboardEvent) => {
-      if (e.key === "Shift")
+      if (e.key === "Shift" && pedalKeys.delete(e.code) && !pedalKeys.size)
         input.current(
           { type: "pedal", pitch: 64, velocity: 0, channel: 0 },
           true,
@@ -706,9 +707,12 @@ function PracticeDesk({
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    const clearPedalKeys = () => pedalKeys.clear();
+    window.addEventListener("blur", clearPedalKeys);
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", clearPedalKeys);
     };
   }, []);
   useEffect(() => {
@@ -1242,68 +1246,84 @@ function PracticeDesk({
               practice={practice}
               onChange={change}
             />
-            <div className="piano-live-status" role="status">
-              <span
-                className={`piano-status-dot ${practice.playing ? "on" : ""}`}
-              />
-              <span>
-                {practice.busy
-                  ? "正在加载斯坦威采样…"
-                  : practice.countdown
-                    ? "跟着预备拍，放松双手"
-                    : options.mode === "wait" && practice.playing
-                      ? `等待：${next?.notes.map((n) => `${noteName(n.pitch)}${n.finger ? ` (${n.finger}指)` : ""}`).join(" + ") || "完成"}`
-                      : practice.playing
-                        ? "练习进行中"
-                        : "准备好后，按下播放"}
-              </span>
-              {practice.feedback && options.mode !== "listen" && (
-                <strong className={`verdict-${practice.feedback.verdict}`}>
-                  {
+            <div className="piano-practice-footer">
+              <div className="piano-live-status" role="status">
+                <span
+                  className={`piano-status-dot ${practice.playing ? "on" : ""}`}
+                />
+                <span>
+                  {practice.busy
+                    ? "正在加载斯坦威采样…"
+                    : practice.countdown
+                      ? "跟着预备拍，放松双手"
+                      : options.mode === "wait" && practice.playing
+                        ? `等待：${next?.notes.map((n) => `${noteName(n.pitch)}${n.finger ? ` (${n.finger}指)` : ""}`).join(" + ") || "完成"}`
+                        : practice.playing
+                          ? "练习进行中"
+                          : "准备好后，按下播放"}
+                </span>
+                {practice.feedback && options.mode !== "listen" && (
+                  <strong className={`verdict-${practice.feedback.verdict}`}>
                     {
-                      correct: "弹对了",
-                      early: "稍早",
-                      late: "稍晚",
-                      wrong: "错音",
-                      missed: "漏音",
-                    }[practice.feedback.verdict]
+                      {
+                        correct: "弹对了",
+                        early: "稍早",
+                        late: "稍晚",
+                        wrong: "错音",
+                        missed: "漏音",
+                      }[practice.feedback.verdict]
+                    }
+                  </strong>
+                )}
+              </div>
+              <div
+                className="piano-pedal-controls"
+                role="group"
+                aria-label="延音踏板控制"
+              >
+                <button
+                  className="piano-button"
+                  aria-pressed={practice.pedal}
+                  title="点击切换，也可按住 Shift 或使用 MIDI 踏板"
+                  onClick={() =>
+                    practice.input(
+                      {
+                        type: "pedal",
+                        pitch: 64,
+                        velocity: practice.pedal ? 0 : 1,
+                        channel: 0,
+                      },
+                      true,
+                    )
                   }
-                </strong>
-              )}
-            </div>
-            <div className="piano-pedal-controls">
-              <button
-                className="piano-button"
-                aria-pressed={practice.pedal}
-                onClick={() =>
-                  practice.input(
-                    {
-                      type: "pedal",
-                      pitch: 64,
-                      velocity: practice.pedal ? 0 : 1,
-                      channel: 0,
-                    },
-                    true,
-                  )
-                }
-              >
-                延音踏板：{practice.pedal ? "踩下 ↓" : "松开 ↑"}
-              </button>
-              <span className="piano-caption">
-                谱面踏板：
-                {score.pedals.length
-                  ? scorePedalDown(score, practice.beat)
-                    ? "踩下 ↓"
-                    : "松开 ↑"
-                  : "未标记"}{" "}
-                · 按住 Shift 或使用 MIDI 踏板
-              </span>
-              <button
-                className="piano-text-button"
-                onClick={() => explainSymbol("pedal")}
-              >
-                踏板怎么用？
-              </button>
+                >
+                  延音踏板：{practice.pedal ? "踩下 ↓" : "松开 ↑"}
+                </button>
+                <span
+                  className="piano-pedal-status"
+                  aria-label="谱面延音踏板状态"
+                  data-down={scorePedalDown(score, practice.beat)}
+                  title={
+                    score.pedals.length
+                      ? "当前谱面要求的延音踏板状态"
+                      : "此文件没有踏板标记，仍可自行使用延音踏板"
+                  }
+                >
+                  谱面踏板：
+                  {score.pedals.length
+                    ? scorePedalDown(score, practice.beat)
+                      ? "踩下 ↓"
+                      : "松开 ↑"
+                    : "未标记"}
+                </span>
+                <span className="piano-pedal-hint">Shift / MIDI</span>
+                <button
+                  className="piano-text-button"
+                  onClick={() => explainSymbol("pedal")}
+                >
+                  踏板怎么用？
+                </button>
+              </div>
             </div>
             <div className="piano-midi">
               <div>

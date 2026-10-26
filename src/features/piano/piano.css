@@ -530,12 +530,40 @@
   font-size: 11px;
   color: var(--piano-muted);
 }
+.piano-practice-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  align-items: center;
+  padding: 6px 0;
+}
 .piano-pedal-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
-  padding: 14px 0;
+  font-size: 11px;
+}
+.piano-pedal-controls .piano-button {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: inherit;
+  white-space: nowrap;
+}
+.piano-pedal-status {
+  padding: 4px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  color: var(--piano-muted);
+}
+.piano-pedal-status[data-down="true"] {
+  color: var(--piano-accent);
+  background: var(--piano-roll-bg);
+}
+.piano-pedal-hint {
+  color: var(--piano-muted);
+  font-size: 10px;
 }
 .piano-pedal-controls [aria-pressed="true"] {
   color: var(--piano-accent);
@@ -1067,6 +1095,11 @@
   cursor: pointer;
   touch-action: none;
 }
+.piano-roll text {
+  font-family: "JetBrains Mono Variable", monospace;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* Fullscreen is a reading surface. The complete controls are available on demand. */
 .piano-desk.piano-focus {
@@ -1134,7 +1167,9 @@
 }
 .piano-focus:not(.piano-focus-controls)
   .piano-workspace-main
-  > :not(.piano-stage):not(.piano-practice-controls):not(.piano-live-status) {
+  > :not(.piano-stage):not(.piano-practice-controls):not(
+    .piano-practice-footer
+  ) {
   display: none;
 }
 .piano-focus .piano-stage {
@@ -1187,11 +1222,20 @@
   }
 }
 .piano-focus .piano-live-status {
-  flex: 0 0 auto;
+  flex: 1;
+  min-width: 90px;
   min-height: 0;
   font-size: 10px;
   margin: 0;
   padding: 1px 0;
+}
+.piano-focus .piano-practice-footer {
+  flex: 0 0 auto;
+  gap: 3px 8px;
+  padding: 3px 0 0;
+}
+.piano-focus .piano-pedal-hint {
+  display: none;
 }
 .piano-focus .piano-sidebar {
   display: none;
@@ -1217,7 +1261,7 @@
 }
 .piano-focus.piano-focus-controls .piano-stage,
 .piano-focus.piano-focus-controls .piano-practice-controls,
-.piano-focus.piano-focus-controls .piano-live-status {
+.piano-focus.piano-focus-controls .piano-practice-footer {
   display: none;
 }
 @media (orientation: portrait) and (max-width: 900px) {
@@ -1254,10 +1298,6 @@
 .piano-status-dot.on {
   background: #6f9681;
   box-shadow: 0 0 0 3px #6f968122;
-}
-.piano-pedal {
-  margin-left: auto;
-  white-space: nowrap;
 }
 .verdict-correct {
   color: #598469;

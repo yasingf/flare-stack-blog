@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { noteName, type PianoNote, type PianoScore } from "../score";
 import { scorePedalDown } from "../pedal";
 import type { Verdict } from "../practice";
@@ -32,6 +32,7 @@ export function PianoRoll(props: Props) {
   const { score, full, waterfall, onPress, onRelease } = props;
   const canvas = useRef<HTMLCanvasElement>(null);
   const keys = useRef<SVGSVGElement>(null);
+  const [keySize, setKeySize] = useState({ width: 1000, height: 98 });
   const live = useRef(props);
   live.current = props;
   const layout = useMemo(() => {
@@ -69,6 +70,22 @@ export function PianoRoll(props: Props) {
       longest: Math.max(...score.notes.map((n) => n.duration)),
     };
   }, [score, full]);
+
+  useEffect(() => {
+    const element = keys.current;
+    if (!element) return;
+    const resize = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0)
+        setKeySize((old) =>
+          old.width === width && old.height === height
+            ? old
+            : { width, height },
+        );
+    });
+    resize.observe(element);
+    return () => resize.disconnect();
+  }, []);
 
   useEffect(() => {
     const surface = canvas.current;
@@ -216,7 +233,7 @@ export function PianoRoll(props: Props) {
             node.rect.setAttribute("stroke", stroke);
             node.rect.setAttribute(
               "stroke-width",
-              expected.has(pitch) ? "2" : ".7",
+              expected.has(pitch) ? "2" : "1",
             );
             node.finger.textContent = finger;
             node.state = next;
@@ -247,68 +264,94 @@ export function PianoRoll(props: Props) {
       <svg
         ref={keys}
         className="piano-roll"
-        viewBox="0 0 1000 98"
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${keySize.width} ${keySize.height}`}
         aria-label="可弹奏钢琴键盘与指法"
       >
-        {layout.pitches.map((p) => (
-          <g
-            key={p}
-            data-pitch={p}
-            role="button"
-            tabIndex={0}
-            aria-label={`琴键 ${noteName(p)}`}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.currentTarget.setPointerCapture(e.pointerId);
-              onPress(p);
-            }}
-            onPointerUp={() => onRelease(p)}
-            onPointerCancel={() => onRelease(p)}
-            onLostPointerCapture={() => onRelease(p)}
-            onKeyDown={(e) => {
-              if (!e.repeat && ["Enter", " "].includes(e.key)) {
+        {layout.pitches.map((p) => {
+          const left = (layout.x.get(p)! / 1000) * keySize.width;
+          const width = (layout.width(p) / 1000) * keySize.width;
+          return (
+            <g
+              key={p}
+              data-pitch={p}
+              role="button"
+              tabIndex={0}
+              aria-label={`琴键 ${noteName(p)}`}
+              onPointerDown={(e) => {
                 e.preventDefault();
+                e.currentTarget.setPointerCapture(e.pointerId);
                 onPress(p);
-              }
-            }}
-            onKeyUp={(e) => {
-              if (["Enter", " "].includes(e.key)) onRelease(p);
-            }}
-          >
-            <rect
-              x={layout.x.get(p)! + 0.7}
-              y={0}
-              width={layout.width(p) - 1.4}
-              height={black(p) ? 62 : 96}
-              rx={2}
-              fill={black(p) ? "#302e2a" : "#fcf9f1"}
-              stroke="#bfb6a8"
-              strokeWidth={0.7}
-            />
-            <text
-              className="piano-key-finger"
-              x={layout.x.get(p)! + layout.width(p) / 2}
-              y={black(p) ? 47 : 76}
-              textAnchor="middle"
-              fontSize={Math.min(18, layout.width(p) * 0.65)}
-              fontWeight="600"
-              fill={black(p) ? "#fff" : "#403c35"}
-            />
-            {!black(p) && p % 12 === 0 && (
+              }}
+              onPointerUp={() => onRelease(p)}
+              onPointerCancel={() => onRelease(p)}
+              onLostPointerCapture={() => onRelease(p)}
+              onKeyDown={(e) => {
+                if (!e.repeat && ["Enter", " "].includes(e.key)) {
+                  e.preventDefault();
+                  onPress(p);
+                }
+              }}
+              onKeyUp={(e) => {
+                if (["Enter", " "].includes(e.key)) onRelease(p);
+              }}
+            >
+              <rect
+                x={Math.round(left) + 0.5}
+                y={0.5}
+                width={Math.max(
+                  1,
+                  Math.round(left + width) - Math.round(left) - 1,
+                )}
+                height={Math.max(
+                  1,
+                  Math.round(keySize.height * (black(p) ? 0.64 : 1)) - 1,
+                )}
+                rx={2}
+                fill={black(p) ? "#302e2a" : "#fcf9f1"}
+                stroke="#bfb6a8"
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+              />
               <text
-                x={layout.x.get(p)! + layout.width(p) / 2}
-                y={90}
+                className="piano-key-finger"
+                x={left + width / 2}
+                y={keySize.height * (black(p) ? 0.49 : 0.79)}
                 textAnchor="middle"
-                fontSize={Math.min(11, layout.width(p) * 0.38)}
-                fill="#766b5e"
-              >
-                {noteName(p)}
-              </text>
-            )}
-          </g>
-        ))}
-        <line x1={0} x2={1000} y1={1} y2={1} stroke="#b98056" strokeWidth={2} />
+                fontSize={Math.min(
+                  18,
+                  Math.max(8, width * 0.65),
+                  keySize.height * 0.23,
+                )}
+                fontWeight="600"
+                fill={black(p) ? "#fff" : "#403c35"}
+              />
+              {!black(p) && p % 12 === 0 && (
+                <text
+                  x={left + width / 2}
+                  y={keySize.height - 5}
+                  textAnchor="middle"
+                  fontSize={Math.min(
+                    11,
+                    Math.max(7, width * 0.38),
+                    keySize.height * 0.12,
+                  )}
+                  fill="#766b5e"
+                >
+                  {noteName(p)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        <line
+          x1={0}
+          x2={keySize.width}
+          y1={0.5}
+          y2={0.5}
+          stroke="#b98056"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
       </svg>
     </div>
   );
