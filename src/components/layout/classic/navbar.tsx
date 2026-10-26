@@ -146,6 +146,14 @@ export function Navbar({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
+            {user?.role === "admin" && (
+              <Link
+                to="/admin"
+                className="text-xs font-mono text-muted-foreground hover:text-foreground whitespace-nowrap"
+              >
+                后台管理
+              </Link>
+            )}
             <div className="flex items-center gap-1">
               <ThemeToggle />
               <Link

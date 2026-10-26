@@ -69,6 +69,98 @@
           "path": "/me/piano/scores/{id}"
         }
       }
+    },
+    "shared": {
+      "list": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/piano/scores"
+          }
+        }
+      },
+      "load": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/piano/scores/{id}"
+          }
+        }
+      },
+      "upload": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "POST",
+            "path": "/piano/scores"
+          }
+        }
+      },
+      "update": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "PATCH",
+            "path": "/admin/piano/scores/{id}"
+          }
+        }
+      },
+      "remove": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "DELETE",
+            "path": "/piano/scores/{id}"
+          }
+        }
+      },
+      "stats": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/piano/storage"
+          }
+        }
+      },
+      "storage": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/piano/storage/bucket"
+          }
+        }
+      },
+      "agreement": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/me/piano/sharing-agreement"
+          }
+        }
+      },
+      "acceptAgreement": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "POST",
+            "path": "/me/piano/sharing-agreement"
+          }
+        }
+      }
     }
   },
   "publicStats": {

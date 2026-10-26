@@ -137,7 +137,7 @@ export function MobileMenu({
                 &gt;_
               </span>
               <span className="text-3xl md:text-5xl font-bold tracking-tight text-muted-foreground group-hover:text-foreground group-hover:translate-x-2 transition-all duration-[350ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]">
-                管理
+                后台管理
               </span>
             </Link>
           )}

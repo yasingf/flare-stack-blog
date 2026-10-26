@@ -25,11 +25,13 @@ import { Route as PublicUserRouteRouteImport } from './routes/_public/_user/rout
 import { Route as PublicFriendLinksRouteImport } from './routes/_public/friend-links'
 import { Route as PublicGuitarTabsRouteImport } from './routes/_public/guitar-tabs'
 import { Route as PublicPianoRouteImport } from './routes/_public/piano'
+import { Route as PublicPianoSharingTermsRouteImport } from './routes/_public/piano-sharing-terms'
 import { Route as PublicPostsRouteImport } from './routes/_public/posts'
 import { Route as PublicSearchRouteImport } from './routes/_public/search'
 import { Route as PublicUnsubscribeRouteImport } from './routes/_public/unsubscribe'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminSplatRouteImport } from './routes/admin/$'
+import { Route as AdminPianoRouteImport } from './routes/admin/piano'
 import { Route as AdminPostsRouteRouteImport } from './routes/admin/posts/route'
 import { Route as AdminSeoRouteImport } from './routes/admin/seo'
 import { Route as AdminSettingsRouteRouteImport } from './routes/admin/settings/route'
@@ -141,6 +143,11 @@ const PublicPianoRoute = PublicPianoRouteImport.update({
   path: '/piano',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicPianoSharingTermsRoute = PublicPianoSharingTermsRouteImport.update({
+  id: '/piano-sharing-terms',
+  path: '/piano-sharing-terms',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const PublicPostsRoute = PublicPostsRouteImport.update({
   id: '/posts',
   path: '/posts',
@@ -164,6 +171,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminSplatRoute = AdminSplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPianoRoute = AdminPianoRouteImport.update({
+  id: '/piano',
+  path: '/piano',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminPostsRouteRoute = AdminPostsRouteRouteImport.update({
@@ -354,10 +366,12 @@ export interface FileRoutesByFullPath {
   '/friend-links': typeof PublicFriendLinksRoute
   '/guitar-tabs': typeof PublicGuitarTabsRoute
   '/piano': typeof PublicPianoRoute
+  '/piano-sharing-terms': typeof PublicPianoSharingTermsRoute
   '/posts': typeof PublicPostsRoute
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
+  '/admin/piano': typeof AdminPianoRoute
   '/admin/seo': typeof AdminSeoRoute
   '/api/$': typeof ApiSplatRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
@@ -404,10 +418,12 @@ export interface FileRoutesByTo {
   '/friend-links': typeof PublicFriendLinksRoute
   '/guitar-tabs': typeof PublicGuitarTabsRoute
   '/piano': typeof PublicPianoRoute
+  '/piano-sharing-terms': typeof PublicPianoSharingTermsRoute
   '/posts': typeof PublicPostsRoute
   '/search': typeof PublicSearchRoute
   '/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
+  '/admin/piano': typeof AdminPianoRoute
   '/admin/seo': typeof AdminSeoRoute
   '/api/$': typeof ApiSplatRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
@@ -459,10 +475,12 @@ export interface FileRoutesById {
   '/_public/friend-links': typeof PublicFriendLinksRoute
   '/_public/guitar-tabs': typeof PublicGuitarTabsRoute
   '/_public/piano': typeof PublicPianoRoute
+  '/_public/piano-sharing-terms': typeof PublicPianoSharingTermsRoute
   '/_public/posts': typeof PublicPostsRoute
   '/_public/search': typeof PublicSearchRoute
   '/_public/unsubscribe': typeof PublicUnsubscribeRoute
   '/admin/$': typeof AdminSplatRoute
+  '/admin/piano': typeof AdminPianoRoute
   '/admin/seo': typeof AdminSeoRoute
   '/api/$': typeof ApiSplatRoute
   '/api/auth': typeof ApiAuthRouteWithChildren
@@ -515,10 +533,12 @@ export interface FileRouteTypes {
     | '/friend-links'
     | '/guitar-tabs'
     | '/piano'
+    | '/piano-sharing-terms'
     | '/posts'
     | '/search'
     | '/unsubscribe'
     | '/admin/$'
+    | '/admin/piano'
     | '/admin/seo'
     | '/api/$'
     | '/api/auth'
@@ -565,10 +585,12 @@ export interface FileRouteTypes {
     | '/friend-links'
     | '/guitar-tabs'
     | '/piano'
+    | '/piano-sharing-terms'
     | '/posts'
     | '/search'
     | '/unsubscribe'
     | '/admin/$'
+    | '/admin/piano'
     | '/admin/seo'
     | '/api/$'
     | '/api/auth'
@@ -619,10 +641,12 @@ export interface FileRouteTypes {
     | '/_public/friend-links'
     | '/_public/guitar-tabs'
     | '/_public/piano'
+    | '/_public/piano-sharing-terms'
     | '/_public/posts'
     | '/_public/search'
     | '/_public/unsubscribe'
     | '/admin/$'
+    | '/admin/piano'
     | '/admin/seo'
     | '/api/$'
     | '/api/auth'
@@ -788,6 +812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicPianoRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_public/piano-sharing-terms': {
+      id: '/_public/piano-sharing-terms'
+      path: '/piano-sharing-terms'
+      fullPath: '/piano-sharing-terms'
+      preLoaderRoute: typeof PublicPianoSharingTermsRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/_public/posts': {
       id: '/_public/posts'
       path: '/posts'
@@ -821,6 +852,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/admin/$'
       preLoaderRoute: typeof AdminSplatRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/piano': {
+      id: '/admin/piano'
+      path: '/piano'
+      fullPath: '/admin/piano'
+      preLoaderRoute: typeof AdminPianoRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/posts': {
@@ -1100,6 +1138,7 @@ interface PublicRouteRouteChildren {
   PublicFriendLinksRoute: typeof PublicFriendLinksRoute
   PublicGuitarTabsRoute: typeof PublicGuitarTabsRoute
   PublicPianoRoute: typeof PublicPianoRoute
+  PublicPianoSharingTermsRoute: typeof PublicPianoSharingTermsRoute
   PublicPostsRoute: typeof PublicPostsRoute
   PublicSearchRoute: typeof PublicSearchRoute
   PublicUnsubscribeRoute: typeof PublicUnsubscribeRoute
@@ -1115,6 +1154,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicFriendLinksRoute: PublicFriendLinksRoute,
   PublicGuitarTabsRoute: PublicGuitarTabsRoute,
   PublicPianoRoute: PublicPianoRoute,
+  PublicPianoSharingTermsRoute: PublicPianoSharingTermsRoute,
   PublicPostsRoute: PublicPostsRoute,
   PublicSearchRoute: PublicSearchRoute,
   PublicUnsubscribeRoute: PublicUnsubscribeRoute,
@@ -1184,6 +1224,7 @@ interface AdminRouteRouteChildren {
   AdminPostsRouteRoute: typeof AdminPostsRouteRouteWithChildren
   AdminSettingsRouteRoute: typeof AdminSettingsRouteRouteWithChildren
   AdminSplatRoute: typeof AdminSplatRoute
+  AdminPianoRoute: typeof AdminPianoRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminFriendLinksIndexRoute: typeof AdminFriendLinksIndexRoute
@@ -1196,6 +1237,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminPostsRouteRoute: AdminPostsRouteRouteWithChildren,
   AdminSettingsRouteRoute: AdminSettingsRouteRouteWithChildren,
   AdminSplatRoute: AdminSplatRoute,
+  AdminPianoRoute: AdminPianoRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminFriendLinksIndexRoute: AdminFriendLinksIndexRoute,

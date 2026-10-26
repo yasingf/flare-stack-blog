@@ -12,6 +12,7 @@ type Props = {
   zoom: number;
   explain: boolean;
   fingers: boolean;
+  compact?: boolean;
   onSeek: (beat: number) => void;
   onNote: (id: string) => void;
   onSymbol: (key: string) => void;
@@ -31,6 +32,7 @@ export function ScoreView({
   zoom,
   explain,
   fingers,
+  compact = false,
   onSeek,
   onNote,
   onSymbol,
@@ -73,9 +75,15 @@ export function ScoreView({
           renderSingleHorizontalStaffline: false,
         });
         osmd.Zoom = zoom;
-        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+        osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = compact ? 0 : 4;
         await osmd.load(score.xml);
         if (cancelled) return;
+        if (compact) {
+          osmd.EngravingRules.PageTopMargin = 1;
+          osmd.EngravingRules.PageTopMarginNarrow = 1;
+          osmd.EngravingRules.PageLeftMargin = 3;
+          osmd.EngravingRules.PageRightMargin = 2;
+        }
         const render = () => {
           if (!osmd || cancelled) return;
           cleanups.splice(0).forEach((fn) => fn());
@@ -282,7 +290,7 @@ export function ScoreView({
       cleanups.forEach((fn) => fn());
       osmd?.clear();
     };
-  }, [score, zoom, fingers]);
+  }, [score, zoom, fingers, compact]);
 
   useEffect(() => {
     const measure = score.measures[Math.max(0, currentMeasure(score, beat))];
@@ -306,17 +314,31 @@ export function ScoreView({
     if (playing && active[0] && scroll.current) {
       const box = active[0].getBoundingClientRect(),
         viewport = scroll.current.getBoundingClientRect();
+      // A portrait phone can display a landscape practice surface with CSS.
+      // Convert screen coordinates back to the scroller's axes in that case.
+      const rotated =
+        getComputedStyle(scroll.current)
+          .getPropertyValue("--piano-rotated")
+          .trim() === "1";
+      const top = rotated ? viewport.right - box.right : box.top - viewport.top;
+      const bottom = rotated
+        ? viewport.right - box.left
+        : box.bottom - viewport.top;
+      const left = rotated ? box.top - viewport.top : box.left - viewport.left;
+      const right = rotated
+        ? box.bottom - viewport.top
+        : box.right - viewport.left;
       const outsideVertical =
-        box.top < viewport.top + 35 || box.bottom > viewport.bottom - 80;
+        top < 35 || bottom > scroll.current.clientHeight - 80;
       const outsideHorizontal =
-        box.left < viewport.left + 24 || box.right > viewport.right - 24;
+        left < 24 || right > scroll.current.clientWidth - 24;
       if (outsideVertical || outsideHorizontal)
         scroll.current.scrollTo({
           top: outsideVertical
-            ? scroll.current.scrollTop + box.top - viewport.top - 90
+            ? scroll.current.scrollTop + top - 90
             : scroll.current.scrollTop,
           left: outsideHorizontal
-            ? scroll.current.scrollLeft + box.left - viewport.left - 80
+            ? scroll.current.scrollLeft + left - 80
             : scroll.current.scrollLeft,
           behavior: "smooth",
         });

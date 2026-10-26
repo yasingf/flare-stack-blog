@@ -89,6 +89,15 @@ export function useLoginForm(options: UseLoginFormOptions) {
   };
 
   const onSubmit = async (data: LoginSchema) => {
+    if (turnstilePending) {
+      setLoginError({
+        message:
+          "安全验证尚未完成。请在下方重试验证器，或使用已绑定的通行密钥登录。",
+        email: data.email,
+        unverified: false,
+      });
+      return;
+    }
     setLoginStep("VERIFYING");
     setLoginError(null);
     setResendFeedback(null);

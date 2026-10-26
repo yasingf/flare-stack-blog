@@ -17,6 +17,7 @@ import {
 } from "./practice";
 import type { PianoInput } from "./midi";
 import { saveHistory } from "./library";
+import { sustainedRelease } from "./pedal";
 
 export type PracticeOptions = {
   mode: PracticeMode;
@@ -283,8 +284,8 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
                     .current!.play(
                       n.pitch,
                       n.velocity,
-                      (n.duration * 60) /
-                        tempoAt(score, n.beat) /
+                      (beatSeconds(score, sustainedRelease(score, n, end)) -
+                        beatSeconds(score, n.beat)) /
                         options.speed,
                     )
                     .catch(() => setError("音源加载失败。"));
@@ -305,17 +306,7 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
                 continue;
               const delay = (at - seconds) / options.speed;
               if (delay < -0.2) continue; // A background tab must not burst old notes.
-              let release = n.beat + n.duration;
-              const down = lastWhere(
-                score.pedals,
-                (p) => p.beat <= release,
-              )?.down;
-              if (down)
-                release = Math.min(
-                  end,
-                  score.pedals.find((p) => !p.down && p.beat > release)?.beat ??
-                    end,
-                );
+              const release = sustainedRelease(score, n, end);
               const duration =
                 (beatSeconds(score, release) - at) / options.speed;
               void audio

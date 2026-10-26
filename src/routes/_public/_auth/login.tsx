@@ -1,6 +1,9 @@
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { z } from "zod";
-import { Turnstile, useTurnstile } from "@/components/common/turnstile";
+import {
+  AuthVerification,
+  useAuthVerification,
+} from "@/components/common/auth-verification";
 import { LoginPage } from "@/features/auth/components/login-page";
 import { useLoginForm, useSocialLogin } from "@/features/auth/hooks";
 import { m } from "@/paraglide/messages";
@@ -27,7 +30,7 @@ function RouteComponent() {
     token: turnstileToken,
     reset: resetTurnstile,
     turnstileProps,
-  } = useTurnstile("login");
+  } = useAuthVerification("login");
 
   const resolvedRedirectTo = search.redirectTo;
 
@@ -44,7 +47,7 @@ function RouteComponent() {
 
   const turnstileElement = isEmailConfigured ? (
     <div className="flex justify-center">
-      <Turnstile {...turnstileProps} />
+      <AuthVerification {...turnstileProps} />
     </div>
   ) : null;
 

@@ -196,10 +196,18 @@ export function parseMusicXml(
                 bpm: Math.min(400, Math.max(20, bpm)),
               });
             const pedal = e.querySelector("pedal");
-            if (pedal)
+            const pedalType = pedal?.getAttribute("type");
+            if (pedalType === "change")
+              pedalByMeasure[index].push({ offset, down: false });
+            if (
+              pedal &&
+              ["start", "stop", "change", "resume", "discontinue"].includes(
+                pedalType || "",
+              )
+            )
               pedalByMeasure[index].push({
                 offset,
-                down: pedal.getAttribute("type") !== "stop",
+                down: pedalType !== "stop" && pedalType !== "discontinue",
               });
             if (sound?.hasAttribute("damper-pedal"))
               pedalByMeasure[index].push({
@@ -570,7 +578,14 @@ export function midiToXml(score: PianoScore) {
         })
         .join("")
         .replace(/<backup><duration>\d+<\/duration><\/backup>$/, "");
-      return `<measure number="${mi + 1}"><attributes><divisions>4</divisions><time><beats>${m.beats}</beats><beat-type>${m.beatType}</beat-type></time>${mi === 0 ? '<staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef>' : ""}</attributes>${voices}</measure>`;
+      const pedals = score.pedals
+        .filter((p) => p.beat >= m.beat && p.beat < m.beat + m.duration)
+        .map(
+          (p) =>
+            `<direction placement="below"><direction-type><pedal type="${p.down ? "start" : "stop"}" line="yes" sign="yes"/></direction-type><offset>${Math.round((p.beat - m.beat) * 4)}</offset><staff>2</staff><sound damper-pedal="${p.down ? "yes" : "no"}"/></direction>`,
+        )
+        .join("");
+      return `<measure number="${mi + 1}"><attributes><divisions>4</divisions><time><beats>${m.beats}</beats><beat-type>${m.beatType}</beat-type></time>${mi === 0 ? '<staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef>' : ""}</attributes>${pedals}${voices}</measure>`;
     })
     .join("");
   return `<?xml version="1.0"?><score-partwise version="4.0"><work><work-title>${escape(score.title)}</work-title></work><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1">${measures}</part></score-partwise>`;

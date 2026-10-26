@@ -48,7 +48,7 @@ export function getAuth({ db, env }: { db: DB; env: Env }) {
   } = serverEnv(env);
 
   return betterAuth({
-    ...createAuthConfig(),
+    ...createAuthConfig(BETTER_AUTH_URL),
     socialProviders: {
       github: {
         clientId: GITHUB_CLIENT_ID,
@@ -57,6 +57,16 @@ export function getAuth({ db, env }: { db: DB; env: Env }) {
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (
+          ctx.path.startsWith("/passkey/") &&
+          (ctx.headers ?? ctx.request?.headers)?.has("x-api-key")
+        ) {
+          throw APIError.from("FORBIDDEN", {
+            code: "API_KEY_CANNOT_MANAGE_PASSKEYS",
+            message:
+              "Please sign in with an interactive session to use passkeys",
+          });
+        }
         if (ctx.path === "/sign-up/email") {
           const email =
             typeof ctx.body?.email === "string" ? ctx.body.email.trim() : "";
