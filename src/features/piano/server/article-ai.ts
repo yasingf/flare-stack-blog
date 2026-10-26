@@ -66,7 +66,7 @@ export async function generateArticle(
       await crypto.subtle.digest(
         "SHA-256",
         new TextEncoder().encode(
-          `${ARTICLE_MODEL}:article-v1:${JSON.stringify(facts)}`,
+          `${ARTICLE_MODEL}:article-v2:${JSON.stringify(facts)}`,
         ),
       ),
     ),

@@ -8,6 +8,7 @@ import {
   seedUser,
 } from "tests/test-utils";
 import router from "./server/router";
+import { musicJson } from "./server/music-metadata";
 import {
   completeArticle,
   handlePianoArticle,
@@ -347,5 +348,31 @@ describe("shared AI budget for articles", () => {
       remaining: 9,
       reservedNeurons: ARTICLE_RESERVATION,
     });
+  });
+});
+
+describe("music source request compatibility", () => {
+  it("uses request options accepted by workerd and rejects redirects without following them", async () => {
+    const request = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (url, options) => {
+        // Exercise workerd's real Request parser: it rejects redirect: error.
+        const req = new Request(url, options);
+        expect(req.redirect).toBe("manual");
+        return Response.json({ recordings: [] });
+      });
+    await expect(
+      musicJson("https://musicbrainz.org/ws/2/recording?fmt=json"),
+    ).resolves.toEqual({ recordings: [] });
+    request.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: { Location: "https://other.example/" },
+      }),
+    );
+    await expect(
+      musicJson("https://musicbrainz.org/ws/2/recording?fmt=json"),
+    ).rejects.toThrow("Music source unavailable");
+    expect(request).toHaveBeenCalledTimes(2);
   });
 });

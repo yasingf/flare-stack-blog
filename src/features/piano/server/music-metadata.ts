@@ -23,7 +23,8 @@ export function lookupTitle(title: string) {
 export async function musicJson(url: string): Promise<unknown> {
   const response = await fetch(url, {
     headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-    redirect: "error",
+    // Workers supports only follow/manual. Reject redirects below via ok.
+    redirect: "manual",
     signal: AbortSignal.timeout(10000),
   });
   if (

@@ -140,3 +140,5 @@ AI 仅生成一次性的简介、粗略难度和练习建议；不用于实时�
 [PR #7](https://github.com/yasingf/flare-stack-blog/pull/7) 合并为 `bbd50ae9`；[CI](https://github.com/yasingf/flare-stack-blog/actions/runs/40292750697) 与[自动部署](https://github.com/yasingf/flare-stack-blog/actions/runs/40293579485) 均成功，770 项 Node 测试、291 项 Cloudflare 集成测试通过。迁移 0034 已执行。经 OAuth 再次确认 Workers Free 后，最终 Worker 版本为 `77a45ae2-f1ef-49ca-b2a2-9581408d9817`，15 个运行时机密均保留，AI binding 和预算开关启用。发布前恢复点、配置核对、队列结果及健康检查保存于被忽略的 `.secrets/piano-articles-2026-10-26/`。
 
 正式站 13 项页面/资源健康检查通过，两个文章管理读取接口对匿名请求均返回 401。用已共享、由管理员拥有的《富士山下》执行一次真实队列任务，生成文章 #5，状态为 `draft`，`published_at` 与 `public_slug` 均为 NULL。现有公开曲谱保持原文件；该文件有 903 处指法但没有踏板标记，因此练习室显示“谱面踏板：未标记”，可自行使用踏板控制。
+
+首轮真实草稿核对发现 Workers 不接受 `redirect: "error"`，导致两个资料来源在请求构造阶段失败。改为 `manual` 并拒绝非成功状态，仍不跟随外部重定向；新增真实 workerd Request 解析回归测试，并更新文章缓存版本以免复用缺少来源的结果。修复后在 workerd 中实际请求 MusicBrainz 与维基百科均取得有效 JSON；外部服务偶发不可用仍按待核实处理。首份资料不完整的生成草稿将在核对无人工修改后重新生成。
