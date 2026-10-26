@@ -776,7 +776,8 @@
   height: 510px;
 }
 .piano-notation {
-  min-width: 550px;
+  position: relative;
+  min-width: 0;
   padding: 12px 4px;
 }
 .piano-notation svg {
@@ -785,13 +786,21 @@
 .piano-notation [data-piano-note] {
   cursor: pointer;
 }
-.piano-notation .piano-note-current {
-  color: #b5784d;
-  filter: drop-shadow(0 0 2px #c58a5b50);
+.piano-playhead-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  contain: strict;
 }
-.piano-notation .piano-note-current path {
-  fill: #b5784d;
-  stroke: #b5784d;
+.piano-playhead-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 2px solid #b5784d;
+  border-radius: 50%;
+  background: #c58a5b44;
+  will-change: transform;
+  contain: strict;
 }
 .is-explaining [data-piano-symbol] {
   cursor: help;
@@ -799,7 +808,8 @@
 .is-explaining [data-piano-symbol]:hover {
   filter: drop-shadow(0 0 3px #c58a5b);
 }
-.dark .piano-notation {
+.dark .piano-notation svg {
+  position: relative;
   filter: invert(0.84) hue-rotate(170deg);
 }
 .dark .piano-stage,
@@ -808,13 +818,25 @@
 }
 .piano-roll-scroll {
   width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--piano-roll-bg);
+}
+.piano-waterfall {
+  display: block;
+  width: 100%;
+  height: 250px;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 .piano-roll {
   display: block;
   width: 100%;
-  touch-action: pan-x;
+  height: clamp(72px, 10vw, 122px);
+  flex: 0 0 auto;
+  touch-action: none;
 }
 .piano-roll g[role="button"] {
   cursor: pointer;
@@ -902,13 +924,14 @@
   height: auto;
 }
 .piano-focus .piano-notation {
+  position: relative;
   padding: 6px 0;
 }
 .piano-focus .view-score .piano-roll-scroll {
   display: none;
 }
 .piano-focus .view-both .piano-roll-scroll {
-  flex: 0 0 30%;
+  flex: 0 0 38%;
   min-height: 0;
 }
 .piano-focus .view-waterfall .piano-roll-scroll {
@@ -916,7 +939,27 @@
   min-height: 0;
 }
 .piano-focus .piano-roll {
-  height: 100%;
+  height: clamp(58px, 16dvh, 132px);
+}
+.piano-focus .view-keyboard .piano-roll-scroll {
+  flex: 0 0 auto;
+}
+.piano-focus .view-both .piano-roll {
+  height: clamp(48px, 11dvh, 90px);
+}
+.piano-focus .piano-waterfall {
+  height: 0;
+}
+.view-keyboard .piano-score-scroll {
+  height: 440px;
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .piano-focus .piano-roll {
+    height: clamp(58px, 18dvw, 96px);
+  }
+  .piano-focus .view-both .piano-roll {
+    height: 48px;
+  }
 }
 .piano-focus .piano-progress {
   flex: 0 0 auto;

@@ -23,6 +23,7 @@ const clientEnvSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((value) => value !== "false"),
+  VITE_GOATCOUNTER_SITE: z.url().optional(),
   VITE_UMAMI_WEBSITE_ID: z.string().optional(),
   VITE_TURNSTILE_SITE_KEY: z.string().optional(),
 });

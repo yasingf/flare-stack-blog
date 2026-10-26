@@ -20,9 +20,13 @@ export const coachFactsSchema = z.object({
 });
 export type CoachFacts = z.infer<typeof coachFactsSchema>;
 export const COACH_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
-export const COACH_DAILY_REQUESTS = 50;
-export const COACH_USER_REQUESTS = 3;
-export const COACH_RESERVATION = 100;
+// At most 4,000 input bytes (an upper bound on tokens) + prompt framing,
+// and 768 output tokens: < 45 neurons at the published Qwen price.
+// Reserve 50 even on failure, leave 2,000 of the account's 10,000 free neurons.
+export const COACH_DAILY_NEURONS = 8000;
+export const COACH_RESERVATION = 50;
+export const COACH_DAILY_REQUESTS = COACH_DAILY_NEURONS / COACH_RESERVATION;
+export const COACH_USER_REQUESTS = 10;
 export const COACH_MAX_TOKENS = 768;
 export const COACH_MAX_INPUT_BYTES = 4000;
 export type CoachResponse = {

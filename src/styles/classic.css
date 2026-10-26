@@ -2,8 +2,9 @@
 @import "@fontsource-variable/noto-serif-sc";
 @import "@fontsource-variable/jetbrains-mono";
 
-/* Preserve the deployed fork theme across both the public site and admin. */
-@scope (html:has(.default-theme, .admin-layout)) {
+/* This fork uses the classic theme throughout. A stable scope avoids rescanning
+   the entire score SVG whenever playback changes a descendant's style. */
+@scope (html) {
   @layer base {
     :scope {
       /* Warm cream tones — richer than pure white, comfortable for extended reading */

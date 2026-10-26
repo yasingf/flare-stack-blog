@@ -1,3 +1,4 @@
+import { clientEnv } from "@/lib/env/client.env";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChartNoAxesColumn, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,11 @@ export function DashboardPopular({
       <SectionHeading
         size="md"
         title={m.dashboard_popular_title()}
-        description={window}
+        description={
+          clientEnv().VITE_GOATCOUNTER_SITE
+            ? `${window || "近 30 天"} · GoatCounter 访问次数`
+            : window
+        }
         actions={
           state === "expired" ? (
             <Badge tone="warning">{m.dashboard_popular_expired()}</Badge>

@@ -1,3 +1,8 @@
+import {
+  COACH_DAILY_REQUESTS,
+  COACH_USER_REQUESTS,
+  COACH_RESERVATION,
+} from "../src/features/piano/coach.schema";
 import { appendFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
@@ -47,5 +52,5 @@ if (process.env.GITHUB_ENV)
 console.log(`PIANO_AI_ENABLED=${enabled}`);
 if (enabled)
   console.log(
-    "Workers Free confirmed. Piano AI: 50 calls/day site-wide, 3/user, 100-neuron reservation/call. No paid fallback.",
+    `Workers Free confirmed. Piano AI: ${COACH_DAILY_REQUESTS} calls/day site-wide, ${COACH_USER_REQUESTS}/user, ${COACH_RESERVATION}-neuron reservation/call. No paid fallback.`,
   );
