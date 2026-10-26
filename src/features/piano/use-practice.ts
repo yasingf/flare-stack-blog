@@ -337,7 +337,7 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
               }
             }
           }
-          if (now - s.lastUi > 45) {
+          if (now - s.lastUi > 125) {
             setBeat(s.beat);
             s.lastUi = now;
             if (tracker.current && options.mode === "rhythm")
@@ -372,6 +372,7 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
   );
   return {
     beat,
+    clock: state,
     playing,
     busy,
     countdown,

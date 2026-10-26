@@ -239,7 +239,8 @@ export function SharedLibrary({
                   <Link2 size={14} />
                   分享
                 </button>
-                {admin && (
+                {(session?.user.role === "admin" ||
+                  session?.user.id === item.userId) && (
                   <button
                     className="piano-text-button"
                     onClick={() => setEditing(item)}

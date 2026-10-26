@@ -194,10 +194,21 @@ const upload = authProcedure
     }
     return { id };
   });
-const update = adminProcedure
-  .route({ method: "PATCH", path: "/admin/piano/scores/{id}" })
+const update = authProcedure
+  .route({ method: "PATCH", path: "/piano/scores/{id}" })
   .input(metadata.extend(idInput.shape))
   .handler(async ({ context, input }) => {
+    const row = await context.env.DB.prepare(
+      "SELECT user_id AS userId FROM piano_scores WHERE id = ?",
+    )
+      .bind(input.id)
+      .first<{ userId: string }>();
+    if (!row) throw new ORPCError("NOT_FOUND");
+    if (
+      row.userId !== context.session.user.id &&
+      context.session.user.role !== "admin"
+    )
+      throw new ORPCError("FORBIDDEN");
     const result = await context.env.DB.prepare(
       "UPDATE piano_scores SET title = ?, composer = ? WHERE id = ?",
     )

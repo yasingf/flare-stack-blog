@@ -14,6 +14,8 @@ const serverEnvSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string(),
   DOMAIN: domainSchema,
   ENVIRONMENT: z.enum(["dev", "prod", "test"]).optional(),
+  GOATCOUNTER_SITE: z.string().optional(),
+  GOATCOUNTER_API_TOKEN: z.string().optional(),
   UMAMI_WEBSITE_ID: z.string().optional(),
   UMAMI_SRC: z.string().optional(),
   UMAMI_API_URL: z.string().optional(),

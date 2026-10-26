@@ -59,6 +59,7 @@ export default defineConfig((ctx) => {
         DB: bindings.d1({ id: d1DatabaseId }),
         KV: bindings.kv({ id: kvNamespaceId }),
         R2: bindings.r2({ name: bucketName }),
+        GOATCOUNTER_SITE: bindings.text(env.GOATCOUNTER_SITE || ""),
         QUEUE: bindings.queue({ name: queueName }),
         ...(env.PIANO_AI_ENABLED === "true" && !isTest
           ? { AI: bindings.ai() }

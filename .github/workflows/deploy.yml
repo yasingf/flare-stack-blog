@@ -29,6 +29,8 @@ jobs:
       KV_NAMESPACE_ID: c9782cd037204c78884af8c189877ae0
       QUEUE_NAME: blog-queue-v361-preview
       DOMAIN: blog.yasing.top
+      GOATCOUNTER_SITE: https://yasing.goatcounter.com
+      VITE_GOATCOUNTER_SITE: https://yasing.goatcounter.com
       VITE_BLOG_NAME: ${{ vars.VITE_BLOG_NAME }}
       VITE_BLOG_TITLE: ${{ vars.VITE_BLOG_TITLE }}
       VITE_BLOG_AUTHOR: ${{ vars.VITE_BLOG_AUTHOR }}

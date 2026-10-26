@@ -1,21 +1,24 @@
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { noteName, type PianoNote, type PianoScore } from "../score";
+import { scorePedalDown } from "../pedal";
 import type { Verdict } from "../practice";
 
-const black = (p: number) => [1, 3, 6, 8, 10].includes(p % 12);
-export function PianoRoll({
-  score,
-  beat,
-  pressed,
-  feedback,
-  expected,
-  full,
-  waterfall,
-  fingers,
-  onPress,
-  onRelease,
-}: {
+const black = (pitch: number) => [1, 3, 6, 8, 10].includes(pitch % 12);
+// Scores are sorted by onset. Only visit the visible time window, not the whole
+// score for every key on every frame.
+export function firstNoteAt(notes: PianoNote[], beat: number) {
+  let lo = 0,
+    hi = notes.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (notes[mid].beat < beat) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+type Props = {
   score: PianoScore;
-  beat: number;
+  clock: RefObject<{ beat: number; playing: boolean }>;
   pressed: Set<number>;
   feedback: { pitch: number; verdict: Verdict } | null;
   expected: PianoNote[];
@@ -24,195 +27,288 @@ export function PianoRoll({
   fingers: boolean;
   onPress: (pitch: number) => void;
   onRelease: (pitch: number) => void;
-}) {
-  const min = full
-    ? 21
-    : Math.max(
-        21,
-        Math.floor(Math.min(...score.notes.map((n) => n.pitch)) / 12) * 12,
-      );
-  const max = full
-    ? 108
-    : Math.min(
-        108,
-        Math.max(
-          min + 35,
-          Math.ceil((Math.max(...score.notes.map((n) => n.pitch)) + 2) / 12) *
-            12,
-        ),
-      );
-  const pitches = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-  const whites = pitches.filter((p) => !black(p));
-  const keyWidth = 1000 / whites.length;
-  const x = (p: number) =>
-    black(p)
-      ? whites.filter((w) => w < p).length * keyWidth - keyWidth * 0.31
-      : whites.indexOf(p) * keyWidth;
-  const width = (p: number) => (black(p) ? keyWidth * 0.62 : keyWidth);
-  const height = waterfall ? 240 : 0;
-  const scale = 44;
-  const visible = waterfall
-    ? score.notes.filter(
-        (n) =>
-          n.beat + n.duration >= beat &&
-          n.beat <= beat + height / scale &&
-          n.pitch >= min &&
-          n.pitch <= max,
-      )
-    : [];
-  const active = score.notes.filter(
-    (n) => n.beat <= beat + 0.015 && n.beat + n.duration > beat,
-  );
-  const key = (p: number) => {
-    const note =
-      expected.find((n) => n.pitch === p) || active.find((n) => n.pitch === p);
-    const down = pressed.has(p);
-    const wrong = down && feedback?.pitch === p && feedback.verdict === "wrong";
-    const fill = wrong
-      ? "#be5148"
-      : down
-        ? "#568d70"
-        : active.some((n) => n.pitch === p)
-          ? note?.hand === "left"
-            ? "#94b1a0"
-            : "#dca271"
-          : black(p)
-            ? "#302e2a"
-            : "#fcf9f1";
-    const keyHeight = black(p) ? 62 : 96;
-    return (
-      <g
-        key={p}
-        role="button"
-        tabIndex={0}
-        aria-label={`琴键 ${noteName(p)}`}
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.currentTarget.setPointerCapture(event.pointerId);
-          onPress(p);
-        }}
-        onPointerUp={() => onRelease(p)}
-        onPointerCancel={() => onRelease(p)}
-        onKeyDown={(e) => {
-          if (!e.repeat && ["Enter", " "].includes(e.key)) {
-            e.preventDefault();
-            onPress(p);
-          }
-        }}
-        onKeyUp={(e) => {
-          if (["Enter", " "].includes(e.key)) onRelease(p);
-        }}
-      >
-        <rect
-          x={x(p) + 0.7}
-          y={height}
-          width={width(p) - 1.4}
-          height={keyHeight}
-          rx={2}
-          fill={fill}
-          stroke={expected.some((n) => n.pitch === p) ? "#b66f3c" : "#bfb6a8"}
-          strokeWidth={expected.some((n) => n.pitch === p) ? 2 : 0.7}
-        />
-        {fingers && note?.finger && (
-          <text
-            x={x(p) + width(p) / 2}
-            y={height + keyHeight - 20}
-            textAnchor="middle"
-            fontSize={Math.min(14, keyWidth * 0.55)}
-            fill={black(p) ? "#fff" : "#403c35"}
-          >
-            {note.finger}
-          </text>
-        )}
-        {!black(p) && (p % 12 === 0 || down) && (
-          <text
-            x={x(p) + width(p) / 2}
-            y={height + keyHeight - 6}
-            textAnchor="middle"
-            fontSize={Math.min(10, keyWidth * 0.38)}
-            fill="#766b5e"
-          >
-            {noteName(p)}
-          </text>
-        )}
-      </g>
+};
+export function PianoRoll(props: Props) {
+  const { score, full, waterfall, onPress, onRelease } = props;
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const keys = useRef<SVGSVGElement>(null);
+  const live = useRef(props);
+  live.current = props;
+  const layout = useMemo(() => {
+    const min = full
+      ? 21
+      : Math.max(
+          21,
+          Math.floor(Math.min(...score.notes.map((n) => n.pitch)) / 12) * 12,
+        );
+    const max = full
+      ? 108
+      : Math.min(
+          108,
+          Math.max(
+            min + 35,
+            Math.ceil((Math.max(...score.notes.map((n) => n.pitch)) + 2) / 12) *
+              12,
+          ),
+        );
+    const pitches = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    const whites = pitches.filter((p) => !black(p));
+    const keyWidth = 1000 / whites.length;
+    return {
+      pitches: [...whites, ...pitches.filter(black)],
+      whites,
+      x: new Map(
+        pitches.map((p) => [
+          p,
+          black(p)
+            ? whites.filter((w) => w < p).length * keyWidth - keyWidth * 0.31
+            : whites.indexOf(p) * keyWidth,
+        ]),
+      ),
+      width: (p: number) => (black(p) ? keyWidth * 0.62 : keyWidth),
+      longest: Math.max(...score.notes.map((n) => n.duration)),
+    };
+  }, [score, full]);
+
+  useEffect(() => {
+    const surface = canvas.current;
+    const ctx = surface?.getContext("2d");
+    let width = 0,
+      height = 0,
+      dirty = true,
+      frame = 0;
+    let previousBeat = -1,
+      previousProps: Props | null = null;
+    const nodes = new Map(
+      Array.from(
+        keys.current?.querySelectorAll<SVGGElement>("[data-pitch]") || [],
+      ).map((el) => [
+        Number(el.dataset.pitch),
+        {
+          rect: el.querySelector("rect")!,
+          finger: el.querySelector(".piano-key-finger")!,
+          state: "",
+        },
+      ]),
     );
-  };
+    const resize = new ResizeObserver((entries) => {
+      const size = entries[0].contentRect;
+      width = size.width;
+      height = size.height;
+      if (surface) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        surface.width = Math.round(width * dpr);
+        surface.height = Math.round(height * dpr);
+        ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      dirty = true;
+    });
+    if (surface) resize.observe(surface);
+    const theme = new MutationObserver(() => {
+      dirty = true;
+    });
+    theme.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    const draw = () => {
+      const p = live.current,
+        beat = p.clock.current.beat;
+      if (dirty || beat !== previousBeat || p !== previousProps) {
+        dirty = false;
+        previousBeat = beat;
+        previousProps = p;
+        const horizon = 6;
+        const start = firstNoteAt(score.notes, beat - layout.longest);
+        const end = firstNoteAt(score.notes, beat + horizon + 0.01);
+        const active = new Map<number, PianoNote>();
+        if (ctx && width && height) {
+          const dark = document.documentElement.classList.contains("dark");
+          ctx.fillStyle = dark ? "#242821" : "#f4f0e8";
+          ctx.fillRect(0, 0, width, height);
+          ctx.strokeStyle = dark ? "#cac5b815" : "#d8d0c36b";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (const pitch of layout.whites) {
+            const x = (layout.x.get(pitch)! / 1000) * width;
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+          }
+          for (let b = Math.ceil(beat); b < beat + horizon; b++) {
+            const y = height - ((b - beat) / horizon) * height;
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+          }
+          ctx.stroke();
+          // A dedicated pedal lane keeps the sustain timing readable alongside
+          // notes, including MIDI files that have no engraved pedal symbol.
+          let down = scorePedalDown(score, beat),
+            from = beat;
+          ctx.fillStyle = dark ? "#d9c49d45" : "#9c785845";
+          for (const event of [
+            ...score.pedals.filter(
+              (e) => e.beat > beat && e.beat <= beat + horizon,
+            ),
+            { beat: beat + horizon, down: false },
+          ]) {
+            if (down)
+              ctx.fillRect(
+                width - 9,
+                height - ((event.beat - beat) / horizon) * height,
+                7,
+                ((event.beat - from) / horizon) * height,
+              );
+            from = event.beat;
+            down = event.down;
+          }
+        }
+        for (let i = start; i < end; i++) {
+          const n = score.notes[i];
+          if (n.beat + n.duration <= beat) continue;
+          if (n.beat <= beat + 0.015) active.set(n.pitch, n);
+          const x = layout.x.get(n.pitch);
+          if (!ctx || x === undefined || !width || !height) continue;
+          const nx = (x / 1000) * width + 1.5;
+          const nw = Math.max(3, (layout.width(n.pitch) / 1000) * width - 3);
+          const ny = height - ((n.beat + n.duration - beat) / horizon) * height;
+          const nh = Math.max(5, (n.duration / horizon) * height - 2);
+          ctx.fillStyle = n.hand === "left" ? "#6f9681" : "#c58a5b";
+          ctx.globalAlpha = n.beat <= beat ? 1 : 0.86;
+          ctx.beginPath();
+          ctx.roundRect(nx, ny, nw, nh, Math.min(4, nw / 3, nh / 3));
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          if (p.fingers && n.finger && nw > 9) {
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.font = `600 ${Math.min(14, nw * 0.65)}px sans-serif`;
+            ctx.fillText(
+              n.finger,
+              nx + nw / 2,
+              Math.min(height - 5, Math.max(13, ny + nh - 6)),
+            );
+          }
+        }
+        const expected = new Map(p.expected.map((n) => [n.pitch, n]));
+        for (const [pitch, node] of nodes) {
+          const note = expected.get(pitch) || active.get(pitch);
+          const down = p.pressed.has(pitch);
+          const wrong =
+            down &&
+            p.feedback?.pitch === pitch &&
+            p.feedback.verdict === "wrong";
+          const fill = wrong
+            ? "#be5148"
+            : down
+              ? "#568d70"
+              : active.has(pitch)
+                ? note?.hand === "left"
+                  ? "#94b1a0"
+                  : "#dca271"
+                : black(pitch)
+                  ? "#302e2a"
+                  : "#fcf9f1";
+          const finger = p.fingers && note?.finger ? note.finger : "";
+          const stroke = expected.has(pitch) ? "#b66f3c" : "#bfb6a8";
+          const next = `${fill}/${finger}/${stroke}`;
+          if (next !== node.state) {
+            node.rect.setAttribute("fill", fill);
+            node.rect.setAttribute("stroke", stroke);
+            node.rect.setAttribute(
+              "stroke-width",
+              expected.has(pitch) ? "2" : ".7",
+            );
+            node.finger.textContent = finger;
+            node.state = next;
+          }
+        }
+      }
+      frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      theme.disconnect();
+    };
+  }, [score, layout, waterfall]);
+
   return (
-    <div className="piano-roll-scroll">
-      <svg
-        className="piano-roll"
-        viewBox={`0 0 1000 ${height + 98}`}
-        style={{ minWidth: full ? 850 : 540 }}
-        aria-label={waterfall ? "瀑布流和可弹奏键盘" : "可弹奏钢琴键盘"}
-      >
-        <defs>
-          <clipPath id="piano-waterfall-clip">
-            <rect width="1000" height={height} />
-          </clipPath>
-        </defs>
-        {waterfall && (
-          <g clipPath="url(#piano-waterfall-clip)">
-            <rect width="1000" height={height} fill="var(--piano-roll-bg)" />
-            {whites.map((p) => (
-              <line
-                key={p}
-                x1={x(p)}
-                x2={x(p)}
-                y1={0}
-                y2={height}
-                stroke="var(--piano-roll-grid)"
-              />
-            ))}
-            {Array.from({ length: 8 }, (_, i) => Math.floor(beat) + i).map(
-              (b) => (
-                <line
-                  key={b}
-                  x1={0}
-                  x2={1000}
-                  y1={height - (b - beat) * scale}
-                  y2={height - (b - beat) * scale}
-                  stroke="var(--piano-roll-grid)"
-                  strokeDasharray="3 6"
-                />
-              ),
-            )}
-            {visible.map((n) => (
-              <g key={n.id}>
-                <rect
-                  x={x(n.pitch) + 2}
-                  y={height - (n.beat + n.duration - beat) * scale}
-                  width={Math.max(4, width(n.pitch) - 4)}
-                  height={Math.max(6, n.duration * scale - 3)}
-                  rx={4}
-                  fill={n.hand === "left" ? "#6f9681" : "#c58a5b"}
-                  opacity={n.beat <= beat ? 1 : 0.82}
-                />
-                {fingers && n.finger && (
-                  <text
-                    x={x(n.pitch) + width(n.pitch) / 2}
-                    y={Math.max(14, height - (n.beat - beat) * scale - 9)}
-                    textAnchor="middle"
-                    fill="white"
-                    fontSize={12}
-                  >
-                    {n.finger}
-                  </text>
-                )}
-              </g>
-            ))}
-          </g>
-        )}
-        {whites.map(key)}
-        {pitches.filter(black).map(key)}
-        <line
-          x1={0}
-          x2={1000}
-          y1={height}
-          y2={height}
-          stroke="#b98056"
-          strokeWidth={3}
+    <div
+      className={`piano-roll-scroll ${waterfall ? "has-waterfall" : "keys-only"}`}
+    >
+      {waterfall && (
+        <canvas
+          ref={canvas}
+          className="piano-waterfall"
+          aria-label="瀑布流：左手绿色、右手棕色，右侧为延音踏板时间线"
         />
+      )}
+      <svg
+        ref={keys}
+        className="piano-roll"
+        viewBox="0 0 1000 98"
+        preserveAspectRatio="none"
+        aria-label="可弹奏钢琴键盘与指法"
+      >
+        {layout.pitches.map((p) => (
+          <g
+            key={p}
+            data-pitch={p}
+            role="button"
+            tabIndex={0}
+            aria-label={`琴键 ${noteName(p)}`}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.currentTarget.setPointerCapture(e.pointerId);
+              onPress(p);
+            }}
+            onPointerUp={() => onRelease(p)}
+            onPointerCancel={() => onRelease(p)}
+            onLostPointerCapture={() => onRelease(p)}
+            onKeyDown={(e) => {
+              if (!e.repeat && ["Enter", " "].includes(e.key)) {
+                e.preventDefault();
+                onPress(p);
+              }
+            }}
+            onKeyUp={(e) => {
+              if (["Enter", " "].includes(e.key)) onRelease(p);
+            }}
+          >
+            <rect
+              x={layout.x.get(p)! + 0.7}
+              y={0}
+              width={layout.width(p) - 1.4}
+              height={black(p) ? 62 : 96}
+              rx={2}
+              fill={black(p) ? "#302e2a" : "#fcf9f1"}
+              stroke="#bfb6a8"
+              strokeWidth={0.7}
+            />
+            <text
+              className="piano-key-finger"
+              x={layout.x.get(p)! + layout.width(p) / 2}
+              y={black(p) ? 47 : 76}
+              textAnchor="middle"
+              fontSize={Math.min(18, layout.width(p) * 0.65)}
+              fontWeight="600"
+              fill={black(p) ? "#fff" : "#403c35"}
+            />
+            {!black(p) && p % 12 === 0 && (
+              <text
+                x={layout.x.get(p)! + layout.width(p) / 2}
+                y={90}
+                textAnchor="middle"
+                fontSize={Math.min(11, layout.width(p) * 0.38)}
+                fill="#766b5e"
+              >
+                {noteName(p)}
+              </text>
+            )}
+          </g>
+        ))}
+        <line x1={0} x2={1000} y1={1} y2={1} stroke="#b98056" strokeWidth={2} />
       </svg>
     </div>
   );

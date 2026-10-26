@@ -107,7 +107,7 @@
           "meta": {},
           "route": {
             "method": "PATCH",
-            "path": "/admin/piano/scores/{id}"
+            "path": "/piano/scores/{id}"
           }
         }
       },
@@ -1421,7 +1421,7 @@
         "route": {
           "method": "POST",
           "path": "/admin/post-popularity/sync",
-          "summary": "Sync post popularity from Umami",
+          "summary": "Sync post popularity from the configured analytics provider",
           "tags": ["Admin Post Popularity"]
         }
       }

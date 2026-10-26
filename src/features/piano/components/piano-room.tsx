@@ -41,6 +41,7 @@ import {
   type PracticeHistory,
 } from "../library";
 import { MidiConnection } from "../midi";
+import { COACH_USER_REQUESTS } from "../coach.schema";
 import { noteGroups, scoreFacts, type PracticeMode } from "../practice";
 import {
   beatSeconds,
@@ -493,7 +494,9 @@ function PracticeDesk({
     monitor: true,
     latency: 0,
   });
-  const [view, setView] = useState<"score" | "waterfall" | "both">("both");
+  const [view, setView] = useState<"score" | "keyboard" | "waterfall" | "both">(
+    "keyboard",
+  );
   const [zoom, setZoom] = useState(0.8);
   const [fingers, setFingers] = useState(true);
   const [explain, setExplain] = useState(false);
@@ -526,9 +529,9 @@ function PracticeDesk({
   const [fullscreen, setFullscreen] = useState<"native" | "page" | null>(null);
   const [focusControls, setFocusControls] = useState(false);
   const [focusHelp, setFocusHelp] = useState(false);
-  const [focusView, setFocusView] = useState<"score" | "waterfall" | "both">(
-    "score",
-  );
+  const [focusView, setFocusView] = useState<
+    "score" | "keyboard" | "waterfall" | "both"
+  >("keyboard");
   const displayView = fullscreen ? focusView : view;
   const fullscreenButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -580,7 +583,7 @@ function PracticeDesk({
     }
     setFocusControls(false);
     setFocusHelp(false);
-    setFocusView("score");
+    setFocusView(view);
     try {
       if (!root.current?.requestFullscreen) throw new Error("unsupported");
       await root.current.requestFullscreen();
@@ -856,6 +859,7 @@ function PracticeDesk({
               value={focusView}
               onChange={(e) => setFocusView(e.target.value as typeof focusView)}
             >
+              <option value="keyboard">曲谱 + 琴键指法</option>
               <option value="score">曲谱</option>
               <option value="waterfall">瀑布流</option>
               <option value="both">谱面 + 瀑布流</option>
@@ -1243,6 +1247,7 @@ function PracticeDesk({
               <div className="piano-segments small">
                 {(
                   [
+                    ["keyboard", "曲谱 + 琴键指法"],
                     ["both", "谱面 + 瀑布流"],
                     ["score", "五线谱"],
                     ["waterfall", "瀑布流"],
@@ -1267,7 +1272,7 @@ function PracticeDesk({
               {displayView !== "waterfall" && (
                 <ScoreView
                   score={score}
-                  beat={practice.beat}
+                  clock={practice.clock}
                   playing={practice.playing}
                   zoom={zoom}
                   explain={explain}
@@ -1283,28 +1288,32 @@ function PracticeDesk({
                   onSymbol={explainSymbol}
                 />
               )}
-              <PianoRoll
-                score={score}
-                beat={practice.beat}
-                pressed={practice.pressed}
-                feedback={practice.feedback}
-                expected={options.mode !== "listen" ? next?.notes || [] : []}
-                full={fullKeys}
-                waterfall={displayView !== "score"}
-                fingers={fingers}
-                onPress={(pitch) =>
-                  practice.input(
-                    { type: "on", pitch, velocity: 0.65, channel: 0 },
-                    true,
-                  )
-                }
-                onRelease={(pitch) =>
-                  practice.input(
-                    { type: "off", pitch, velocity: 0, channel: 0 },
-                    true,
-                  )
-                }
-              />
+              {displayView !== "score" && (
+                <PianoRoll
+                  score={score}
+                  clock={practice.clock}
+                  pressed={practice.pressed}
+                  feedback={practice.feedback}
+                  expected={options.mode !== "listen" ? next?.notes || [] : []}
+                  full={fullKeys}
+                  waterfall={
+                    displayView === "both" || displayView === "waterfall"
+                  }
+                  fingers={fingers}
+                  onPress={(pitch) =>
+                    practice.input(
+                      { type: "on", pitch, velocity: 0.65, channel: 0 },
+                      true,
+                    )
+                  }
+                  onRelease={(pitch) =>
+                    practice.input(
+                      { type: "off", pitch, velocity: 0, channel: 0 },
+                      true,
+                    )
+                  }
+                />
+              )}
               {practice.countdown > 0 && (
                 <div className="piano-countdown" role="status">
                   <span>预备</span>
@@ -1595,7 +1604,7 @@ function PracticeDesk({
                       <small>
                         {session
                           ? aiStatus?.enabled
-                            ? `今天还可生成 ${aiStatus.remaining} 次 · 每人每日 3 次`
+                            ? `今天还可生成 ${aiStatus.remaining} 次 · 每人每日 ${COACH_USER_REQUESTS} 次`
                             : "AI 暂未启用，本页练习功能可正常使用。"
                           : "仅限注册用户 · 免费额度用尽后停止"}
                       </small>

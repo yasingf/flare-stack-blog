@@ -4,6 +4,7 @@ import {
   useNavigate,
   useRouteContext,
 } from "@tanstack/react-router";
+import { GoatCounterTracker } from "@/features/post-popularity/components/goatcounter-tracker";
 import { useEffect } from "react";
 import { PublicLayout as SitePublicLayout } from "@/components/layout/public-layout";
 import { Toaster } from "@/components/layout/toaster";
@@ -45,12 +46,17 @@ function PublicLayout() {
   const navOptions = [
     { id: "home", label: m.nav_home(), href: "/", external: false },
     { id: "posts", label: m.nav_posts(), href: "/posts", external: false },
-    ...siteConfig.navLinks.map((link, index) => ({
-      id: `custom-${index}`,
-      label: link.label,
-      href: link.href,
-      external: isExternalNavHref(link.href),
-    })),
+    ...siteConfig.navLinks
+      .filter((link) => {
+        const path = new URL(link.href, "https://navigation.invalid").pathname;
+        return !/^\/admin(?:\/|$)/.test(path) || session?.user.role === "admin";
+      })
+      .map((link, index) => ({
+        id: `custom-${index}`,
+        label: link.label,
+        href: link.href,
+        external: isExternalNavHref(link.href),
+      })),
     ...(!siteConfig.navLinks.some((link) => link.href === "/piano")
       ? [{ id: "piano", label: "钢琴练习", href: "/piano", external: false }]
       : []),
@@ -85,6 +91,7 @@ function PublicLayout() {
       >
         <Outlet />
       </SitePublicLayout>
+      <GoatCounterTracker />
       <Toaster />
     </>
   );

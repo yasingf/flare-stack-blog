@@ -1,3 +1,8 @@
+import {
+  resolveGoatCounterConfig,
+  goatCounterClient,
+  type GoatCounterConfig,
+} from "../data/goatcounter-api";
 import { invalidate } from "@/features/cache/public-cache";
 import * as PostPopularityRepo from "@/features/post-popularity/data/post-popularity.data";
 import {
@@ -35,9 +40,9 @@ type SyncResult = Result<PostPopularitySyncStatus, { reason: "SYNC_FAILED" }>;
 
 type Dependencies = {
   now: () => Date;
-  resolveConfig: (env: Env) => UmamiApiConfig;
+  resolveConfig: (env: Env) => UmamiApiConfig | GoatCounterConfig;
   getPathMetrics: (
-    config: UmamiApiConfig,
+    config: UmamiApiConfig | GoatCounterConfig,
     window: PostPopularityWindow,
   ) => Promise<PostPopularityMetric[]>;
   listPublishedPosts: (db: DB) => Promise<PublishedPostPopularityRef[]>;
@@ -236,9 +241,16 @@ export function createPostPopularityService(dependencies: Dependencies) {
 
 export const postPopularityService = createPostPopularityService({
   now: () => new Date(),
-  resolveConfig: (env) => resolveUmamiApiConfig(serverEnv(env)),
+  resolveConfig: (env) => {
+    const config = serverEnv(env);
+    return config.GOATCOUNTER_SITE
+      ? resolveGoatCounterConfig(config)
+      : resolveUmamiApiConfig(config);
+  },
   getPathMetrics: (config, window) =>
-    umamiClient.getPathMetrics(config, window),
+    config.type === "goatcounter"
+      ? goatCounterClient.getPathMetrics(config, window)
+      : umamiClient.getPathMetrics(config, window),
   listPublishedPosts: PostPopularityRepo.listPublishedPosts,
   readSnapshot: PostPopularityRepo.readSnapshot,
   writeSnapshot: PostPopularityRepo.writeSnapshot,

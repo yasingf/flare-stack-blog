@@ -9,7 +9,13 @@ import {
 } from "tests/test-utils";
 import { handleImageRequest } from "@/features/media/service/media.service";
 import router from "./server/router";
-import { COACH_MAX_TOKENS, type CoachFacts } from "./coach.schema";
+import {
+  COACH_MAX_TOKENS,
+  COACH_USER_REQUESTS,
+  COACH_DAILY_NEURONS,
+  COACH_RESERVATION,
+  type CoachFacts,
+} from "./coach.schema";
 import { demoXml } from "./demo";
 import { PIANO_SHARING_TERMS_VERSION } from "./sharing-terms";
 import { zipSync, strToU8 } from "fflate";
@@ -172,7 +178,19 @@ describe("public piano library", () => {
       { file: fixture(), title: "共享练习", composer: "测试作曲者" },
       { context: c },
     );
+    await call(
+      router.shared.update,
+      { ...saved, title: "上传者的新曲名", composer: "测试作曲者" },
+      { context: c },
+    );
     vi.mocked(c.auth.api.getSession).mockResolvedValue(null);
+    await expect(
+      call(
+        router.shared.update,
+        { ...saved, title: "匿名编辑", composer: "" },
+        { context: c },
+      ),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     const list = await call(
       router.shared.list,
       { page: 0, search: "测试作曲者" },
@@ -180,6 +198,7 @@ describe("public piano library", () => {
     );
     expect(list.total).toBe(1);
     expect(list.items[0].id).toBe(saved.id);
+    expect(list.items[0].title).toBe("上传者的新曲名");
     expect(
       new TextDecoder().decode(
         Uint8Array.from(
@@ -306,7 +325,11 @@ describe("Cloudflare AI free-budget reservations", () => {
     expect(results.some((r) => "text" in r)).toBe(true);
     expect(await stub.generate("user", facts)).toMatchObject({
       cached: true,
-      remaining: 2,
+      remaining: COACH_USER_REQUESTS - 1,
+    });
+    expect(await stub.generate("different-user", facts)).toMatchObject({
+      cached: true,
+      remaining: COACH_USER_REQUESTS,
     });
     expect(run).toHaveBeenCalledTimes(1);
     expect(run.mock.calls[0][1]).toMatchObject({
@@ -321,27 +344,40 @@ describe("Cloudflare AI free-budget reservations", () => {
         stub.generate("user", { ...facts, title: `谱${i}` }),
       ),
     );
-    expect(run).toHaveBeenCalledTimes(3);
+    expect(run).toHaveBeenCalledTimes(COACH_USER_REQUESTS);
     expect((await stub.status("user")).remaining).toBe(0);
     expect(await stub.saved("user", { ...facts, title: "谱0" })).toHaveProperty(
       "text",
       "这是一首五指练习曲。先分手慢练，再连接短句。",
     );
-    expect(await stub.saved("other-user", { ...facts, title: "谱0" })).toEqual({
-      text: null,
+    expect(
+      await stub.saved("other-user", { ...facts, title: "谱0" }),
+    ).toHaveProperty("text", "这是一首五指练习曲。先分手慢练，再连接短句。");
+    expect(run).toHaveBeenCalledTimes(COACH_USER_REQUESTS);
+    await runInDurableObject(stub, async (_, state) => {
+      await state.storage.put(
+        `quota:${new Date().toISOString().slice(0, 10)}`,
+        {
+          requests: 158,
+          neurons: COACH_DAILY_NEURONS - 2 * COACH_RESERVATION,
+          users: {},
+          stopped: false,
+        },
+      );
     });
-    expect(run).toHaveBeenCalledTimes(3);
     await Promise.all(
-      Array.from({ length: 80 }, (_, i) => stub.generate(`person-${i}`, facts)),
+      Array.from({ length: 16 }, (_, i) =>
+        stub.generate(`person-${i}`, { ...facts, title: `全站额度测试${i}` }),
+      ),
     );
-    expect(run).toHaveBeenCalledTimes(50);
+    expect(run).toHaveBeenCalledTimes(COACH_USER_REQUESTS + 2);
     expect((await stub.status("new-user")).remaining).toBe(0);
   });
   it("retains reservations on failure and stops for the day on quota errors", async () => {
     const { stub, run } = await coachFixture();
     run.mockRejectedValue(new Error("429 Workers AI neurons quota exceeded"));
     expect(await stub.generate("user", facts)).toHaveProperty("error");
-    expect((await stub.status("user")).remaining).toBe(2);
+    expect((await stub.status("user")).remaining).toBe(COACH_USER_REQUESTS - 1);
     expect((await stub.status("user")).exhausted).toBe(true);
     await stub.generate("other", { ...facts, title: "第二首" });
     expect(run).toHaveBeenCalledTimes(1);
