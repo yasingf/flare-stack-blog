@@ -13,12 +13,18 @@ import {
   type CoachResponse,
 } from "../coach.schema";
 
-type Quota = {
+export type Quota = {
   requests: number;
   users: Record<string, number>;
   stopped: boolean;
   neurons?: number;
+  articleRequests?: number;
+  articleUsers?: Record<string, number>;
 };
+import { articleStatus, generateArticle } from "./article-ai";
+import { musicJson } from "./music-metadata";
+import type { ArticleFacts } from "../article.schema";
+
 type Cache = { text: string; createdAt: number };
 
 async function cacheKey(facts: CoachFacts, legacyUser?: string) {
@@ -38,6 +44,34 @@ async function cacheKey(facts: CoachFacts, legacyUser?: string) {
 /** All requests go to one named object: reservations are atomic across users,
  * isolates and concurrent requests. A failed/aborted request is never refunded. */
 export class PianoCoach extends DurableObject<Env> {
+  private musicPending: Promise<void> = Promise.resolve();
+  // Serialize MusicBrainz requests across every article and persist the last
+  // start time across object restarts (their non-commercial API allows 1/sec).
+  private async music(path: string) {
+    const previous = this.musicPending;
+    let release!: () => void;
+    this.musicPending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      const last = (await this.ctx.storage.get<number>("music:last")) || 0;
+      const delay = last + 1100 - Date.now();
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+      await this.ctx.storage.put("music:last", Date.now());
+      return await musicJson(`https://musicbrainz.org/ws/2/${path}`);
+    } finally {
+      release();
+    }
+  }
+  async articleStatus(userId: string) {
+    return articleStatus(this.env, this.ctx.storage, userId);
+  }
+  async generateArticle(userId: string, facts: ArticleFacts) {
+    return generateArticle(this.env, this.ctx.storage, userId, facts, (path) =>
+      this.music(path),
+    );
+  }
   async saved(userId: string, unsafeFacts: CoachFacts) {
     const facts = coachFactsSchema.parse(unsafeFacts);
     const key = await cacheKey(facts);
@@ -179,12 +213,17 @@ export class PianoCoach extends DurableObject<Env> {
     });
   }
   async alarm() {
+    for (const [key, value] of await this.ctx.storage.list<{
+      createdAt: number;
+    }>({ prefix: "article:" }))
+      if (Date.now() - value.createdAt > 7 * 86400000)
+        await this.ctx.storage.delete(key);
     const today = new Date().toISOString().slice(0, 10);
     for (const [key] of await this.ctx.storage.list({ prefix: "quota:" }))
       if (key !== `quota:${today}`) await this.ctx.storage.delete(key);
     for (const [key, timestamp] of await this.ctx.storage.list<number>({
       prefix: "pending:",
     }))
-      if (Date.now() - timestamp > 120000) await this.ctx.storage.delete(key);
+      if (Date.now() - timestamp > 300000) await this.ctx.storage.delete(key);
   }
 }

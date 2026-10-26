@@ -3,6 +3,7 @@ import { z } from "zod";
 import { coachFactsSchema } from "../coach.schema";
 import { authProcedure, withRateLimit } from "@/lib/orpc/procedure";
 import shared from "./shared";
+import articles from "./articles";
 
 async function coach() {
   const { exports } = await import("cloudflare:workers");
@@ -80,4 +81,5 @@ export default {
   load,
   remove,
   shared,
+  articles,
 };
