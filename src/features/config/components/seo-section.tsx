@@ -51,7 +51,7 @@ export function SeoSection() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   // 查询网站 URL 列表
-  const { isLoading: isLoadingUrls, refetch } = useQuery({
+  const { isFetching: isLoadingUrls, refetch } = useQuery({
     queryKey: ["admin", "site-urls"],
     queryFn: async () => {
       const urls = await getSiteUrlsFn();
@@ -67,8 +67,9 @@ export function SeoSection() {
     enabled: false, // 手动触发
   });
 
-  const handleLoadUrls = useCallback(() => {
-    void refetch();
+  const handleLoadUrls = useCallback(async () => {
+    const result = await refetch();
+    if (result.error) toast.error("站点 URL 加载失败，请重试");
   }, [refetch]);
 
   const toggleSelectAll = useCallback((selected: boolean) => {
@@ -230,7 +231,7 @@ export function SeoSection() {
 
       {/* ── URL 批量提交 ── */}
       <section className="space-y-6 pt-8 border-t border-border/20">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
             <h3 className="text-lg font-serif font-medium tracking-tight">
               URL 提交
@@ -259,7 +260,7 @@ export function SeoSection() {
         {siteUrls.length > 0 && (
           <div className="space-y-4">
             {/* 统计栏 */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground/60 font-mono">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground/60 font-mono">
               <span>共 {siteUrls.length} 个 URL</span>
               <span>已选 {selectedCount} 个</span>
               {submittedCount > 0 && (

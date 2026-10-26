@@ -9,6 +9,8 @@ import type { SystemConfig } from "@/features/config/config.schema";
 import { orpc, orpcClient } from "@/lib/orpc";
 
 export const Route = createFileRoute("/admin/seo")({
+  loader: () => ({ title: "站长工具" }),
+  head: () => ({ meta: [{ title: "站长工具" }] }),
   component: SeoPage,
   ssr: false,
 });
@@ -44,13 +46,22 @@ function SeoPage() {
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit((value) => save.mutate(value))}
-        className="space-y-6"
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <h1 className="text-2xl font-medium">站长工具</h1>
-        <SeoSection />
-        <Button type="submit" disabled={!dirty || save.isPending}>
-          保存设置
-        </Button>
+        <header className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 bg-background pb-6">
+          <h1 className="text-2xl font-medium">站长工具</h1>
+          <Button type="submit" disabled={!dirty || save.isPending}>
+            {save.isPending ? "正在保存…" : "保存设置"}
+          </Button>
+        </header>
+        <div
+          role="region"
+          aria-label="站长工具配置与 URL 提交"
+          tabIndex={0}
+          className="min-h-0 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-2"
+        >
+          <SeoSection />
+        </div>
       </form>
     </FormProvider>
   );
