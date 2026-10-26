@@ -407,7 +407,6 @@ export function ScoreView({
       // Read scroll geometry before moving highlights; scrolling only needs to be
       // checked on a new measure, not on every sixteenth-note highlight.
       if (
-        playing &&
         active[0] &&
         scroll.current &&
         lastFollowedMeasure.current !== measure.sourceIndex
