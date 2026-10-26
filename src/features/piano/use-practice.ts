@@ -33,6 +33,11 @@ export type PracticeOptions = {
   monitor: boolean;
   latency: number;
 };
+const audible = (hand: Hand, options: PracticeOptions) =>
+  (hand === "left" ? options.leftSound : options.rightSound) &&
+  (options.mode !== "listen" ||
+    options.hand === "both" ||
+    options.hand === hand);
 export function usePractice(score: PianoScore, options: PracticeOptions) {
   const audio = useRef<GrandPiano | null>(null);
   audio.current ??= new GrandPiano();
@@ -67,6 +72,7 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
   const pause = useCallback(() => {
     state.current.playing = false;
     state.current.generation++;
+    setBeat(state.current.beat);
     setPlaying(false);
     setBusy(false);
     setCountdown(0);
@@ -76,20 +82,6 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
     setPressed(new Set());
     setPedal(false);
   }, []);
-  const seek = useCallback(
-    (value: number) => {
-      pause();
-      state.current.beat = Math.min(
-        settings.current.score.totalBeats,
-        Math.max(0, value),
-      );
-      setBeat(state.current.beat);
-      tracker.current = null;
-      setFeedback(null);
-      setResult(emptyResult());
-    },
-    [pause],
-  );
   const summary = useCallback(() => {
     const result = tracker.current?.finish();
     if (!result) return;
@@ -115,66 +107,87 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
         result,
       });
   }, []);
-  const start = useCallback(async () => {
-    if (state.current.playing) {
+  const start = useCallback(
+    async (withCountIn = true) => {
+      if (state.current.playing) {
+        pause();
+        return;
+      }
+      const { score, options } = settings.current;
+      const s = state.current;
+      const generation = ++s.generation;
+      setBusy(true);
+      setError("");
+      try {
+        const notes = score.notes.filter((n) => audible(n.hand, options));
+        await audio.current!.preload(notes);
+        if (generation !== s.generation) return;
+        const begin = options.loop
+          ? score.measures[options.startMeasure - 1].beat
+          : 0;
+        const end = options.loop
+          ? (score.measures[options.endMeasure]?.beat ?? score.totalBeats)
+          : score.totalBeats;
+        if (s.beat >= end - 0.01 || s.beat < begin) s.beat = begin;
+        tracker.current = new PracticeTracker(
+          score,
+          options.mode,
+          options.hand,
+          s.beat,
+          end,
+          options.speed,
+        );
+        if (options.mode !== "listen" && !tracker.current.groups.length) {
+          setError("当前片段没有所选手的音符，请调整练习手、起点或循环范围。");
+          return;
+        }
+        s.elapsedStart = performance.now();
+        s.started = performance.now();
+        s.baseSeconds = beatSeconds(score, s.beat);
+        s.noteIndex = score.notes.findIndex((n) => n.beat >= s.beat - 0.0001);
+        if (s.noteIndex < 0) s.noteIndex = score.notes.length;
+        s.clickBeat = Math.ceil(s.beat) - 1;
+        s.waitingAccompanimentBeat = s.beat - 0.01;
+        if (options.mode === "wait" && tracker.current.next)
+          s.beat = tracker.current.next.beat;
+        const count = withCountIn && options.countIn ? 4 : 0;
+        const secondsPerBeat = 60 / tempoAt(score, s.beat) / options.speed;
+        for (let i = 0; i < count; i++)
+          audio.current!.click(i === 0, i * secondsPerBeat);
+        s.started += count * secondsPerBeat * 1000;
+        s.playing = true;
+        setPlaying(true);
+        setBeat(s.beat);
+        setResult(emptyResult());
+        setFeedback(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "无法播放，请重试。");
+      } finally {
+        if (generation === s.generation) setBusy(false);
+      }
+    },
+    [pause],
+  );
+
+  const seek = useCallback(
+    (value: number, resume = false) => {
       pause();
-      return;
-    }
-    const { score, options } = settings.current;
-    const s = state.current;
-    const generation = ++s.generation;
-    setBusy(true);
-    setError("");
-    try {
-      const notes = score.notes.filter((n) =>
-        n.hand === "left" ? options.leftSound : options.rightSound,
+      state.current.beat = Math.min(
+        settings.current.score.totalBeats,
+        Math.max(0, value),
       );
-      await audio.current!.preload(notes);
-      if (generation !== s.generation) return;
-      const begin = options.loop
-        ? score.measures[options.startMeasure - 1].beat
-        : 0;
+      setBeat(state.current.beat);
+      tracker.current = null;
+      setFeedback(null);
+      setResult(emptyResult());
+      const { score, options } = settings.current;
       const end = options.loop
         ? (score.measures[options.endMeasure]?.beat ?? score.totalBeats)
         : score.totalBeats;
-      if (s.beat >= end - 0.01 || s.beat < begin) s.beat = begin;
-      tracker.current = new PracticeTracker(
-        score,
-        options.mode,
-        options.hand,
-        s.beat,
-        end,
-        options.speed,
-      );
-      if (options.mode !== "listen" && !tracker.current.groups.length) {
-        setError("当前片段没有所选手的音符，请调整练习手、起点或循环范围。");
-        return;
-      }
-      s.elapsedStart = performance.now();
-      s.started = performance.now();
-      s.baseSeconds = beatSeconds(score, s.beat);
-      s.noteIndex = score.notes.findIndex((n) => n.beat >= s.beat - 0.0001);
-      if (s.noteIndex < 0) s.noteIndex = score.notes.length;
-      s.clickBeat = Math.ceil(s.beat) - 1;
-      s.waitingAccompanimentBeat = s.beat - 0.01;
-      if (options.mode === "wait" && tracker.current.next)
-        s.beat = tracker.current.next.beat;
-      const count = options.countIn ? 4 : 0;
-      const secondsPerBeat = 60 / tempoAt(score, s.beat) / options.speed;
-      for (let i = 0; i < count; i++)
-        audio.current!.click(i === 0, i * secondsPerBeat);
-      s.started += count * secondsPerBeat * 1000;
-      s.playing = true;
-      setPlaying(true);
-      setBeat(s.beat);
-      setResult(emptyResult());
-      setFeedback(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "无法播放，请重试。");
-    } finally {
-      if (generation === s.generation) setBusy(false);
-    }
-  }, [pause]);
+      if (resume && state.current.beat < end - 0.01) void start(false);
+    },
+    [pause, start],
+  );
 
   const input = useCallback(
     (event: PianoInput, screen = false) => {
@@ -302,8 +315,7 @@ export function usePractice(score: PianoScore, options: PracticeOptions) {
               const at = beatSeconds(score, n.beat);
               if (at > ahead || n.beat >= end) break;
               s.noteIndex++;
-              if (!(n.hand === "left" ? options.leftSound : options.rightSound))
-                continue;
+              if (!audible(n.hand, options)) continue;
               const delay = (at - seconds) / options.speed;
               if (delay < -0.2) continue; // A background tab must not burst old notes.
               const release = sustainedRelease(score, n, end);

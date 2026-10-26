@@ -17,8 +17,6 @@ import {
   Pause,
   Piano,
   Play,
-  Repeat2,
-  RotateCcw,
   RotateCw,
   SlidersHorizontal,
   Sparkles,
@@ -44,8 +42,6 @@ import { MidiConnection } from "../midi";
 import { COACH_USER_REQUESTS } from "../coach.schema";
 import { noteGroups, scoreFacts, type PracticeMode } from "../practice";
 import {
-  beatSeconds,
-  currentMeasure,
   midiToXml,
   noteName,
   parseMusicXml,
@@ -57,6 +53,7 @@ import { symbols } from "../symbols";
 import { usePractice, type PracticeOptions } from "../use-practice";
 import { PianoRoll } from "./piano-roll";
 import { ScoreView } from "./score-view";
+import { HandPicker, PracticeControls } from "./practice-controls";
 import { SharedLibrary } from "./shared-library";
 import { scorePedalDown } from "../pedal";
 import { SharingAgreement, useSharingAgreement } from "./sharing-agreement";
@@ -609,7 +606,6 @@ function PracticeDesk({
   actions.current = practice;
   const selectedNote = score.notes.find((n) => n.id === selectedNoteId);
   const facts = useMemo(() => scoreFacts(score), [score]);
-  const measureIndex = Math.max(0, currentMeasure(score, practice.beat));
   const endBeat = options.loop
     ? (score.measures[options.endMeasure]?.beat ?? score.totalBeats)
     : score.totalBeats;
@@ -664,7 +660,9 @@ function PracticeDesk({
         e.ctrlKey ||
         e.altKey ||
         (e.target instanceof Element &&
-          e.target.closest("input,select,textarea,[contenteditable]"))
+          e.target.closest(
+            "input,select,textarea,button,a,[role=button],[contenteditable]",
+          ))
       )
         return;
       if (e.code === "Space") {
@@ -845,6 +843,10 @@ function PracticeDesk({
               {practice.playing ? <Pause size={18} /> : <Play size={18} />}
             </button>
             <strong title={score.title}>{score.title}</strong>
+            <HandPicker
+              hand={options.hand}
+              onChange={(hand) => change({ hand })}
+            />
             <select
               aria-label="全屏练习模式"
               value={options.mode}
@@ -1029,19 +1031,6 @@ function PracticeDesk({
                   <Play size={22} />
                 )}
               </button>
-              <button
-                className="piano-icon-button"
-                aria-label="回到练习段开头"
-                onClick={() =>
-                  practice.seek(
-                    options.loop
-                      ? score.measures[options.startMeasure - 1].beat
-                      : 0,
-                  )
-                }
-              >
-                <RotateCcw size={17} />
-              </button>
               <div className="piano-tempo">
                 <strong>
                   ♩ ={" "}
@@ -1060,20 +1049,12 @@ function PracticeDesk({
                   <span>{options.speed.toFixed(2)}×</span>
                 </label>
               </div>
-              <label className="piano-hand">
-                <span>练习</span>
-                <select
-                  aria-label="练习左右手"
-                  value={options.hand}
-                  onChange={(e) =>
-                    change({ hand: e.target.value as PracticeOptions["hand"] })
-                  }
-                >
-                  <option value="both">双手</option>
-                  <option value="right">右手</option>
-                  <option value="left">左手</option>
-                </select>
-              </label>
+              {!fullscreen && (
+                <HandPicker
+                  hand={options.hand}
+                  onChange={(hand) => change({ hand })}
+                />
+              )}
               <label className="piano-check">
                 <input
                   type="checkbox"
@@ -1177,72 +1158,6 @@ function PracticeDesk({
                 </p>
               </div>
             )}
-            <div className="piano-loop">
-              <button
-                className={`piano-text-button ${options.loop ? "active" : ""}`}
-                aria-pressed={options.loop}
-                onClick={() => change({ loop: !options.loop })}
-              >
-                <Repeat2 size={16} />
-                A–B 循环
-              </button>
-              <label>
-                A{" "}
-                <input
-                  aria-label="循环起始小节"
-                  type="number"
-                  min="1"
-                  max={options.endMeasure}
-                  value={options.startMeasure}
-                  onChange={(e) =>
-                    change({
-                      startMeasure: Math.max(
-                        1,
-                        Math.min(
-                          options.endMeasure,
-                          Number(e.target.value) || 1,
-                        ),
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <span>—</span>
-              <label>
-                B{" "}
-                <input
-                  aria-label="循环结束小节"
-                  type="number"
-                  min={options.startMeasure}
-                  max={score.measures.length}
-                  value={options.endMeasure}
-                  onChange={(e) =>
-                    change({
-                      endMeasure: Math.max(
-                        options.startMeasure,
-                        Math.min(
-                          score.measures.length,
-                          Number(e.target.value) || 1,
-                        ),
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <button
-                className="piano-text-button"
-                onClick={() =>
-                  change({
-                    startMeasure: measureIndex + 1,
-                    endMeasure: Math.max(options.endMeasure, measureIndex + 1),
-                    loop: true,
-                  })
-                }
-              >
-                此处设为 A
-              </button>
-              <span className="piano-loop-label">按演奏顺序的小节</span>
-            </div>
             <div className="piano-view-bar">
               <div className="piano-segments small">
                 {(
@@ -1321,29 +1236,12 @@ function PracticeDesk({
                 </div>
               )}
             </div>
-            <div className="piano-progress">
-              <input
-                type="range"
-                aria-label="曲谱播放位置"
-                min="0"
-                max={score.totalBeats}
-                step="0.125"
-                value={practice.beat}
-                onChange={(e) => practice.seek(Number(e.target.value))}
-              />
-              <div>
-                <span>
-                  第 {score.measures[measureIndex].number} 小节{" "}
-                  <small>
-                    · {measureIndex + 1} / {score.measures.length}
-                  </small>
-                </span>
-                <span>
-                  {time(beatSeconds(score, practice.beat) / options.speed)} /{" "}
-                  {time(beatSeconds(score, score.totalBeats) / options.speed)}
-                </span>
-              </div>
-            </div>
+            <PracticeControls
+              score={score}
+              options={options}
+              practice={practice}
+              onChange={change}
+            />
             <div className="piano-live-status" role="status">
               <span
                 className={`piano-status-dot ${practice.playing ? "on" : ""}`}
