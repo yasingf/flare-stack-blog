@@ -1,3 +1,4 @@
+import { handlePianoArticle } from "@/features/piano/server/article-jobs";
 import { handleEmailMessage } from "@/features/email/api/email.consumer";
 import { handleWebhookMessage } from "@/features/webhook/api/webhook.consumer";
 import { queueMessageSchema } from "@/lib/queue/queue.schema";
@@ -24,6 +25,9 @@ export async function handleQueueBatch(
     try {
       const event = parsed.data;
       switch (event.type) {
+        case "PIANO_ARTICLE":
+          await handlePianoArticle(env, event.data);
+          break;
         case "EMAIL":
           await handleEmailMessage(
             {

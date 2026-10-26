@@ -1,8 +1,14 @@
 import {
+  COACH_DAILY_NEURONS,
   COACH_DAILY_REQUESTS,
   COACH_USER_REQUESTS,
   COACH_RESERVATION,
 } from "../src/features/piano/coach.schema";
+import {
+  ARTICLE_DAILY_REQUESTS,
+  ARTICLE_USER_REQUESTS,
+  ARTICLE_RESERVATION,
+} from "../src/features/piano/article.schema";
 import { appendFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
@@ -52,5 +58,5 @@ if (process.env.GITHUB_ENV)
 console.log(`PIANO_AI_ENABLED=${enabled}`);
 if (enabled)
   console.log(
-    `Workers Free confirmed. Piano AI: ${COACH_DAILY_REQUESTS} calls/day site-wide, ${COACH_USER_REQUESTS}/user, ${COACH_RESERVATION}-neuron reservation/call. No paid fallback.`,
+    `Workers Free confirmed. Piano AI: ${COACH_DAILY_REQUESTS} calls/day site-wide, ${COACH_USER_REQUESTS}/user, ${COACH_RESERVATION}-neuron reservation/call. Articles: ${ARTICLE_DAILY_REQUESTS}/day site-wide, ${ARTICLE_USER_REQUESTS}/admin, ${ARTICLE_RESERVATION}-neuron reservation. Shared budget: ${COACH_DAILY_NEURONS} neurons/day. No paid fallback.`,
   );

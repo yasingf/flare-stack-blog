@@ -161,6 +161,48 @@
           }
         }
       }
+    },
+    "articles": {
+      "settings": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/piano/articles/settings"
+          }
+        }
+      },
+      "configure": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "PATCH",
+            "path": "/admin/piano/articles/settings"
+          }
+        }
+      },
+      "list": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "GET",
+            "path": "/admin/piano/articles"
+          }
+        }
+      },
+      "generate": {
+        "~orpc": {
+          "errorMap": {},
+          "meta": {},
+          "route": {
+            "method": "POST",
+            "path": "/admin/piano/articles/{id}"
+          }
+        }
+      }
     }
   },
   "publicStats": {

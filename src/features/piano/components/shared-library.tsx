@@ -15,6 +15,12 @@ import { orpcClient } from "@/lib/orpc";
 import { SharingAgreement, useSharingAgreement } from "./sharing-agreement";
 import { PIANO_SHARING_TERMS_URL } from "../sharing-terms";
 
+import {
+  ArticleSettings,
+  ArticleAction,
+  useArticleJobs,
+} from "./article-manager";
+
 const api = orpcClient.piano.shared;
 const failure = (e: unknown) =>
   e instanceof Error ? e.message : "操作失败，请重试。";
@@ -39,6 +45,8 @@ export function SharedLibrary({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [composer, setComposer] = useState("");
+  const [artistHint, setArtistHint] = useState("");
+  const isAdmin = session?.user.role === "admin";
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState<{
@@ -51,7 +59,12 @@ export function SharedLibrary({
     queryKey: ["piano-shared", search, page],
     queryFn: () => api.list({ search, page }),
   });
+  const articles = useArticleJobs(
+    query.data?.items.map((item) => item.id) || [],
+    admin && isAdmin,
+  );
   async function refresh() {
+    await client.invalidateQueries({ queryKey: ["piano-articles"] });
     await client.invalidateQueries({ queryKey: ["piano-shared"] });
     await client.invalidateQueries({ queryKey: ["piano-storage"] });
   }
@@ -63,15 +76,25 @@ export function SharedLibrary({
       const { parseScore } = await import("../score");
       await parseScore(file);
       await agreement.ensureAccepted();
-      await api.upload({ file, title, composer });
+      await api.upload({
+        file,
+        title,
+        composer,
+        ...(isAdmin ? { artistHint } : {}),
+      });
       setFile(null);
       setTitle("");
       setComposer("");
+      setArtistHint("");
       if (fileInput.current) fileInput.current.value = "";
       setPage(0);
       setSearch("");
       await refresh();
-      setNotice("上传成功，所有人都可以打开这首曲谱练习。");
+      setNotice(
+        isAdmin
+          ? "曲谱已全站共享。文章生成状态可在后台钢琴谱管理中查看。"
+          : "上传成功，所有人都可以打开这首曲谱练习。",
+      );
     } catch (e) {
       setNotice(failure(e));
     } finally {
@@ -84,6 +107,7 @@ export function SharedLibrary({
       aria-label={admin ? "钢琴谱管理" : "全站共享曲库"}
     >
       {admin && <StorageUsage />}
+      {admin && isAdmin && <ArticleSettings />}
       <div className="piano-library-heading">
         <h2>
           <Cloud size={19} /> {admin ? "共享曲谱管理" : "全站共享曲库"}{" "}
@@ -160,6 +184,17 @@ export function SharedLibrary({
                 />
               </label>
             </>
+          )}
+          {file && isAdmin && (
+            <label>
+              演唱／演奏者（选填，用于文章资料检索）
+              <input
+                className="piano-input"
+                maxLength={160}
+                value={artistHint}
+                onChange={(e) => setArtistHint(e.target.value)}
+              />
+            </label>
           )}
           <SharingAgreement agreement={agreement} />
           <button
@@ -275,9 +310,20 @@ export function SharedLibrary({
                   </button>
                 )}
               </div>
+              {admin && isAdmin && (
+                <ArticleAction
+                  scoreId={item.id}
+                  job={articles.data?.find((job) => job.scoreId === item.id)}
+                />
+              )}
             </article>
           ))}
         </div>
+      )}
+      {admin && articles.isError && (
+        <p className="piano-error" role="alert">
+          文章任务读取失败，请刷新页面查看。
+        </p>
       )}
       {(query.data?.total ?? 0) > 24 && (
         <div className="piano-share-actions">

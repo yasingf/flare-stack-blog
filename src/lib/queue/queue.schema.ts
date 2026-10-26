@@ -30,6 +30,10 @@ const webhookMessageSchema = z.object({
 });
 
 export const queueMessageSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("PIANO_ARTICLE"),
+    data: z.object({ scoreId: z.uuid(), requestId: z.uuid() }),
+  }),
   emailMessageSchema,
   webhookMessageSchema,
 ]);
