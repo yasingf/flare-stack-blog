@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { clientEnv } from "@/lib/env/client.env";
 
 const TURNSTILE_SCRIPT_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 declare global {
   interface Window {
@@ -44,6 +44,7 @@ interface TurnstileProps {
   action?: string;
   size?: "normal" | "compact";
   widgetIdRef?: RefObject<string | null>;
+  retryKey?: number;
 }
 
 export type { TurnstileProps };
@@ -58,11 +59,21 @@ function loadScript(): Promise<void> {
     const script = document.createElement("script");
     script.src = TURNSTILE_SCRIPT_URL;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => {
+    const timeout = window.setTimeout(() => fail(), 20000);
+    const fail = () => {
+      window.clearTimeout(timeout);
+      script.onload = null;
+      script.onerror = null;
+      script.remove();
       scriptLoadPromise = null;
       reject(new Error("Failed to load Turnstile script"));
     };
+    script.onload = () => {
+      window.clearTimeout(timeout);
+      if (window.turnstile) resolve();
+      else fail();
+    };
+    script.onerror = fail;
     document.head.appendChild(script);
   });
 
@@ -76,9 +87,14 @@ export function Turnstile({
   action,
   size = "normal",
   widgetIdRef: externalWidgetIdRef,
+  retryKey = 0,
 }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const internalWidgetIdRef = useRef<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [status, setStatus] = useState<"loading" | "verified" | "failed">(
+    "loading",
+  );
 
   const siteKey = clientEnv().VITE_TURNSTILE_SITE_KEY;
 
@@ -86,6 +102,14 @@ export function Turnstile({
     if (!siteKey || !containerRef.current) return;
 
     let mounted = true;
+    setStatus("loading");
+    const failed = () => {
+      if (!mounted) return;
+      setStatus("failed");
+      onError?.();
+      onExpire?.();
+    };
+    const timeout = window.setTimeout(failed, 30000);
 
     loadScript()
       .then(() => {
@@ -93,9 +117,15 @@ export function Turnstile({
 
         const id = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          callback: onVerify,
-          "error-callback": onError,
-          "expired-callback": onExpire,
+          callback: (token: string) => {
+            if (!mounted) return;
+            window.clearTimeout(timeout);
+            setStatus("verified");
+            onVerify(token);
+          },
+          "error-callback": failed,
+          "expired-callback": failed,
+          "timeout-callback": failed,
           action,
           size,
           appearance: "interaction-only",
@@ -105,12 +135,11 @@ export function Turnstile({
           externalWidgetIdRef.current = id;
         }
       })
-      .catch(() => {
-        // Turnstile script failed to load — skip silently
-      });
+      .catch(failed);
 
     return () => {
       mounted = false;
+      window.clearTimeout(timeout);
       if (internalWidgetIdRef.current && window.turnstile) {
         window.turnstile.remove(internalWidgetIdRef.current);
         internalWidgetIdRef.current = null;
@@ -119,11 +148,47 @@ export function Turnstile({
         }
       }
     };
-  }, [siteKey, onVerify, onError, onExpire, action, size, externalWidgetIdRef]);
+  }, [
+    siteKey,
+    onVerify,
+    onError,
+    onExpire,
+    action,
+    size,
+    externalWidgetIdRef,
+    attempt,
+    retryKey,
+  ]);
 
   if (!siteKey) return null;
 
-  return <div ref={containerRef} />;
+  return (
+    <div className="w-full space-y-2 text-sm">
+      <div ref={containerRef} />
+      {status === "loading" && (
+        <p role="status" className="text-muted-foreground">
+          正在加载安全验证…
+        </p>
+      )}
+      {status === "failed" && (
+        <div role="alert" className="text-muted-foreground">
+          <p>
+            安全验证未完成或加载超时，请重试。已绑定通行密钥的账号可以使用通行密钥登录。
+          </p>
+          <button
+            type="button"
+            className="underline underline-offset-4 mt-2"
+            onClick={() => {
+              onExpire?.();
+              setAttempt((n) => n + 1);
+            }}
+          >
+            重新加载验证器
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -134,6 +199,7 @@ export function Turnstile({
  */
 export function useTurnstile(action?: string) {
   const [token, setToken] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const widgetIdRef = useRef<string | null>(null);
   const siteKey = clientEnv().VITE_TURNSTILE_SITE_KEY;
 
@@ -151,9 +217,9 @@ export function useTurnstile(action?: string) {
   const reset = useCallback(() => {
     setToken(null);
     setTurnstileToken(null);
-    if (widgetIdRef.current && window.turnstile) {
+    if (widgetIdRef.current && window.turnstile)
       window.turnstile.reset(widgetIdRef.current);
-    }
+    setRetryKey((n) => n + 1);
   }, []);
 
   return {
@@ -168,6 +234,7 @@ export function useTurnstile(action?: string) {
       onExpire,
       action,
       widgetIdRef,
+      retryKey,
     } satisfies TurnstileProps,
   };
 }

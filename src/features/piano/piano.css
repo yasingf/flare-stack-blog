@@ -376,10 +376,171 @@
   max-width: 1440px;
   padding-top: 14px;
 }
-.piano-desk:fullscreen {
+.piano-orientation-hint {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 20px;
+  padding: 8px 10px;
+  border: 1px solid var(--piano-line);
+  border-radius: 5px;
+  color: var(--piano-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.piano-orientation-hint > svg {
+  flex-shrink: 0;
+}
+.piano-orientation-hint .piano-icon-button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.piano-desk:fullscreen,
+.piano-desk.piano-expanded {
   padding: 22px;
   overflow: auto;
   background: hsl(var(--background));
+}
+.piano-desk.piano-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  height: 100dvh;
+  width: 100%;
+}
+.piano-desk:fullscreen .piano-desk-heading,
+.piano-expanded .piano-desk-heading {
+  position: sticky;
+  top: -22px;
+  z-index: 20;
+  background: hsl(var(--background));
+  padding: 12px 0;
+}
+.piano-admin {
+  max-width: none;
+  padding: 0;
+}
+.piano-shared-library {
+  margin: 36px 0;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--piano-line);
+}
+.piano-share-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  padding: 18px 0;
+}
+.piano-share-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  max-width: 100%;
+}
+.piano-share-form input[type="file"] {
+  max-width: 100%;
+  font-size: 12px;
+}
+.piano-share-form > .piano-agreement,
+.piano-share-form > [role="status"],
+.piano-share-form > [role="alert"] {
+  flex-basis: 100%;
+}
+.piano-agreement a,
+.piano-terms a,
+.piano-shared-library > .piano-caption a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.piano-agreement-check,
+.piano-share-form .piano-agreement-check {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.piano-agreement-check input {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.piano-share-consent {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--piano-line);
+  border-radius: 5px;
+}
+.piano-share-consent .piano-heading-actions {
+  padding-top: 12px;
+}
+.piano-terms {
+  max-width: 800px;
+  padding-bottom: 60px;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.piano-terms h1 {
+  font-family: "Noto Serif SC Variable", serif;
+  font-size: 32px;
+  margin: 28px 0 12px;
+}
+.piano-terms h2 {
+  font-size: 18px;
+  margin: 30px 0 12px;
+}
+.piano-terms p {
+  margin-bottom: 16px;
+}
+.piano-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.piano-storage {
+  border: 1px solid var(--piano-line);
+  padding: 22px;
+}
+.piano-storage h2 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.piano-storage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.piano-storage-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.piano-storage-grid strong {
+  font-size: 26px;
+  font-weight: 500;
+}
+.piano-storage-grid span,
+.piano-storage-grid small {
+  font-size: 11px;
+  color: var(--piano-muted);
+}
+.piano-pedal-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+}
+.piano-pedal-controls [aria-pressed="true"] {
+  color: var(--piano-accent);
+  border-color: currentColor;
+  background: var(--piano-roll-bg);
 }
 .piano-desk-heading {
   display: flex;
@@ -605,6 +766,7 @@
 .piano-score-scroll {
   height: 350px;
   overflow: auto;
+  scrollbar-gutter: stable;
   scroll-behavior: smooth;
   position: relative;
   background: #fcfaf5;
@@ -657,6 +819,158 @@
 .piano-roll g[role="button"] {
   cursor: pointer;
   touch-action: none;
+}
+
+/* Fullscreen is a reading surface. The complete controls are available on demand. */
+.piano-desk.piano-focus {
+  padding: 0;
+  overflow: hidden;
+  height: 100dvh;
+  width: 100%;
+}
+.piano-focus .piano-desk-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: hsl(var(--background));
+}
+.piano-focus-bar {
+  flex: 0 0 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 6px;
+}
+.piano-focus-bar > strong {
+  min-width: 0;
+  flex: 1;
+  font-family: "Noto Serif SC Variable", serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.piano-focus-bar select {
+  min-width: 0;
+  max-width: 120px;
+  border: 1px solid var(--piano-line);
+  background: transparent;
+  border-radius: 4px;
+  padding: 5px;
+  font-size: 11px;
+}
+.piano-focus-bar .piano-button {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+.piano-focus .piano-desk-heading {
+  display: none;
+}
+.piano-focus .piano-workspace {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+}
+.piano-focus .piano-workspace-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.piano-focus:not(.piano-focus-controls)
+  .piano-workspace-main
+  > :not(.piano-stage):not(.piano-progress):not(.piano-live-status) {
+  display: none;
+}
+.piano-focus .piano-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.piano-focus .piano-stage .piano-score-scroll {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.piano-focus .piano-notation {
+  padding: 6px 0;
+}
+.piano-focus .view-score .piano-roll-scroll {
+  display: none;
+}
+.piano-focus .view-both .piano-roll-scroll {
+  flex: 0 0 30%;
+  min-height: 0;
+}
+.piano-focus .view-waterfall .piano-roll-scroll {
+  flex: 1;
+  min-height: 0;
+}
+.piano-focus .piano-roll {
+  height: 100%;
+}
+.piano-focus .piano-progress {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+  padding: 0;
+}
+.piano-focus .piano-progress > div {
+  font-size: 10px;
+}
+.piano-focus .piano-live-status {
+  flex: 0 0 auto;
+  min-height: 0;
+  font-size: 10px;
+  margin: 0;
+  padding: 1px 0;
+}
+.piano-focus .piano-sidebar {
+  display: none;
+}
+.piano-focus.piano-focus-help .piano-sidebar {
+  display: block;
+  position: absolute;
+  z-index: 30;
+  right: 12px;
+  top: 50px;
+  bottom: 12px;
+  width: min(340px, 80%);
+  overflow: auto;
+  background: hsl(var(--background));
+  padding: 18px;
+  border: 1px solid var(--piano-line);
+  box-shadow: 0 12px 40px #0002;
+}
+.piano-focus.piano-focus-controls .piano-workspace-main {
+  display: block;
+  overflow: auto;
+  padding: 8px 12px;
+}
+.piano-focus.piano-focus-controls .piano-stage,
+.piano-focus.piano-focus-controls .piano-progress,
+.piano-focus.piano-focus-controls .piano-live-status {
+  display: none;
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .piano-focus .piano-desk-content {
+    --piano-rotated: 1;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(90deg);
+    transform-origin: top left;
+  }
 }
 .piano-progress {
   padding: 13px 1px 7px;

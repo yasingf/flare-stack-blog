@@ -3,7 +3,10 @@ import {
   redirect,
   useRouteContext,
 } from "@tanstack/react-router";
-import { Turnstile, useTurnstile } from "@/components/common/turnstile";
+import {
+  AuthVerification,
+  useAuthVerification,
+} from "@/components/common/auth-verification";
 import { RegisterPage } from "@/features/auth/components/register-page";
 import { useRegisterForm } from "@/features/auth/hooks";
 import { m } from "@/paraglide/messages";
@@ -31,7 +34,7 @@ function RouteComponent() {
     token: turnstileToken,
     reset: resetTurnstile,
     turnstileProps,
-  } = useTurnstile("register");
+  } = useAuthVerification("register");
 
   const registerForm = useRegisterForm({
     turnstileToken,
@@ -42,7 +45,7 @@ function RouteComponent() {
 
   const turnstileElement = (
     <div className="flex justify-center">
-      <Turnstile {...turnstileProps} />
+      <AuthVerification {...turnstileProps} />
     </div>
   );
 

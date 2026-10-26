@@ -41,3 +41,34 @@ describe("first User is Admin", () => {
     expect(second?.role).not.toBe("admin");
   });
 });
+
+describe("passkey authentication", () => {
+  it("offers a local challenge without Turnstile, but requires a session to register", async () => {
+    const context = createTestContext();
+    const auth = getAuth({ db: context.db, env });
+    const request = (path: string, options?: RequestInit) =>
+      auth.handler(
+        new Request(`http://localhost:3000/api/auth/passkey/${path}`, {
+          headers: {
+            origin: "http://localhost:3000",
+            "content-type": "application/json",
+          },
+          ...options,
+        }),
+      );
+    const register = await request("generate-register-options");
+    expect(register.status).toBe(401);
+    const apiKeyRegister = await request("generate-register-options", {
+      headers: {
+        origin: "http://localhost:3000",
+        "x-api-key": "fsb_cannot_enroll_passkeys",
+      },
+    });
+    expect(apiKeyRegister.status).toBe(403);
+    const options = await request("generate-authenticate-options");
+    expect(options.status).toBe(200);
+    const data = (await options.json()) as { challenge: string; rpId: string };
+    expect(data.challenge.length).toBeGreaterThan(20);
+    expect(data.rpId).toBe("localhost");
+  });
+});

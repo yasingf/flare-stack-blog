@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   FileText,
   Guitar,
+  Piano,
   Image as ImageIcon,
   LayoutDashboard,
   Link2,
@@ -37,6 +38,7 @@ interface NavItem {
 }
 
 const navItems = [
+  { path: "/admin/piano", icon: Piano, label: "钢琴谱管理", exact: false },
   { path: "/admin/seo", icon: Globe, label: "站长工具", exact: false },
   {
     path: "/admin",

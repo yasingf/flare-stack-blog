@@ -1,5 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Turnstile, useTurnstile } from "@/components/common/turnstile";
+import {
+  AuthVerification,
+  useAuthVerification,
+} from "@/components/common/auth-verification";
 import { ForgotPasswordPage } from "@/features/auth/components/forgot-password-page";
 import { useForgotPasswordForm } from "@/features/auth/hooks";
 import { m } from "@/paraglide/messages";
@@ -26,7 +29,7 @@ function RouteComponent() {
     token: turnstileToken,
     reset: resetTurnstile,
     turnstileProps,
-  } = useTurnstile("forgot-password");
+  } = useAuthVerification("forgot-password");
 
   const forgotPasswordForm = useForgotPasswordForm({
     turnstileToken,
@@ -36,7 +39,7 @@ function RouteComponent() {
 
   const turnstileElement = (
     <div className="flex justify-center">
-      <Turnstile {...turnstileProps} />
+      <AuthVerification {...turnstileProps} />
     </div>
   );
 

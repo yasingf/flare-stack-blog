@@ -11,6 +11,7 @@ import {
 } from "./score";
 import { PracticeTracker } from "./practice";
 import { decodeBleMidi, decodeMidi } from "./midi";
+import { scorePedalDown, sustainedRelease } from "./pedal";
 
 const wrap = (measures: string) =>
   `<score-partwise version="4.0"><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1">${measures}</part></score-partwise>`;
@@ -20,6 +21,36 @@ const note = (pitch = "C", extra = "", duration = 4, staff = 1) =>
   `<note><pitch><step>${pitch}</step><octave>4</octave></pitch><duration>${duration}</duration><staff>${staff}</staff>${extra}</note>`;
 
 describe("piano MusicXML and MIDI timing", () => {
+  it("preserves pedal changes, releases the prior sustain, and respects loop ends", () => {
+    const score = parseMusicXml(
+      wrap(
+        `<measure>${attrs}<direction><direction-type><pedal type="start"/></direction-type></direction>${note()}<direction><direction-type><pedal type="change"/></direction-type><offset>4</offset></direction>${note("D")}<direction><direction-type><pedal type="stop"/></direction-type><offset>4</offset></direction>${note("E", "", 8)}</measure>`,
+      ),
+    );
+    expect(score.pedals).toEqual([
+      { beat: 0, down: true },
+      { beat: 2, down: false },
+      { beat: 2, down: true },
+      { beat: 3, down: false },
+    ]);
+    expect(sustainedRelease(score, score.notes[0], 4)).toBe(2);
+    expect(sustainedRelease(score, score.notes[0], 1.5)).toBe(1.5);
+    expect(scorePedalDown(score, 2.5)).toBe(true);
+    expect(scorePedalDown(score, 3)).toBe(false);
+  });
+  it("renders MIDI CC64 as pedal markings in its exported reference MusicXML", () => {
+    const midi = new Midi();
+    const track = midi.addTrack();
+    track.addNote({ midi: 60, time: 0, duration: 0.5 });
+    track.addCC({ number: 64, value: 1, time: 0 });
+    track.addCC({ number: 64, value: 0, time: 1 });
+    const score = parseMidi(midi.toArray().buffer as ArrayBuffer, "pedal.mid");
+    expect(score.xml).toContain('<pedal type="start"');
+    expect(score.xml).toContain('<pedal type="stop"');
+    const exported = parseMusicXml(score.xml);
+    expect(scorePedalDown(exported, 1)).toBe(true);
+    expect(scorePedalDown(exported, 2)).toBe(false);
+  });
   it("preserves both staves, fingerings and tempo", () => {
     const score = parseMusicXml(demoXml);
     expect(score.title).toBe("晨光 · 五指练习");

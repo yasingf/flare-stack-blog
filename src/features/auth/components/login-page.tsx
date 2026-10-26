@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Check, CircleAlert } from "lucide-react";
-import { type ReactNode } from "react";
+import { Check, CircleAlert, Fingerprint } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { authClient } from "@/lib/auth/auth-client";
+import { normalizeRedirectUrl } from "../hooks/normalize-redirect-url";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -37,7 +39,35 @@ export function LoginPage({
     isResending,
     resendVerification,
   } = loginForm;
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyError, setPasskeyError] = useState("");
+  async function signInPasskey() {
+    setPasskeyBusy(true);
+    setPasskeyError("");
+    try {
+      if (!window.PublicKeyCredential)
+        throw new Error(
+          "当前浏览器不支持通行密钥，请更新浏览器或使用其他登录方式。",
+        );
+      const result = await authClient.signIn.passkey();
+      if (result.error)
+        throw new Error(
+          "通行密钥登录未完成。请使用已绑定的设备重试；首次使用请先登录，在个人资料中添加通行密钥。",
+        );
+      window.location.assign(
+        normalizeRedirectUrl(
+          new URLSearchParams(location.search).get("redirectTo") ?? undefined,
+          "/profile",
+        ),
+      );
+    } catch (e) {
+      setPasskeyError(e instanceof Error ? e.message : "登录未完成，请重试。");
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }
   const busy =
+    passkeyBusy ||
     isSubmitting ||
     loginStep !== "IDLE" ||
     socialLogin.isLoading ||
@@ -48,6 +78,22 @@ export function LoginPage({
         <h1>{m.login_title()}</h1>
         <p>{m.login_welcome_back()}</p>
       </header>
+      <Button
+        variant="regular"
+        size="lg"
+        onClick={() => void signInPasskey()}
+        disabled={busy}
+        loading={passkeyBusy}
+        icon={<Fingerprint size={18} />}
+        className="auth-action"
+      >
+        使用通行密钥登录
+      </Button>
+      <p className="auth-note">
+        已绑定的设备可通过指纹、面容、系统 PIN
+        或安全密钥登录，无需验证码。首次绑定请前往个人资料。
+      </p>
+      {passkeyError && <StatusText error>{passkeyError}</StatusText>}
       <Button
         variant={isEmailConfigured ? "regular" : "primary"}
         size="lg"
@@ -135,7 +181,7 @@ export function LoginPage({
               variant="primary"
               size="lg"
               className="auth-action"
-              disabled={busy || turnstilePending}
+              disabled={busy}
               loading={loginStep === "VERIFYING"}
               icon={loginStep === "SUCCESS" ? <Check size={16} /> : null}
             >

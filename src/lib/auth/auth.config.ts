@@ -1,8 +1,10 @@
 import { apiKey } from "@better-auth/api-key";
+import { passkey } from "@better-auth/passkey";
+import { APIError } from "better-auth/api";
 import type { BetterAuthOptions } from "better-auth";
 import { admin } from "better-auth/plugins";
 
-export function createAuthConfig() {
+export function createAuthConfig(baseURL?: string) {
   return {
     emailAndPassword: {
       enabled: true,
@@ -25,6 +27,32 @@ export function createAuthConfig() {
     },
     plugins: [
       admin(),
+      passkey({
+        rpName: "Yasin's Blog",
+        ...(baseURL
+          ? { rpID: new URL(baseURL).hostname, origin: new URL(baseURL).origin }
+          : {}),
+        authenticatorSelection: {
+          residentKey: "required",
+          userVerification: "required",
+        },
+        registration: {
+          afterVerification: ({ verification }) => {
+            if (!verification.registrationInfo?.userVerified)
+              throw new APIError("FORBIDDEN", {
+                message: "请通过设备指纹、面容或 PIN 完成身份验证。",
+              });
+          },
+        },
+        authentication: {
+          afterVerification: ({ verification }) => {
+            if (!verification.authenticationInfo.userVerified)
+              throw new APIError("FORBIDDEN", {
+                message: "请通过设备指纹、面容或 PIN 完成身份验证。",
+              });
+          },
+        },
+      }),
       apiKey({
         enableSessionForAPIKeys: true,
         requireName: true,

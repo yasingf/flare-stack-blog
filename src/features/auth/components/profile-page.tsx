@@ -16,6 +16,7 @@ import type { useNotificationToggle } from "../hooks/use-notification-toggle";
 import { StatusText } from "@/components/ui/status-text";
 import { m } from "@/paraglide/messages";
 import "./profile-page.css";
+import { PasskeySettings } from "./passkey-settings";
 
 // Only an Admin can pick an avatar from the media library, so readers never
 // load the picker.
@@ -59,6 +60,11 @@ export function ProfilePage({
         back={{ to: "/", label: m.account_back() }}
         description={m.account_intro()}
       />
+      <div className="flex flex-wrap gap-4 my-5 text-sm">
+        {user.role === "admin" && <Link to="/admin">进入后台管理 →</Link>}
+        <Link to="/piano">钢琴练习与曲谱上传 →</Link>
+      </div>
+      <PasskeySettings />
       <form
         className="account-profile"
         onSubmit={profileForm.handleSubmit}
