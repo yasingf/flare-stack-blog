@@ -96,3 +96,11 @@ AI 仅生成一次性的简介、粗略难度和练习建议；不用于实时�
 [PR #3](https://github.com/yasingf/flare-stack-blog/pull/3) 已合并为 `d4b75f7c`，[CI](https://github.com/yasingf/flare-stack-blog/actions/runs/40268421754) 和[自动部署](https://github.com/yasingf/flare-stack-blog/actions/runs/40269014055) 均通过。生产已执行 `0031`–`0033`，共享曲库、管理页、一次性协议授权、通行密钥及地区验证上线。原生产曲谱库为空，无历史文件迁移或伪造同意记录。
 
 再次通过 OAuth 核验 Workers Free 后，使用同一代码和生产资源恢复预算内 AI；最终 Worker 版本为 `e41c7d84-76d4-4250-b513-3a33ba08e0db`，AI binding 与 `PIANO_AI_ENABLED=true` 已核对，14 个运行时机密均保留。数据库恢复点、发布前后版本信息位于被忽略的 `.secrets/piano-shared-2026-10-26/`。相关页面缓存已刷新，正式站手机方向提示、844×390 横向练习区、全屏退出、协议页和通行密钥入口已通过浏览器验收，无页面脚本错误。首次上传需同意协议，刷新后不再重复确认的流程已在本地注册账号验证。
+
+### 看谱缩放、性能与 GoatCounter（2026-10-26）
+
+[PR #4](https://github.com/yasingf/flare-stack-blog/pull/4) 合并为 `fa234368`，[CI](https://github.com/yasingf/flare-stack-blog/actions/runs/40275087378) 与[正式部署](https://github.com/yasingf/flare-stack-blog/actions/runs/40275673543) 均通过，760 项 Node 测试、284 项 Cloudflare 集成测试通过，无新增数据库迁移。
+
+自动部署后沿用 OAuth 免费套餐核验流程恢复 AI；最终 Worker 版本为 `441a2782-a166-4b7f-976c-38f31025c825`。15 个运行时机密（含 GoatCounter 只读 Token）均保留，AI binding、预算开关和 GoatCounter 地址已核对。发布前恢复点与版本记录位于被忽略的 `.secrets/piano-performance-2026-10-26/`；18 个公开页面缓存已清理。
+
+线上使用同一 MusicXML 验证默认曲谱加琴键模式、每行至多四小节、22 组原生踏板解释目标、手机竖屏自动横向全屏和零水平溢出。生产瀑布流实测 60 FPS，页面脚本错误为 0。Umami 的 `/stats.js`、`/api/send` 与 GoatCounter 的脚本及计数请求均返回 200；新服务端客户端读取 GoatCounter API 成功，当前完整日期窗口暂无数据。匿名页面无后台链接，直接访问后台转到登录；首页、文章、吉他谱、登录、协议、RSS、站点地图和钢琴采样健康检查全部通过。用户提供的曲谱仅作本机测试，未发布到共享曲库。
