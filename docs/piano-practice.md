@@ -141,4 +141,7 @@ AI 仅生成一次性的简介、粗略难度和练习建议；不用于实时�
 
 正式站 13 项页面/资源健康检查通过，两个文章管理读取接口对匿名请求均返回 401。用已共享、由管理员拥有的《富士山下》执行一次真实队列任务，生成文章 #5，状态为 `draft`，`published_at` 与 `public_slug` 均为 NULL。现有公开曲谱保持原文件；该文件有 903 处指法但没有踏板标记，因此练习室显示“谱面踏板：未标记”，可自行使用踏板控制。
 
-首轮真实草稿核对发现 Workers 不接受 `redirect: "error"`，导致两个资料来源在请求构造阶段失败。改为 `manual` 并拒绝非成功状态，仍不跟随外部重定向；新增真实 workerd Request 解析回归测试，并更新文章缓存版本以免复用缺少来源的结果。修复后在 workerd 中实际请求 MusicBrainz 与维基百科均取得有效 JSON；外部服务偶发不可用仍按待核实处理。首份资料不完整的生成草稿将在核对无人工修改后重新生成。
+首轮真实草稿核对发现 Workers 不接受 `redirect: "error"`，导致两个资料来源在请求构造阶段失败。改为 `manual` 并拒绝非成功状态，仍不跟随外部重定向；新增真实 workerd Request 解析回归测试，并更新文章缓存版本以免复用缺少来源的结果。修复后在 workerd 中实际请求 MusicBrainz 与维基百科均取得有效 JSON；外部服务偶发不可用仍按待核实处理。首份资料不完整的生成草稿在核对无人工修改后已重新生成。
+
+
+兼容修复提交 `755a1819` 已通过[完整部署流水线](https://github.com/yasingf/flare-stack-blog/actions/runs/40296220340)：770 项 Node 测试、292 项 Cloudflare 集成测试通过。最终 Worker 版本为 `ea6d3956-1fec-4fda-b403-44b948f61d0e`，保留 15 个机密，AI binding 和免费预算开关启用。重新通过真实队列生成的文章为 [#6 草稿](https://blog.yasing.top/admin/posts/edit/6)，含陈奕迅、Christopher Chak、林夕、参考专辑 What’s Going On…? 及三个资料来源链接；主题未取得可靠依据，留待核实。草稿的公开 URL 返回 404，未发布、未建立公开 slug。
