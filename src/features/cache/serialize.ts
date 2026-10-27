@@ -13,3 +13,18 @@ export function serializeKey(key: CacheKey): string {
     })
     .join(":");
 }
+
+/** Compare the JSON value stored in KV, independent of object field order. */
+export function serializeCacheValue(value: unknown): string | undefined {
+  return JSON.stringify(value, (_key, item: unknown) => {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      return item;
+    }
+    const record = item as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record)
+        .sort()
+        .map((key) => [key, record[key]]),
+    );
+  });
+}

@@ -400,6 +400,7 @@ describe("Infra Integration", () => {
         }),
       );
 
+      const put = vi.spyOn(context.env.KV, "put");
       const config = await ConfigService.getSystemConfig(context);
 
       expect(config.email).toEqual({
@@ -429,6 +430,48 @@ describe("Infra Integration", () => {
           apiKey: expect.anything(),
         }),
       });
+      expect(put).toHaveBeenCalledOnce();
+
+      const request = createTestContext();
+      expect(await ConfigService.getSystemConfig(request)).toEqual(config);
+      await waitForBackgroundTasks(request.executionCtx);
+      expect(put).toHaveBeenCalledOnce();
+    });
+
+    it("does not rewrite unchanged cached config with SEO settings", async () => {
+      await seedSystemConfig(context, {
+        ...DEFAULT_CONFIG,
+        seo: { googleVerification: "verification-code" },
+      });
+      const expected = await ConfigService.getSystemConfig(context);
+      await waitForBackgroundTasks(context.executionCtx);
+
+      const put = vi.spyOn(context.env.KV, "put");
+      for (let i = 0; i < 3; i++) {
+        const request = createTestContext();
+        expect(await ConfigService.getSystemConfig(request)).toEqual(expected);
+        await waitForBackgroundTasks(request.executionCtx);
+      }
+
+      expect(put).not.toHaveBeenCalled();
+    });
+
+    it("serves current config when the KV daily write limit is exhausted", async () => {
+      await seedSystemConfig(context, {
+        ...DEFAULT_CONFIG,
+        site: { ...DEFAULT_CONFIG.site, title: "Still available" },
+        seo: { googleVerification: "verification-code" },
+      });
+      vi.spyOn(context.env.KV, "put").mockRejectedValue(
+        new Error("KV put failed: 429 daily write limit exceeded"),
+      );
+
+      const config = await ConfigService.getSystemConfig(context);
+      expect(config.site?.title).toBe("Still available");
+      expect(config.seo?.googleVerification).toBe("verification-code");
+      await expect(
+        waitForBackgroundTasks(context.executionCtx),
+      ).resolves.not.toThrow();
     });
 
     it("stores the normalized SMTP config without legacy apiKey field", async () => {

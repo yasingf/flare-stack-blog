@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import type { Duration } from "@/lib/duration";
 import { ms } from "@/lib/duration";
-import { serializeKey } from "./serialize";
+import { serializeCacheValue, serializeKey } from "./serialize";
 import type {
   CacheKey,
   PublicCacheReadContext,
@@ -191,7 +191,7 @@ async function readEntry<T>(
       const data = entry.hydrate ? entry.hydrate(parsed.data) : parsed.data;
       if (
         entry.hydrate &&
-        JSON.stringify(data) !== JSON.stringify(parsed.data)
+        serializeCacheValue(data) !== serializeCacheValue(parsed.data)
       ) {
         context.executionCtx.waitUntil(persist(data));
       }
